@@ -71,6 +71,32 @@ export function getIfcFile(fileName: string): File | null {
   return ifcFileCache.get(fileName) || null;
 }
 
+// Get a list of unique property names available in the given model
+// If no model is provided, uses the last loaded model
+export function getModelPropertyNames(model?: IfcModel): string[] {
+  const current = model || getLastLoadedModel();
+  if (!current) return [];
+
+  const props = new Set<string>();
+
+  current.elements.forEach((el) => {
+    if (el.properties) {
+      Object.keys(el.properties).forEach((p) => props.add(p));
+    }
+
+    if (el.psets) {
+      for (const pset in el.psets) {
+        const psetProps = el.psets[pset];
+        for (const prop in psetProps) {
+          props.add(`${pset}.${prop}`);
+        }
+      }
+    }
+  });
+
+  return Array.from(props).sort();
+}
+
 // Worker management
 let ifcWorker: Worker | null = null;
 let isWorkerInitialized = false;
