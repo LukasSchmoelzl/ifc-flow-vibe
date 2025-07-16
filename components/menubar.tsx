@@ -407,18 +407,45 @@ export function AppMenubar({
               <MenubarSub>
                 <MenubarSubTrigger>Theme</MenubarSubTrigger>
                 <MenubarSubContent>
-                  <MenubarItem onClick={() => setTheme('light')}>
-                    Light
-                    {theme === 'light' && <Check className="h-4 w-4 ml-auto" />}
-                  </MenubarItem>
-                  <MenubarItem onClick={() => setTheme('dark')}>
-                    Dark
-                    {theme === 'dark' && <Check className="h-4 w-4 ml-auto" />}
-                  </MenubarItem>
+                  <MenubarSub>
+                    <MenubarSubTrigger>Default</MenubarSubTrigger>
+                    <MenubarSubContent>
+                      <MenubarItem onClick={() => setTheme('light')}>
+                        Light
+                        {theme === 'light' && (
+                          <Check className="h-4 w-4 ml-auto" />
+                        )}
+                      </MenubarItem>
+                      <MenubarItem onClick={() => setTheme('dark')}>
+                        Dark
+                        {theme === 'dark' && (
+                          <Check className="h-4 w-4 ml-auto" />
+                        )}
+                      </MenubarItem>
+                    </MenubarSubContent>
+                  </MenubarSub>
                   <MenubarItem onClick={() => setTheme('system')}>
                     System
                     {theme === 'system' && <Check className="h-4 w-4 ml-auto" />}
                   </MenubarItem>
+                  <MenubarSeparator />
+                  <MenubarSub>
+                    <MenubarSubTrigger>Tokyo Night</MenubarSubTrigger>
+                    <MenubarSubContent>
+                      <MenubarItem onClick={() => setTheme('tokyo-night-dark')}>
+                        Storm
+                        {theme === 'tokyo-night-dark' && (
+                          <Check className="h-4 w-4 ml-auto" />
+                        )}
+                      </MenubarItem>
+                      <MenubarItem onClick={() => setTheme('tokyo-night-light')}>
+                        Light
+                        {theme === 'tokyo-night-light' && (
+                          <Check className="h-4 w-4 ml-auto" />
+                        )}
+                      </MenubarItem>
+                    </MenubarSubContent>
+                  </MenubarSub>
                 </MenubarSubContent>
               </MenubarSub>
             </MenubarContent>
