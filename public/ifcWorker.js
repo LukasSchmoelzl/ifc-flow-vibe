@@ -124,6 +124,11 @@ self.onmessage = async (event) => {
         await handleExtractQuantities(data, messageId);
         break;
 
+      case "runPython":
+        console.log("Running custom Python code...");
+        await handleRunPython({ ...data, messageId });
+        break;
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -1860,6 +1865,63 @@ except Exception as e:
     self.postMessage({
       type: "error",
       message: `Error extracting quantities: ${error.message}`,
+      messageId,
+    });
+  }
+}
+
+// Execute custom Python code against the currently loaded IFC model
+async function handleRunPython({ script, arrayBuffer, messageId }) {
+  try {
+    await initPyodide();
+
+    if (arrayBuffer && arrayBuffer instanceof ArrayBuffer) {
+      pyodide.FS.writeFile("model.ifc", new Uint8Array(arrayBuffer));
+    }
+
+    const namespace = pyodide.globals.get("dict")();
+    namespace.set("user_script", script);
+
+    const pythonCode = `
+import json, ifcopenshell, traceback
+model = None
+result = None
+try:
+    model = ifcopenshell.open('model.ifc')
+except Exception:
+    pass
+try:
+    exec(user_script)
+    success = True
+    result_json = json.dumps(result)
+except Exception as e:
+    success = False
+    error_msg = str(e)
+    error_trace = traceback.format_exc()
+`;
+
+    await pyodide.runPythonAsync(pythonCode, { globals: namespace });
+
+    const success = namespace.get("success");
+    if (!success) {
+      const errorMsg = namespace.get("error_msg");
+      const errorTrace = namespace.get("error_trace");
+      throw new Error(`${errorMsg}\n${errorTrace}`);
+    }
+
+    const resultJson = namespace.get("result_json");
+    const result = resultJson ? JSON.parse(resultJson) : null;
+    namespace.destroy();
+
+    self.postMessage({
+      type: "pythonResult",
+      messageId,
+      result,
+    });
+  } catch (error) {
+    self.postMessage({
+      type: "error",
+      message: `Error running Python code: ${error.message}`,
       messageId,
     });
   }

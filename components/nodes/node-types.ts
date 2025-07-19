@@ -72,6 +72,14 @@ export interface ParameterNodeData extends BaseNodeData {
     };
 }
 
+// Python node data
+export interface PythonNodeData extends BaseNodeData {
+    properties?: {
+        code?: string;
+        [key: string]: any;
+    };
+}
+
 // Property node data
 export interface PropertyNodeData extends BaseNodeData {
     properties?: {
