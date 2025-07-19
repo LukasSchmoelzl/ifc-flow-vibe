@@ -3,6 +3,7 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { getModelPropertyNames } from "@/lib/ifc-utils";
 import {
@@ -653,7 +654,12 @@ export function NodePropertyRenderer({
                 <SelectItem value="excel">Excel</SelectItem>
                 <SelectItem value="json">JSON</SelectItem>
                 <SelectItem value="ifc">IFC</SelectItem>
-                <SelectItem value="glb">glTF/GLB</SelectItem>
+                <SelectItem value="glb">
+                  <div className="flex items-center gap-2">
+                    <span>glTF/GLB</span>
+                    <Badge variant="secondary" className="text-xs">WIP</Badge>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -667,24 +673,17 @@ export function NodePropertyRenderer({
               }
             />
           </div>
-          {(properties.format === "csv" ||
-            properties.format === "excel" ||
-            properties.format === "json") && (
-              <div className="space-y-2">
-                <Label htmlFor="properties">Include Properties</Label>
-                <Input
-                  id="properties"
-                  value={properties.properties || "Name,Type,Material"}
-                  onChange={(e) =>
-                    setProperties({
-                      ...properties,
-                      properties: e.target.value,
-                    })
-                  }
-                  placeholder="Comma-separated properties"
-                />
+          {properties.format === "glb" && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="flex items-start gap-2">
+                <Badge variant="secondary" className="mt-0.5">WIP</Badge>
+                <div className="text-xs text-amber-700 dark:text-amber-300">
+                  <p className="font-semibold mb-1">GLB Export is Work In Progress</p>
+                  <p>The geometry extraction is simplified and doesn't accurately represent complex IFC elements.</p>
+                </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
       );
 

@@ -50,7 +50,12 @@ export function ExportDialog({ open, onOpenChange, onExport }: ExportDialogProps
                 <SelectItem value="excel">Excel</SelectItem>
                 <SelectItem value="json">JSON</SelectItem>
                 <SelectItem value="ifc">IFC</SelectItem>
-                <SelectItem value="glb">glTF/GLB</SelectItem>
+                <SelectItem value="glb">
+                  <div className="flex items-center gap-2">
+                    <span>glTF/GLB</span>
+                    <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">WIP</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -63,6 +68,14 @@ export function ExportDialog({ open, onOpenChange, onExport }: ExportDialogProps
               placeholder="Enter filename"
             />
           </div>
+          {format === "glb" && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="text-xs text-amber-700 dark:text-amber-300">
+                <p className="font-semibold mb-1">⚠️ GLB Export is Work In Progress</p>
+                <p>The geometry extraction is simplified and may not accurately represent complex IFC elements.</p>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

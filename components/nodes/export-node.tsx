@@ -14,11 +14,16 @@ export const ExportNode = memo(({ data, isConnectable }: NodeProps<ExportNodeDat
       </div>
       <div className="p-3 text-xs">
         <div className="space-y-1">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span>Format:</span>
-            <span className="font-medium">
-              {data.properties?.format || "CSV"}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">
+                {data.properties?.format || "CSV"}
+              </span>
+              {data.properties?.format === "glb" && (
+                <span className="text-[10px] bg-amber-500 text-white px-1 py-0.5 rounded">WIP</span>
+              )}
+            </div>
           </div>
           <div className="flex justify-between">
             <span>File Name:</span>
@@ -26,17 +31,6 @@ export const ExportNode = memo(({ data, isConnectable }: NodeProps<ExportNodeDat
               {data.properties?.fileName || "export"}
             </span>
           </div>
-          {(data.properties?.format === "csv" ||
-            data.properties?.format === "excel" ||
-            data.properties?.format === "json") &&
-            data.properties?.properties ? (
-            <div className="flex justify-between">
-              <span>Properties:</span>
-              <span className="font-medium truncate">
-                {data.properties.properties}
-              </span>
-            </div>
-          ) : null}
         </div>
       </div>
       <Handle
