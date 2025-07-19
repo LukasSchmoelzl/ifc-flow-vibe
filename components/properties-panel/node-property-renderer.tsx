@@ -1004,6 +1004,27 @@ export function NodePropertyRenderer({
         </div>
       );
 
+    case "pythonNode":
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pythonCode">Python Code</Label>
+            <textarea
+              id="pythonCode"
+              value={properties.code || "# Your Python code here\n# Access ifc_file, input_data, and properties\nresult = input_data"}
+              onChange={(e) =>
+                setProperties({ ...properties, code: e.target.value })
+              }
+              className="w-full h-32 font-mono text-sm border rounded-md p-2"
+              placeholder="Write your Python code here..."
+            />
+            <div className="text-xs text-muted-foreground">
+              Double-click the node to open the full Python editor
+            </div>
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="text-center text-sm text-muted-foreground py-4">

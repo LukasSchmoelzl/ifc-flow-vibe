@@ -78,6 +78,13 @@ export interface PythonNodeData extends BaseNodeData {
         code?: string;
         [key: string]: any;
     };
+    isLoading?: boolean;
+    error?: string | null;
+    result?: any;
+    progress?: {
+        percentage: number;
+        message?: string;
+    } | null;
 }
 
 // Property node data

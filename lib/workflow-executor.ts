@@ -748,13 +748,13 @@ export class WorkflowExecutor {
         break;
 
       case "pythonNode": {
-        if (!inputValues.input) {
-          console.warn(`No input provided to python node ${nodeId}`);
-          result = null;
-          break;
-        }
+        console.log("Processing pythonNode", { node, inputValues });
+
+        // Python nodes can work with or without input
         const model = inputValues.input as IfcModel;
-        if (!model || !model.name) {
+
+        // Validate we have a model with a file for the IFC context
+        if (inputValues.input && (!model || !model.name)) {
           console.warn(`Invalid model provided to python node ${nodeId}`);
           result = null;
           break;
@@ -768,16 +768,20 @@ export class WorkflowExecutor {
         });
 
         try {
+          // Pass input data and properties to the Python script
+          // Use model if available, otherwise pass null (worker will handle it)
           result = await runPythonScript(
-            model,
-            node.data.properties?.code || "",
+            model || null,
+            node.data.properties?.code || "# No code provided\nresult = None",
             (p, m) => {
               this.updateNodeDataInList(nodeId, {
                 ...node.data,
                 isLoading: true,
                 progress: { percentage: p, message: m || "Processing" },
               });
-            }
+            },
+            inputValues.input, // Pass the input data
+            node.data.properties // Pass the node properties
           );
           this.updateNodeDataInList(nodeId, {
             ...node.data,

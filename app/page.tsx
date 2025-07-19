@@ -51,6 +51,7 @@ import {
 } from "@/lib/keyboard-shortcuts";
 import { useAppSettings } from "@/lib/settings-manager";
 import { useTheme } from "next-themes";
+import { ViewerFocusProvider } from "@/components/contexts/viewer-focus-context";
 import { nodeCategories } from "@/components/sidebar";
 
 // Define custom node types
@@ -159,6 +160,9 @@ function FlowWithProvider() {
 
   // Reference to worker for IFC operations
   const ifcWorkerRef = useRef<Worker | null>(null);
+
+  // 3D Focus Mode - track which viewer is in focus mode
+  const [focusedViewerId, setFocusedViewerId] = useState<string | null>(null);
 
   // Apply theme from settings
   useEffect(() => {
@@ -1563,33 +1567,52 @@ function FlowWithProvider() {
           onDelete={handleDelete}
         />
         <div className={`flex-1 h-full relative`} ref={reactFlowWrapper}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onNodeClick={onNodeClick}
-            onNodeDoubleClick={onNodeDoubleClick}
-            onPaneClick={() => setEditingNode(null)}
-            nodeTypes={nodeTypes}
-            snapToGrid
-            snapGrid={[15, 15]}
-            minZoom={0.1}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
+          <ViewerFocusProvider
+            focusedViewerId={focusedViewerId}
+            setFocusedViewerId={setFocusedViewerId}
           >
-            <Controls />
-            {showGrid && <Background color="#aaa" gap={16} />}
-            {showMinimap && <MiniMap />}
-            <Panel position="bottom-right">
-              <div className="bg-card rounded-md p-2 text-xs text-muted-foreground">
-                {currentWorkflow ? currentWorkflow.name : "IFCflow - v0.1.0"}
-              </div>
-            </Panel>
-          </ReactFlow>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onNodeClick={onNodeClick}
+              onNodeDoubleClick={onNodeDoubleClick}
+              onPaneClick={() => {
+                setEditingNode(null);
+                // Exit 3D focus mode when clicking on canvas
+                if (focusedViewerId) {
+                  setFocusedViewerId(null);
+                }
+              }}
+              nodeTypes={nodeTypes}
+              snapToGrid
+              snapGrid={[15, 15]}
+              minZoom={0.1}
+              maxZoom={2}
+              proOptions={{ hideAttribution: true }}
+              // Disable interactions when viewer is in focus mode
+              panOnDrag={!focusedViewerId}
+              zoomOnScroll={!focusedViewerId}
+              zoomOnPinch={!focusedViewerId}
+              zoomOnDoubleClick={!focusedViewerId}
+              elementsSelectable={!focusedViewerId}
+              nodesConnectable={!focusedViewerId}
+              nodesDraggable={!focusedViewerId}
+            >
+              <Controls />
+              {showGrid && <Background color="#aaa" gap={16} />}
+              {showMinimap && <MiniMap />}
+              <Panel position="bottom-right">
+                <div className="bg-card rounded-md p-2 text-xs text-muted-foreground">
+                  {currentWorkflow ? currentWorkflow.name : "IFCflow - v0.1.0"}
+                </div>
+              </Panel>
+            </ReactFlow>
+          </ViewerFocusProvider>
         </div>
       </div>
       {editingNode && (

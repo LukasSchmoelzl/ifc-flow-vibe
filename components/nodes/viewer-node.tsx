@@ -7,9 +7,10 @@ import {
   useReactFlow,
   NodeProps,
 } from "reactflow";
-import { CuboidIcon as Cube, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { CuboidIcon as Cube, Loader2, AlertCircle, CheckCircle, Focus, MousePointer2 } from "lucide-react";
 import { IfcViewer } from "@/lib/ifc/viewer-utils";
 import { ViewerNodeData as BaseViewerNodeData } from "./node-types";
+import { useViewerFocus } from "@/components/contexts/viewer-focus-context";
 
 // Extend the base ViewerNodeData with additional properties
 interface ExtendedViewerNodeData extends BaseViewerNodeData {
@@ -28,11 +29,40 @@ export const ViewerNode = memo(
     const [loadedFileIdentifier, setLoadedFileIdentifier] = useState<string | null>(null);
     const [isResizing, setIsResizing] = useState(false);
     const { setNodes } = useReactFlow();
+    const { focusedViewerId, setFocusedViewerId } = useViewerFocus();
 
     // Default sizes with fallback values
     const width = data.width || 220;
     const height = data.height || 200;
     const viewerHeight = Math.max(height - 60, 100); // Subtract space for header and footer
+
+    // Check if this viewer is in focus mode
+    const isInFocusMode = focusedViewerId === id;
+
+    // Handle double-click to enter 3D focus mode
+    const handleViewerDoubleClick = useCallback((e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isInFocusMode && elementCount > 0 && !errorMessage && !isLoading) {
+        setFocusedViewerId(id);
+      }
+    }, [id, isInFocusMode, elementCount, errorMessage, isLoading, setFocusedViewerId]);
+
+    // Keyboard event handling when in focus mode
+    useEffect(() => {
+      if (!isInFocusMode) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Prevent canvas shortcuts when viewer is in focus
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'PageUp', 'PageDown'].includes(e.key)) {
+          e.stopPropagation();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown, true);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown, true);
+      };
+    }, [isInFocusMode]);
 
     // Handle window mouse events for resizing
     const startResize = useCallback(
@@ -104,16 +134,8 @@ export const ViewerNode = memo(
     // Update viewer when size changes
     useEffect(() => {
       if (viewer && viewerRef.current) {
-        // Update the container size
+        // Update the container size - this preserves current camera position
         viewer.resize();
-
-        // Give a small delay to ensure the resize is completed before fitting
-        const timer = setTimeout(() => {
-          if (viewer) {
-            viewer.fitCameraToModel();
-          }
-        }, 150);
-        return () => clearTimeout(timer);
       }
     }, [width, height, viewer]);
 
@@ -196,17 +218,38 @@ export const ViewerNode = memo(
 
     return (
       <div
-        className={`bg-white dark:bg-gray-800 border-2 ${selected ? "border-cyan-600 dark:border-cyan-400" : "border-cyan-500 dark:border-cyan-400"
-          } rounded-md shadow-md relative`}
-        style={{ width: `${width}px` }}
+        className={`bg-white dark:bg-gray-800 border-2 ${isInFocusMode
+          ? "border-cyan-400 dark:border-cyan-300 shadow-xl shadow-cyan-400/50 ring-4 ring-cyan-300/20"
+          : selected
+            ? "border-cyan-600 dark:border-cyan-400"
+            : "border-cyan-500 dark:border-cyan-400"
+          } rounded-md shadow-md relative transition-all duration-300`}
+        style={{
+          width: `${width}px`,
+          zIndex: isInFocusMode ? 1000 : 'auto',
+          ...(isInFocusMode && {
+            filter: 'drop-shadow(0 0 12px rgba(34, 211, 238, 0.5)) drop-shadow(0 0 20px rgba(34, 211, 238, 0.2))', // Layered neon glow
+          })
+        }}
         data-id={id}
+        onMouseEnter={(e) => {
+          if (isInFocusMode) {
+            e.stopPropagation();
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (isInFocusMode) {
+            e.stopPropagation();
+          }
+        }}
       >
-        <div className="bg-cyan-500 text-white px-3 py-1 flex items-center justify-between gap-2 nodrag-handle">
+        <div className={`${isInFocusMode ? "bg-cyan-500 shadow-lg shadow-cyan-400/60 border-b border-cyan-300/30" : "bg-cyan-500"} text-white px-3 py-1 flex items-center justify-between gap-2 nodrag-handle transition-all duration-300`}>
           <div className="flex items-center gap-2 min-w-0">
             <Cube className="h-4 w-4 flex-shrink-0" />
             <div className="text-sm font-medium truncate">{data.label}</div>
+            {isInFocusMode && <Focus className="h-3 w-3 flex-shrink-0 text-cyan-200 animate-pulse" />}
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {!isLoading && errorMessage && <AlertCircle className="h-4 w-4 text-red-300" />}
             {!isLoading && !errorMessage && elementCount > 0 && <CheckCircle className="h-4 w-4 text-green-300" />}
@@ -215,8 +258,19 @@ export const ViewerNode = memo(
         <div className="p-3">
           <div
             ref={viewerRef}
-            className="bg-gray-100 rounded-md flex items-center justify-center overflow-hidden nodrag relative"
-            style={{ height: `${viewerHeight}px` }}
+            className={`bg-gray-100 rounded-md flex items-center justify-center overflow-hidden ${isInFocusMode ? "ring-2 ring-cyan-400/30 shadow-inner" : "nodrag"
+              } relative cursor-pointer transition-all duration-300`}
+            style={{
+              height: `${viewerHeight}px`,
+              zIndex: isInFocusMode ? 50 : 'auto' // Ensure viewer is on top when in focus mode
+            }}
+            onDoubleClick={handleViewerDoubleClick}
+            // Minimal event handling - let Three.js controls work naturally
+            onContextMenu={(e) => {
+              if (isInFocusMode) {
+                e.stopPropagation(); // Prevent ReactFlow context menu
+              }
+            }}
           >
             {isLoading && (
               <div className="absolute inset-0 bg-gray-400 bg-opacity-50 flex items-center justify-center z-10">
@@ -229,8 +283,29 @@ export const ViewerNode = memo(
               </div>
             )}
             {!elementCount && !isLoading && !errorMessage && (
-              <div className="text-xs text-muted-foreground pointer-events-none">
-                Connect IFC File
+              <div className="text-xs text-muted-foreground pointer-events-none text-center">
+                <MousePointer2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Connect IFC File</p>
+              </div>
+            )}
+
+            {/* Focus mode overlay when viewer is ready */}
+            {!isInFocusMode && elementCount > 0 && !isLoading && !errorMessage && (
+              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center pointer-events-none">
+                <div className="bg-white dark:bg-gray-800 rounded-lg px-3 py-2 shadow-lg opacity-0 hover:opacity-100 transition-opacity duration-200">
+                  <div className="text-xs font-medium text-center flex items-center gap-2">
+                    <Focus className="h-4 w-4" />
+                    Double-click for 3D controls
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Focus mode active indicator */}
+            {isInFocusMode && (
+              <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full px-2 py-1 text-xs font-medium flex items-center gap-1 shadow-lg z-20">
+                <Focus className="h-3 w-3" />
+                3D Focus
               </div>
             )}
           </div>
@@ -244,7 +319,16 @@ export const ViewerNode = memo(
             {elementCount > 0 && !isLoading && !errorMessage && (
               <div className="flex justify-between mt-1 text-green-700">
                 <span>Status:</span>
-                <span className="font-medium">Model Loaded</span>
+                <span className="font-medium">
+                  {isInFocusMode ? "3D Focus Active" : "Model Loaded"}
+                </span>
+              </div>
+            )}
+
+            {/* Instructions for focus mode */}
+            {isInFocusMode && (
+              <div className="mt-1 text-[10px] text-blue-600 dark:text-blue-400 text-center">
+                Click canvas to exit 3D focus mode
               </div>
             )}
             {errorMessage && !isLoading && (
@@ -258,8 +342,8 @@ export const ViewerNode = memo(
 
         <div
           className={`absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize nodrag ${selected ? "text-cyan-600" : "text-gray-400"
-            } hover:text-cyan-500`}
-          onMouseDown={startResize}
+            } hover:text-cyan-500 ${isInFocusMode ? "opacity-30 pointer-events-none" : ""}`}
+          onMouseDown={!isInFocusMode ? startResize : undefined}
         >
           <svg
             width="16"

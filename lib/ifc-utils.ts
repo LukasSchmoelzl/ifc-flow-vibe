@@ -1784,18 +1784,26 @@ export function downloadExportedFile(
 
 // Run arbitrary Python code against the loaded IFC model using the worker
 export async function runPythonScript(
-  model: IfcModel,
+  model: IfcModel | null,
   code: string,
   onProgress?: (progress: number, message?: string) => void,
+  inputData?: any,
+  properties?: Record<string, any>
 ): Promise<any> {
   await initializeWorker();
   if (!ifcWorker) throw new Error("IFC worker is not available");
 
-  const file = getIfcFile(model.name);
-  if (!file) {
-    throw new Error(`Could not retrieve cached file object for ${model.name}`);
+  let arrayBuffer: ArrayBuffer | undefined = undefined;
+  
+  // Only try to get file and arrayBuffer if model is provided
+  if (model && model.name) {
+    const file = getIfcFile(model.name);
+    if (file) {
+      arrayBuffer = await file.arrayBuffer();
+    } else {
+      console.warn(`Could not retrieve cached file object for ${model.name}`);
+    }
   }
-  const arrayBuffer = await file.arrayBuffer();
 
   const messageId = `python_${Date.now()}_${Math.random()
     .toString(36)
@@ -1831,14 +1839,23 @@ export async function runPythonScript(
       },
     });
 
-    ifcWorker!.postMessage(
-      {
-        action: "runPython",
-        messageId,
-        data: { script: code, arrayBuffer },
+        // Only pass arrayBuffer as transferable if it exists
+    const message = {
+      action: "runPython",
+      messageId,
+      data: { 
+        script: code, 
+        arrayBuffer,
+        inputData,
+        properties
       },
-      [arrayBuffer],
-    );
+    };
+
+    if (arrayBuffer) {
+      ifcWorker!.postMessage(message, [arrayBuffer]);
+    } else {
+      ifcWorker!.postMessage(message);
+    }
   });
 
   return resultPromise;
