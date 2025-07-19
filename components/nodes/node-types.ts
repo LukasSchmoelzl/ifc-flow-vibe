@@ -72,6 +72,21 @@ export interface ParameterNodeData extends BaseNodeData {
     };
 }
 
+// Python node data
+export interface PythonNodeData extends BaseNodeData {
+    properties?: {
+        code?: string;
+        [key: string]: any;
+    };
+    isLoading?: boolean;
+    error?: string | null;
+    result?: any;
+    progress?: {
+        percentage: number;
+        message?: string;
+    } | null;
+}
+
 // Property node data
 export interface PropertyNodeData extends BaseNodeData {
     properties?: {

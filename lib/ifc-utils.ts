@@ -186,6 +186,12 @@ export async function initializeWorker(): Promise<void> {
           workerPromiseResolvers.get(messageId)!.resolve(data.data);
           workerPromiseResolvers.delete(messageId);
         }
+      } else if (type === "pythonResult") {
+        console.log("Received python result:", data);
+        if (messageId && workerPromiseResolvers.has(messageId)) {
+          workerPromiseResolvers.get(messageId)!.resolve(data.result);
+          workerPromiseResolvers.delete(messageId);
+        }
       }
       // Progress messages don't resolve promises
     };
@@ -1774,4 +1780,83 @@ export function downloadExportedFile(
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// Run arbitrary Python code against the loaded IFC model using the worker
+export async function runPythonScript(
+  model: IfcModel | null,
+  code: string,
+  onProgress?: (progress: number, message?: string) => void,
+  inputData?: any,
+  properties?: Record<string, any>
+): Promise<any> {
+  await initializeWorker();
+  if (!ifcWorker) throw new Error("IFC worker is not available");
+
+  let arrayBuffer: ArrayBuffer | undefined = undefined;
+  
+  // Only try to get file and arrayBuffer if model is provided
+  if (model && model.name) {
+    const file = getIfcFile(model.name);
+    if (file) {
+      arrayBuffer = await file.arrayBuffer();
+    } else {
+      console.warn(`Could not retrieve cached file object for ${model.name}`);
+    }
+  }
+
+  const messageId = `python_${Date.now()}_${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
+  const resultPromise = new Promise<any>((resolve, reject) => {
+    const progressHandler = (event: MessageEvent) => {
+      const data = event.data;
+      if (
+        data.type === "progress" &&
+        data.messageId === messageId &&
+        onProgress
+      ) {
+        onProgress(data.percentage, data.message);
+      }
+    };
+
+    if (onProgress) ifcWorker!.addEventListener("message", progressHandler);
+
+    const cleanup = () => {
+      if (onProgress) ifcWorker!.removeEventListener("message", progressHandler);
+      workerPromiseResolvers.delete(messageId);
+    };
+
+    workerPromiseResolvers.set(messageId, {
+      resolve: (data: any) => {
+        cleanup();
+        resolve(data);
+      },
+      reject: (error: any) => {
+        cleanup();
+        reject(error);
+      },
+    });
+
+        // Only pass arrayBuffer as transferable if it exists
+    const message = {
+      action: "runPython",
+      messageId,
+      data: { 
+        script: code, 
+        arrayBuffer,
+        inputData,
+        properties
+      },
+    };
+
+    if (arrayBuffer) {
+      ifcWorker!.postMessage(message, [arrayBuffer]);
+    } else {
+      ifcWorker!.postMessage(message);
+    }
+  });
+
+  return resultPromise;
 }

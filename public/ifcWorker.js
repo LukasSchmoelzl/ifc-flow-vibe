@@ -124,6 +124,11 @@ self.onmessage = async (event) => {
         await handleExtractQuantities(data, messageId);
         break;
 
+      case "runPython":
+        console.log("Running custom Python code...");
+        await handleRunPython({ ...data, messageId });
+        break;
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -1860,6 +1865,126 @@ except Exception as e:
     self.postMessage({
       type: "error",
       message: `Error extracting quantities: ${error.message}`,
+      messageId,
+    });
+  }
+}
+
+// Execute custom Python code against the currently loaded IFC model
+async function handleRunPython({ script, arrayBuffer, inputData, properties, messageId }) {
+  try {
+    await initPyodide();
+
+    // Write IFC file only if arrayBuffer is provided
+    let hasIfcFile = false;
+    if (arrayBuffer && arrayBuffer instanceof ArrayBuffer) {
+      try {
+        pyodide.FS.writeFile("model.ifc", new Uint8Array(arrayBuffer));
+        hasIfcFile = true;
+      } catch (fsError) {
+        console.warn("Could not write IFC file to filesystem:", fsError);
+      }
+    }
+
+    const namespace = pyodide.globals.get("dict")();
+
+    // Set up all the variables that should be available to the Python code
+    namespace.set("user_script", script);
+    namespace.set("input_data_json", JSON.stringify(inputData || null));
+    namespace.set("properties_json", JSON.stringify(properties || {}));
+
+    const pythonCode = `
+import json, ifcopenshell, traceback
+import os
+
+# Initialize all variables that should be available to user code
+ifc_file = None
+model = None  # Legacy alias for ifc_file
+input_data = None
+properties = {}
+result = None
+has_ifc_file = ${hasIfcFile ? 'True' : 'False'}
+
+try:
+    # Load IFC file if available
+    if has_ifc_file and os.path.exists('model.ifc'):
+        try:
+            ifc_file = ifcopenshell.open('model.ifc')
+            model = ifc_file  # Legacy alias
+            print("Python: IFC file loaded successfully")
+        except Exception as ifc_error:
+            print(f"Python: Warning - Could not load IFC file: {ifc_error}")
+            ifc_file = None
+            model = None
+    elif not has_ifc_file:
+        print("Python: No IFC file provided - ifc_file will be None")
+    
+    # Parse input data and properties
+    try:
+        input_data = json.loads(input_data_json) if input_data_json != "null" else None
+        if input_data is not None:
+            print(f"Python: Input data loaded - type: {type(input_data)}")
+    except Exception as parse_error:
+        print(f"Python: Warning - Could not parse input data: {parse_error}")
+        input_data = None
+        
+    try:
+        properties = json.loads(properties_json)
+        print(f"Python: Properties loaded - keys: {list(properties.keys())}")
+    except Exception as props_error:
+        print(f"Python: Warning - Could not parse properties: {props_error}")
+        properties = {}
+    
+    # Execute user script with all variables available
+    print("Python: Executing user script...")
+    exec(user_script)
+    success = True
+    print("Python: User script executed successfully")
+    
+    # Serialize result - handle None and complex objects
+    if result is None:
+        result_json = "null"
+        print("Python: Result is None")
+    else:
+        try:
+            result_json = json.dumps(result)
+            print(f"Python: Result serialized successfully - type: {type(result)}")
+        except TypeError as json_error:
+            # Handle objects that aren't JSON serializable
+            result_str = str(result)
+            result_json = json.dumps(result_str)
+            print(f"Python: Result not JSON serializable, converted to string: {result_str[:100]}...")
+            
+except Exception as e:
+    success = False
+    error_msg = str(e)
+    error_trace = traceback.format_exc()
+    print(f"Python execution error: {error_msg}")
+    print(f"Traceback: {error_trace}")
+`;
+
+    await pyodide.runPythonAsync(pythonCode, { globals: namespace });
+
+    const success = namespace.get("success");
+    if (!success) {
+      const errorMsg = namespace.get("error_msg");
+      const errorTrace = namespace.get("error_trace");
+      throw new Error(`${errorMsg}\n${errorTrace}`);
+    }
+
+    const resultJson = namespace.get("result_json");
+    const result = resultJson === "null" ? null : JSON.parse(resultJson);
+    namespace.destroy();
+
+    self.postMessage({
+      type: "pythonResult",
+      messageId,
+      result,
+    });
+  } catch (error) {
+    self.postMessage({
+      type: "error",
+      message: `Error running Python code: ${error.message}`,
       messageId,
     });
   }

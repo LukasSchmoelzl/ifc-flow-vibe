@@ -14,6 +14,7 @@ import {
   IfcModel,
   getLastLoadedModel,
   extractGeometryWithGeom,
+  runPythonScript,
 } from "@/lib/ifc-utils";
 
 // Add TypeScript interfaces at the top of the file
@@ -745,6 +746,60 @@ export class WorkflowExecutor {
           );
         }
         break;
+
+      case "pythonNode": {
+        console.log("Processing pythonNode", { node, inputValues });
+
+        // Python nodes can work with or without input
+        const model = inputValues.input as IfcModel;
+
+        // Validate we have a model with a file for the IFC context
+        if (inputValues.input && (!model || !model.name)) {
+          console.warn(`Invalid model provided to python node ${nodeId}`);
+          result = null;
+          break;
+        }
+
+        this.updateNodeDataInList(nodeId, {
+          ...node.data,
+          isLoading: true,
+          progress: { percentage: 5, message: "Running Python..." },
+          error: null,
+        });
+
+        try {
+          // Pass input data and properties to the Python script
+          // Use model if available, otherwise pass null (worker will handle it)
+          result = await runPythonScript(
+            model || null,
+            node.data.properties?.code || "# No code provided\nresult = None",
+            (p, m) => {
+              this.updateNodeDataInList(nodeId, {
+                ...node.data,
+                isLoading: true,
+                progress: { percentage: p, message: m || "Processing" },
+              });
+            },
+            inputValues.input, // Pass the input data
+            node.data.properties // Pass the node properties
+          );
+          this.updateNodeDataInList(nodeId, {
+            ...node.data,
+            isLoading: false,
+            progress: null,
+            result,
+          });
+        } catch (err) {
+          this.updateNodeDataInList(nodeId, {
+            ...node.data,
+            isLoading: false,
+            progress: null,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw err;
+        }
+        break;
+      }
 
       case "exportNode":
         // Export

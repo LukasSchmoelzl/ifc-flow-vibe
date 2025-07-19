@@ -39,6 +39,7 @@ import {
   Clock,
   Plus,
   Database,
+  Terminal,
   WorkflowIcon,
 } from "lucide-react";
 import {
@@ -115,6 +116,12 @@ export const nodeCategories = [
         id: "classificationNode",
         label: "Classification",
         icon: <FileText className="h-4 w-4 mr-2" />,
+        status: "new",
+      },
+      {
+        id: "pythonNode",
+        label: "Python",
+        icon: <Terminal className="h-4 w-4 mr-2" />,
         status: "new",
       },
       {
