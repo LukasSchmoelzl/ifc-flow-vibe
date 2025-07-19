@@ -1627,28 +1627,44 @@ export async function exportData(
       return JSON.stringify(data, null, 2);
     }
     case "excel": {
-      const tableRows = rows.map((element) => {
-        const cells = headers.map((header) => {
+      // Import SheetJS dynamically to generate proper Excel files
+      const XLSX = await import('xlsx');
+
+      // Create worksheet data from rows
+      const worksheetData = rows.map((element) => {
+        const row: Record<string, any> = {};
+        headers.forEach((header) => {
           const parts = header.split(".");
-          let value = "";
           if (parts.length === 1) {
-            value = element.properties?.[header] ?? element[header];
+            row[header] = element.properties?.[header] ?? element[header] ?? "";
           } else if (
             parts.length === 2 &&
             element.psets &&
             element.psets[parts[0]]
           ) {
-            value = element.psets[parts[0]][parts[1]];
+            row[header] = element.psets[parts[0]][parts[1]] ?? "";
+          } else {
+            row[header] = "";
           }
-          return `<td>${String(value ?? "")}</td>`;
         });
-        return `<tr>${cells.join("")}</tr>`;
+        return row;
       });
-      const table = `<table><thead><tr>${headers
-        .map((h) => `<th>${h}</th>`)
-        .join("")}</tr></thead><tbody>${tableRows.join("")}</tbody></table>`;
-      const html = `<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">\n<head><meta http-equiv="Content-Type" content="application/vnd.ms-excel; charset=UTF-8"/></head><body>${table}</body></html>`;
-      return html;
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+      // Generate Excel file as ArrayBuffer
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+        compression: true
+      });
+
+      return excelBuffer;
     }
     case "glb": {
       const scene = new Scene();
@@ -1711,6 +1727,14 @@ export function downloadExportedFile(
     glb: "model/gltf-binary",
   };
 
+  // Map format to proper file extension
+  const extensionMap: Record<string, string> = {
+    csv: "csv",
+    json: "json",
+    excel: "xlsx", // Fix: Use .xlsx instead of .excel
+    glb: "glb",
+  };
+
   const blob =
     data instanceof ArrayBuffer
       ? new Blob([data], { type: mimeMap[format] || "application/octet-stream" })
@@ -1719,7 +1743,7 @@ export function downloadExportedFile(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${fileName}.${format}`;
+  a.download = `${fileName}.${extensionMap[format] || format}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -250,8 +250,16 @@ export class WorkflowExecutor {
         break;
 
       case "geometryNode":
-        // Check if we should use actual geometry
-        if (node.data.properties?.useActualGeometry) {
+        // Check if we should use actual geometry OR if there's a downstream GLB export
+        const hasDownstreamGLB = this.hasDownstreamGLBExport(nodeId);
+        const needsActualGeometry = node.data.properties?.useActualGeometry || hasDownstreamGLB;
+
+        if (needsActualGeometry) {
+          // Log why we're using actual geometry
+          if (hasDownstreamGLB && !node.data.properties?.useActualGeometry) {
+            console.log(`Automatically enabling geometry extraction for GLB export downstream from node ${nodeId}`);
+          }
+
           // Use the full geometry extraction with web worker
           result = await this.executeGeometryNode(node);
         } else {
@@ -740,8 +748,31 @@ export class WorkflowExecutor {
           console.warn(`No input provided to export node ${nodeId}`);
           result = "";
         } else {
+          let exportInput = inputValues.input;
+
+          // Check if this is GLB export and we need to extract geometry
+          if (node.data.properties?.format === "glb") {
+            console.log("GLB export detected - checking if geometry extraction is needed");
+
+            // Check if input has geometry data
+            const hasGeometry = this.checkIfInputHasGeometry(exportInput);
+
+            if (!hasGeometry) {
+              console.log("No geometry found in input - extracting geometry for GLB export");
+
+              // Extract geometry from the input model
+              try {
+                exportInput = await this.extractGeometryForGLB(exportInput);
+                console.log("Geometry extracted for GLB export:", exportInput?.length || 0, "elements");
+              } catch (error) {
+                console.error("Failed to extract geometry for GLB export:", error);
+                // Continue with original input - let the export handle the error
+              }
+            }
+          }
+
           result = await exportData(
-            inputValues.input,
+            exportInput,
             node.data.properties?.format || "csv",
             node.data.properties?.fileName || "export"
           );
@@ -965,5 +996,91 @@ export class WorkflowExecutor {
       // Rethrow the error
       throw error;
     }
+  }
+
+  // Helper method to check if there's a downstream GLB export from this node
+  private hasDownstreamGLBExport(nodeId: string): boolean {
+    const visited = new Set<string>();
+
+    const checkDownstream = (currentNodeId: string): boolean => {
+      if (visited.has(currentNodeId)) return false;
+      visited.add(currentNodeId);
+
+      // Find all edges that start from this node
+      const outgoingEdges = this.edges.filter(edge => edge.source === currentNodeId);
+
+      for (const edge of outgoingEdges) {
+        const targetNode = this.nodes.find(n => n.id === edge.target);
+        if (!targetNode) continue;
+
+        // Check if this target node is an export node with GLB format
+        if (targetNode.type === "exportNode" &&
+          targetNode.data.properties?.format === "glb") {
+          console.log(`Found downstream GLB export from geometry node ${nodeId}`);
+          return true;
+        }
+
+        // Recursively check downstream nodes
+        if (checkDownstream(edge.target)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    return checkDownstream(nodeId);
+  }
+
+  // Helper method to check if input data has geometry
+  private checkIfInputHasGeometry(input: any): boolean {
+    if (!input) return false;
+
+    // Check if it's an array of elements with geometry
+    if (Array.isArray(input)) {
+      return input.some((element: any) => element.geometry && element.geometry.vertices);
+    }
+
+    // Check if it's a model with elements that have geometry
+    if (input.elements && Array.isArray(input.elements)) {
+      return input.elements.some((element: any) => element.geometry && element.geometry.vertices);
+    }
+
+    return false;
+  }
+
+  // Helper method to extract geometry for GLB export
+  private async extractGeometryForGLB(input: any): Promise<any> {
+    // Determine if we have a model or elements array
+    let model;
+    if (Array.isArray(input)) {
+      // If it's already an array, we need to find the source model
+      // This is a limitation - we'll use the last loaded model
+      const lastLoaded = getLastLoadedModel();
+      if (!lastLoaded) {
+        throw new Error("No IFC model available for geometry extraction");
+      }
+      model = lastLoaded;
+    } else if (input.elements && Array.isArray(input.elements)) {
+      // It's a model object
+      model = input;
+    } else {
+      throw new Error("Invalid input format for geometry extraction");
+    }
+
+    // Extract geometry using the worker-based method
+    console.log("Extracting geometry for GLB export from model:", model.name);
+
+    // Use the same method as the geometry node
+    const elements = await extractGeometryWithGeom(
+      model,
+      "all", // Extract all element types
+      true,  // Include openings
+      (progress, message) => {
+        console.log(`GLB Geometry extraction: ${progress}% - ${message}`);
+      }
+    );
+
+    return elements;
   }
 }
