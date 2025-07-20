@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface SaveWorkflowDialogProps {
   open: boolean;
@@ -57,6 +58,9 @@ export function SaveWorkflowDialog({
     existingWorkflow?.description || ""
   );
   const [tags, setTags] = useState<string[]>(existingWorkflow?.tags || []);
+  const [isPreset, setIsPreset] = useState(
+    existingWorkflow?.tags.includes("preset") || false
+  );
   const [newTag, setNewTag] = useState("");
   const [activeTab, setActiveTab] = useState<"library" | "local">("library");
   const [localFilename, setLocalFilename] = useState(
@@ -69,6 +73,7 @@ export function SaveWorkflowDialog({
       setName(existingWorkflow?.name || "");
       setDescription(existingWorkflow?.description || "");
       setTags(existingWorkflow?.tags || []);
+      setIsPreset(existingWorkflow?.tags.includes("preset") || false);
       setLocalFilename(
         existingWorkflow?.name?.toLowerCase().replace(/\s+/g, "-") ||
         "untitled-workflow"
@@ -96,6 +101,20 @@ export function SaveWorkflowDialog({
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddTag();
+    }
+  };
+
+  const handlePresetChange = (value: string) => {
+    const preset = value === "preset";
+    setIsPreset(preset);
+    if (preset) {
+      if (!tags.includes("preset")) {
+        setTags([...tags, "preset"]);
+      }
+    } else {
+      if (tags.includes("preset")) {
+        setTags(tags.filter((tag) => tag !== "preset"));
+      }
     }
   };
 
@@ -224,6 +243,28 @@ export function SaveWorkflowDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Workflow Type</Label>
+              <RadioGroup
+                value={isPreset ? "preset" : "workflow"}
+                onValueChange={handlePresetChange}
+                className="flex items-center space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="workflow" id="workflow" />
+                  <Label htmlFor="workflow" className="cursor-pointer">
+                    Workflow
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="preset" id="preset" />
+                  <Label htmlFor="preset" className="cursor-pointer">Preset</Label>
+                </div>
+              </RadioGroup>
+              <p className="text-sm text-muted-foreground">
+                Presets appear in the Presets panel
+              </p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
