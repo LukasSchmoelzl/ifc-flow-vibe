@@ -33,7 +33,7 @@ export function ExportDialog({ open, onOpenChange, onExport }: ExportDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Results</DialogTitle>
           <DialogDescription>Export your workflow results to a file.</DialogDescription>

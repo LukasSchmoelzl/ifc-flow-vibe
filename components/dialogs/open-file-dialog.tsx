@@ -51,7 +51,7 @@ export function OpenFileDialog({ open, onOpenChange, onFileSelected }: OpenFileD
         if (!isOpen) handleReset()
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Open IFC File</DialogTitle>
           <DialogDescription>Select an IFC file to open in the viewer.</DialogDescription>
