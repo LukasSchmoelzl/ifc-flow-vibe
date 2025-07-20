@@ -61,16 +61,8 @@ export function getDefaultShortcuts(): KeyboardShortcut[] {
     {
       id: "save-workflow",
       name: "Save Workflow",
-      description: "Save current workflow to library",
+      description: "Save current workflow",
       keys: `${mod}+s`,
-      category: "file",
-      action: () => {},
-    },
-    {
-      id: "save-workflow-locally",
-      name: "Save Workflow Locally",
-      description: "Save current workflow to local file",
-      keys: `${mod}+shift+s`,
       category: "file",
       action: () => {},
     },

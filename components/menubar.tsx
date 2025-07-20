@@ -266,45 +266,15 @@ export function AppMenubar({
                   {getShortcutDisplay("open-file")}
                 </MenubarShortcut>
               </MenubarItem>
-              <MenubarSeparator />
-              <MenubarSub>
-                <MenubarSubTrigger>Save Workflow</MenubarSubTrigger>
-                <MenubarSubContent>
-                  <MenubarItem
-                    onClick={() => setSaveWorkflowDialogOpen(true)}
-                    data-save-workflow-dialog-trigger
-                  >
-                    Save to Library
-                    <MenubarShortcut>
-                      {getShortcutDisplay("save-workflow")}
-                    </MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem
-                    onClick={() => {
-                      const flowData = getFlowObject();
-                      // Create a temporary workflow object for local saving
-                      const tempWorkflow = {
-                        id: currentWorkflow?.id || crypto.randomUUID(),
-                        name: currentWorkflow?.name || "Untitled Workflow",
-                        description: currentWorkflow?.description || "",
-                        tags: currentWorkflow?.tags || [],
-                        createdAt:
-                          currentWorkflow?.createdAt ||
-                          new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        flowData,
-                      };
-                      handleSaveLocally(tempWorkflow);
-                    }}
-                    data-save-locally-trigger
-                  >
-                    Save Locally
-                    <MenubarShortcut>
-                      {getShortcutDisplay("save-workflow-locally")}
-                    </MenubarShortcut>
-                  </MenubarItem>
-                </MenubarSubContent>
-              </MenubarSub>
+              <MenubarItem
+                onClick={() => setSaveWorkflowDialogOpen(true)}
+                data-save-workflow-dialog-trigger
+              >
+                Save Workflow
+                <MenubarShortcut>
+                  {getShortcutDisplay("save-workflow")}
+                </MenubarShortcut>
+              </MenubarItem>
               <MenubarItem
                 onClick={() => setWorkflowLibraryOpen(true)}
                 data-workflow-library-trigger
@@ -314,12 +284,6 @@ export function AppMenubar({
                   {getShortcutDisplay("open-workflow-library")}
                 </MenubarShortcut>
               </MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem onClick={() => setSettingsDialogOpen(true)}>
-                Settings
-              </MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem>Exit</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
 
@@ -408,7 +372,7 @@ export function AppMenubar({
                 <MenubarSubTrigger>Theme</MenubarSubTrigger>
                 <MenubarSubContent>
                   <MenubarSub>
-                    <MenubarSubTrigger>Default</MenubarSubTrigger>
+                    <MenubarSubTrigger>Boring</MenubarSubTrigger>
                     <MenubarSubContent>
                       <MenubarItem onClick={() => setTheme('light')}>
                         Light
@@ -424,23 +388,18 @@ export function AppMenubar({
                       </MenubarItem>
                     </MenubarSubContent>
                   </MenubarSub>
-                  <MenubarItem onClick={() => setTheme('system')}>
-                    System
-                    {theme === 'system' && <Check className="h-4 w-4 ml-auto" />}
-                  </MenubarItem>
-                  <MenubarSeparator />
                   <MenubarSub>
-                    <MenubarSubTrigger>Tokyo Night</MenubarSubTrigger>
+                    <MenubarSubTrigger>Less Boring</MenubarSubTrigger>
                     <MenubarSubContent>
-                      <MenubarItem onClick={() => setTheme('tokyo-night-dark')}>
-                        Storm
-                        {theme === 'tokyo-night-dark' && (
-                          <Check className="h-4 w-4 ml-auto" />
-                        )}
-                      </MenubarItem>
                       <MenubarItem onClick={() => setTheme('tokyo-night-light')}>
                         Light
                         {theme === 'tokyo-night-light' && (
+                          <Check className="h-4 w-4 ml-auto" />
+                        )}
+                      </MenubarItem>
+                      <MenubarItem onClick={() => setTheme('tokyo-night-dark')}>
+                        Dark
+                        {theme === 'tokyo-night-dark' && (
                           <Check className="h-4 w-4 ml-auto" />
                         )}
                       </MenubarItem>

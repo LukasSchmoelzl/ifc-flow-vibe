@@ -1132,12 +1132,6 @@ function FlowWithProvider() {
     if (saveWorkflowDialogTrigger) saveWorkflowDialogTrigger.click();
   };
 
-  const saveLocallyHotkey = () => {
-    const saveLocallyTrigger = document.querySelector(
-      "[data-save-locally-trigger]"
-    ) as HTMLElement;
-    if (saveLocallyTrigger) saveLocallyTrigger.click();
-  };
 
   const openWorkflowLibraryHotkey = () => {
     const workflowLibraryTrigger = document.querySelector(
@@ -1216,15 +1210,6 @@ function FlowWithProvider() {
     { preventDefault: true }
   );
 
-  // Save Workflow Locally
-  useHotkeys(
-    parseKeyCombination(
-      shortcuts.find((s) => s.id === "save-workflow-locally")?.keys ||
-      "ctrl+shift+s"
-    ),
-    saveLocallyHotkey,
-    { preventDefault: true }
-  );
 
   // Open Workflow Library
   useHotkeys(
