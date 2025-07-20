@@ -27,7 +27,7 @@ interface AboutDialogProps {
 export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl bg-background">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background">
                 <DialogHeader className="pb-2 border-b">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <Info className="h-5 w-5 text-primary" />
