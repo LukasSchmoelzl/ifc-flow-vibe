@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Save, FolderOpen, Play, Download, Undo, Redo, Settings, HelpCircle, Pause, BookOpen } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { OpenFileDialog } from "@/components/dialogs/open-file-dialog"
-import { SaveFileDialog } from "@/components/dialogs/save-file-dialog"
 import { SaveWorkflowDialog } from "@/components/dialogs/save-workflow-dialog"
 import { SettingsDialog } from "@/components/dialogs/settings-dialog"
 import { HelpDialog } from "@/components/dialogs/help-dialog"
@@ -16,7 +15,6 @@ import type { Workflow } from "@/lib/workflow-storage"
 
 interface ToolbarProps {
   onOpenFile: (file: File) => void;
-  onSaveWorkflow: (filename: string, flowData: any) => void;
   onRunWorkflow: () => void;
   onExportResults: (format: string, filename: string) => void;
   onLoadWorkflow: (workflow: Workflow) => void;
@@ -32,7 +30,6 @@ interface ToolbarProps {
 
 export function Toolbar({
   onOpenFile,
-  onSaveWorkflow,
   onRunWorkflow,
   onExportResults,
   onLoadWorkflow,
@@ -46,7 +43,6 @@ export function Toolbar({
   currentWorkflow,
 }: ToolbarProps) {
   const [openFileDialogOpen, setOpenFileDialogOpen] = useState(false)
-  const [saveFileDialogOpen, setSaveFileDialogOpen] = useState(false)
   const [saveWorkflowDialogOpen, setSaveWorkflowDialogOpen] = useState(false)
   const [workflowLibraryOpen, setWorkflowLibraryOpen] = useState(false)
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
@@ -63,14 +59,6 @@ export function Toolbar({
     })
   }
 
-  const handleSaveWorkflow = (filename: string) => {
-    onSaveWorkflow(filename, getFlowObject())
-    setSaveFileDialogOpen(false)
-    toast({
-      title: "Workflow saved",
-      description: `Successfully saved as ${filename}`,
-    })
-  }
 
   const handleSaveToLibrary = (workflow: Workflow) => {
     setSaveWorkflowDialogOpen(false)
@@ -152,7 +140,12 @@ export function Toolbar({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => setSaveFileDialogOpen(true)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSaveWorkflowDialogOpen(true)}
+                  data-save-workflow-dialog-trigger
+                >
                   <Save className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -220,10 +213,6 @@ export function Toolbar({
             Export
           </Button>
 
-          <Button variant="outline" size="sm" className="gap-1" onClick={() => setSaveWorkflowDialogOpen(true)}>
-            <Save className="h-4 w-4" />
-            Save to Library
-          </Button>
 
           <span className="mx-2 text-muted-foreground">|</span>
 
@@ -257,7 +246,6 @@ export function Toolbar({
 
       <OpenFileDialog open={openFileDialogOpen} onOpenChange={setOpenFileDialogOpen} onFileSelected={handleOpenFile} />
 
-      <SaveFileDialog open={saveFileDialogOpen} onOpenChange={setSaveFileDialogOpen} onSave={handleSaveWorkflow} />
 
       <SaveWorkflowDialog
         open={saveWorkflowDialogOpen}
