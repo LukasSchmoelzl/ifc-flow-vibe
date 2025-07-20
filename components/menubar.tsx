@@ -58,6 +58,7 @@ interface AppMenubarProps {
   onPaste: () => void;
   onDelete: () => void;
   onToggleSidebar: () => void;
+  sidebarOpen?: boolean;
 }
 
 export function AppMenubar({
@@ -84,6 +85,7 @@ export function AppMenubar({
   onPaste,
   onDelete,
   onToggleSidebar,
+  sidebarOpen = false,
 }: AppMenubarProps) {
   const [openFileDialogOpen, setOpenFileDialogOpen] = useState(false);
   const [saveWorkflowDialogOpen, setSaveWorkflowDialogOpen] = useState(false);
