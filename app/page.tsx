@@ -18,6 +18,7 @@ import ReactFlow, {
   type NodeChange,
   applyNodeChanges,
   type OnInit,
+  type SelectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Sidebar } from "@/components/sidebar";
@@ -65,16 +66,6 @@ const proOptions = { hideAttribution: true };
 const defaultStyle = { cursor: 'default' };
 const placementStyle = { cursor: 'crosshair' };
 
-// Custom node style to highlight selected nodes
-const nodeStyle = {
-  selected: {
-    boxShadow: "0 0 10px 2px rgba(59, 130, 246, 0.6)",
-    borderRadius: "6px",
-    zIndex: 10,
-  },
-  default: {},
-};
-
 // Define interfaces
 interface FlowState {
   nodes: Node[];
@@ -90,6 +81,22 @@ const generateId = () => {
   return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Helper to load viewer settings from localStorage synchronously
+const loadViewerSetting = (key: 'showGrid' | 'showMinimap', defaultValue: boolean): boolean => {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('app-settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.viewer?.[key] ?? defaultValue;
+      }
+    } catch (e) {
+      console.error(`Error loading ${key} setting:`, e);
+    }
+  }
+  return defaultValue;
+};
+
 // Removed getViewportClass to prevent hydration mismatch
 // Using isMobile hook instead which properly handles SSR
 
@@ -102,16 +109,43 @@ function FlowWithProvider() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { shortcuts } = useKeyboardShortcuts();
-  const { settings } = useAppSettings();
+  const { settings, updateViewerSettings } = useAppSettings();
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
 
   // nodeTypes and edgeTypes are now defined outside the component
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // View settings
-  const [showGrid, setShowGrid] = useState(settings.viewer.showGrid);
-  const [showMinimap, setShowMinimap] = useState(false);
+  // View settings - start with defaults to match server rendering
+  const [showGrid, setShowGridState] = useState(true);
+  const [showMinimap, setShowMinimapState] = useState(false);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+
+  // Wrapper functions to update both state and localStorage
+  const setShowGrid = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    const newValue = typeof value === 'function' ? value(showGrid) : value;
+    setShowGridState(newValue);
+    updateViewerSettings({ showGrid: newValue });
+  }, [showGrid, updateViewerSettings]);
+
+  const setShowMinimap = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    const newValue = typeof value === 'function' ? value(showMinimap) : value;
+    setShowMinimapState(newValue);
+    updateViewerSettings({ showMinimap: newValue });
+  }, [showMinimap, updateViewerSettings]);
+
+  // Load persisted settings after mount to avoid hydration issues
+  useEffect(() => {
+    // Load settings from localStorage after component mounts
+    const gridSetting = loadViewerSetting('showGrid', true);
+    const minimapSetting = loadViewerSetting('showMinimap', false);
+
+    setShowGridState(gridSetting);
+    setShowMinimapState(minimapSetting);
+    setIsSettingsLoaded(true);
+  }, []); // Only run once on mount
+
+
 
   // Current workflow state
   const [currentWorkflow, setCurrentWorkflow] = useState<Workflow | null>(null);
@@ -129,9 +163,6 @@ function FlowWithProvider() {
   const [canRedo, setCanRedo] = useState(false);
 
   // Node movement tracking
-  const [nodeMovementStart, setNodeMovementStart] = useState<
-    Record<string, NodePosition | undefined>
-  >({});
   const [isNodeDragging, setIsNodeDragging] = useState(false);
 
   // File drop state
@@ -145,6 +176,8 @@ function FlowWithProvider() {
 
   // Auto-save timer
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+
 
   // Focused viewer state
   const [focusedViewerId, setFocusedViewerId] = useState<string | null>(null);
@@ -232,8 +265,31 @@ function FlowWithProvider() {
   useHotkeys(
     findShortcut("copy") || "ctrl+c,cmd+c",
     (e) => {
-      e.preventDefault();
-      handleCopy();
+      console.log('[DEBUG] Copy hotkey triggered');
+
+      const activeElement = document.activeElement;
+      console.log('[DEBUG] Active element:', activeElement?.tagName, activeElement?.className);
+
+      // Check if we're in a form field
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+      console.log('[DEBUG] Is in form field:', isInFormField);
+
+      const selectedNodes = nodes.filter((node) => node.selected);
+      console.log('[DEBUG] Selected nodes count:', selectedNodes.length);
+
+      // Handle copy if we're not in a form field and have selected nodes
+      if (!isInFormField && selectedNodes.length > 0) {
+        console.log('[DEBUG] Executing handleCopy');
+        e.preventDefault();
+        e.stopPropagation();
+        handleCopy();
+      } else {
+        console.log('[DEBUG] Copy not executed - form field:', isInFormField, 'selected:', selectedNodes.length);
+      }
     },
     { enableOnFormTags: false }
   );
@@ -242,8 +298,24 @@ function FlowWithProvider() {
   useHotkeys(
     findShortcut("cut") || "ctrl+x,cmd+x",
     (e) => {
-      e.preventDefault();
-      handleCut();
+      console.log('[DEBUG] Cut hotkey triggered');
+
+      const activeElement = document.activeElement;
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+
+      const selectedNodes = nodes.filter((node) => node.selected);
+      console.log('[DEBUG] Cut - selected nodes:', selectedNodes.length);
+
+      if (!isInFormField && selectedNodes.length > 0) {
+        console.log('[DEBUG] Executing handleCut');
+        e.preventDefault();
+        e.stopPropagation();
+        handleCut();
+      }
     },
     { enableOnFormTags: false }
   );
@@ -252,8 +324,24 @@ function FlowWithProvider() {
   useHotkeys(
     findShortcut("paste") || "ctrl+v,cmd+v",
     (e) => {
-      e.preventDefault();
-      handlePaste();
+      console.log('[DEBUG] Paste hotkey triggered');
+      console.log('[DEBUG] Clipboard:', clipboard);
+
+      const activeElement = document.activeElement;
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+
+      if (!isInFormField && clipboard && clipboard.nodes.length > 0) {
+        console.log('[DEBUG] Executing handlePaste');
+        e.preventDefault();
+        e.stopPropagation();
+        handlePaste();
+      } else {
+        console.log('[DEBUG] Paste not executed - form field:', isInFormField, 'clipboard:', clipboard?.nodes?.length || 0);
+      }
     },
     { enableOnFormTags: false }
   );
@@ -330,9 +418,15 @@ function FlowWithProvider() {
     const updatedNodes = nodes.map((node) => ({
       ...node,
       selected: true,
+      // Remove style modification - CSS handles this now
     }));
     setNodes(updatedNodes);
-  }, [nodes, setNodes]);
+
+    toast({
+      title: "Select All",
+      description: `Selected ${nodes.length} nodes`,
+    });
+  }, [nodes, setNodes, toast]);
 
   // Handle copy
   const handleCopy = useCallback(() => {
@@ -408,6 +502,7 @@ function FlowWithProvider() {
           y: node.position.y + offset.y,
         },
         selected: true, // Select the pasted nodes
+        // Remove style modification - CSS handles this now
       };
     });
 
@@ -423,6 +518,7 @@ function FlowWithProvider() {
     const updatedExistingNodes = nodes.map((node) => ({
       ...node,
       selected: false,
+      // Remove style modification - CSS handles this now
     }));
 
     setNodes([...updatedExistingNodes, ...newNodes]);
@@ -437,52 +533,53 @@ function FlowWithProvider() {
   // Updated node changes handler with history
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      // Check if this is a node selection change
+      // Apply changes immediately for smooth interaction
+      onNodesChange(changes);
+
+      // Check if this is a position change (dragging)
+      const isPositionChange = changes.some(
+        (change) => change.type === "position"
+      );
+
+      // Check if dragging has ended
+      const isDragEnd = changes.some(
+        (change) =>
+          change.type === "position" &&
+          change.dragging === false &&
+          isNodeDragging
+      );
+
+      // Track drag start
+      if (isPositionChange && !isNodeDragging) {
+        const isDragStart = changes.some(
+          (change) => change.type === "position" && change.dragging === true
+        );
+        if (isDragStart) {
+          setIsNodeDragging(true);
+        }
+      }
+
+      // Save to history only when drag ends
+      if (isDragEnd) {
+        setIsNodeDragging(false);
+        // Use a small delay to ensure final position is captured
+        setTimeout(() => {
+          saveToHistory(nodes, edges);
+        }, 50);
+      }
+
+      // For non-drag changes, save to history after a delay
       const isSelectionChange = changes.every(
         (change) => change.type === "select"
       );
 
-      // Check if this is the start of a node drag
-      const isDragStart = changes.some(
-        (change) => change.type === "position" && change.dragging
-      );
-
-      // Check if this is the end of a node drag
-      const isDragEnd = changes.some(
-        (change) =>
-          change.type === "position" && !change.dragging && isNodeDragging
-      );
-
-      if (isDragStart && !isNodeDragging) {
-        // Save positions at the start of dragging
-        const startPositions: Record<string, NodePosition | undefined> = {};
-        nodes.forEach((node) => {
-          startPositions[node.id] = node.position;
-        });
-        setNodeMovementStart(startPositions);
-        setIsNodeDragging(true);
-      }
-
-      if (isDragEnd) {
-        // Save to history at the end of dragging
-        const updatedNodes = applyNodeChanges(changes, nodes);
-        saveToHistory(updatedNodes, edges);
-        setIsNodeDragging(false);
-        setNodeMovementStart({});
-      }
-
-      // Apply the changes regardless
-      onNodesChange(changes);
-
-      // Don't save to history for selection changes or during dragging
-      if (!isSelectionChange && !isNodeDragging && !isDragStart) {
-        // Auto-save timer for other changes (like resizing, etc.)
+      if (!isSelectionChange && !isPositionChange) {
+        // Auto-save timer for other changes
         if (autoSaveTimerRef.current) {
           clearTimeout(autoSaveTimerRef.current);
         }
         autoSaveTimerRef.current = setTimeout(() => {
-          const updatedNodes = applyNodeChanges(changes, nodes);
-          saveToHistory(updatedNodes, edges);
+          saveToHistory(nodes, edges);
         }, 1000);
       }
     },
@@ -564,7 +661,7 @@ function FlowWithProvider() {
         data: {
           label: getNodeLabel(type),
         },
-        style: nodeStyle.default,
+        // CSS handles node styling now
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -575,15 +672,8 @@ function FlowWithProvider() {
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
       setSelectedNode(node);
-      // Ensure the clicked node is marked as selected in the nodes array
-      setNodes((nds) =>
-        nds.map((n) => ({
-          ...n,
-          selected: n.id === node.id,
-        }))
-      );
     },
-    [setNodes]
+    []
   );
 
   const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -610,7 +700,7 @@ function FlowWithProvider() {
             fileHandle: result,
             modelState: null,
           },
-          style: nodeStyle.default,
+          // CSS handles node styling now
         };
 
         setNodes((nds) => [...nds, newNode]);
@@ -936,7 +1026,7 @@ function FlowWithProvider() {
       data: {
         label: getNodeLabel(selectedNodeType),
       },
-      style: nodeStyle.default,
+      // CSS handles node styling now
     };
 
     setNodes((nds) => nds.concat(newNode));
@@ -955,6 +1045,52 @@ function FlowWithProvider() {
       description: `${getNodeLabel(selectedNodeType)} placed successfully`,
     });
   }, [isMobile, placementMode, selectedNodeType, reactFlowInstance, nodes, edges, saveToHistory, setNodes, toast]);
+
+  // Keyboard shortcuts for copy/paste/delete
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore if typing in form fields
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+      const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
+
+      if (cmdOrCtrl) {
+        switch (event.key.toLowerCase()) {
+          case 'c':
+          case 'x':
+            event.preventDefault();
+            handleCopy();
+            break;
+          case 'v':
+            event.preventDefault();
+            handlePaste();
+            break;
+          case 'a':
+            event.preventDefault();
+            handleSelectAll();
+            break;
+        }
+      }
+
+      // Handle Delete/Backspace
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter((node) => node.selected);
+        if (selectedNodes.length > 0) {
+          event.preventDefault();
+          handleDelete();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [nodes, handleCopy, handlePaste, handleSelectAll, handleDelete]);
 
   return (
     <div className="flex h-screen w-full bg-background">
@@ -1069,60 +1205,72 @@ function FlowWithProvider() {
             focusedViewerId={focusedViewerId}
             setFocusedViewerId={setFocusedViewerId}
           >
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={handleNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onNodeClick={onNodeClick}
-              onNodeDoubleClick={onNodeDoubleClick}
-              onPaneClick={(event) => {
-                // Handle mobile node placement first
-                if (isMobile && placementMode && selectedNodeType) {
-                  handleCanvasClick(event);
-                  return;
-                }
+            {/* Container for ReactFlow */}
+            <div className="flex-1 h-full w-full">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={handleNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onNodeClick={onNodeClick}
+                onNodeDoubleClick={onNodeDoubleClick}
+                autoPanOnConnect={false}
+                autoPanOnNodeDrag={false}
+                onPaneClick={(event) => {
+                  // Handle mobile node placement first
+                  if (isMobile && placementMode && selectedNodeType) {
+                    handleCanvasClick(event);
+                    return;
+                  }
 
-                setEditingNode(null);
-                // Exit 3D focus mode when clicking on canvas
-                if (focusedViewerId) {
-                  setFocusedViewerId(null);
-                }
+                  setEditingNode(null);
+                  // Exit 3D focus mode when clicking on canvas
+                  if (focusedViewerId) {
+                    setFocusedViewerId(null);
+                  }
 
-                // Close sidebar on mobile when clicking canvas (only if not in placement mode)
-                if (isMobile && sidebarOpen && !placementMode) {
-                  setSidebarOpen(false);
-                }
-              }}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              snapToGrid
-              snapGrid={snapGrid}
-              minZoom={0.1}
-              maxZoom={2}
-              proOptions={proOptions}
-              style={isMobile && placementMode ? placementStyle : defaultStyle}
-              // Disable interactions when viewer is in focus mode or in placement mode
-              panOnDrag={!focusedViewerId && !(isMobile && placementMode)}
-              zoomOnScroll={!focusedViewerId && !(isMobile && placementMode)}
-              zoomOnPinch={!focusedViewerId && !(isMobile && placementMode)}
-              zoomOnDoubleClick={!focusedViewerId && !(isMobile && placementMode)}
-              elementsSelectable={!focusedViewerId && !(isMobile && placementMode)}
-              nodesConnectable={!focusedViewerId && !(isMobile && placementMode)}
-              nodesDraggable={!focusedViewerId && !(isMobile && placementMode)}
-            >
-              <Controls />
-              {showGrid && <Background color="#aaa" gap={16} />}
-              {showMinimap && <MiniMap />}
-              <Panel position="bottom-right">
-                <div className="bg-card rounded-md p-2 text-xs text-muted-foreground">
-                  {currentWorkflow ? currentWorkflow.name : "IFCflow - v0.1.0"}
-                </div>
-              </Panel>
-            </ReactFlow>
+                  // Close sidebar on mobile when clicking canvas (only if not in placement mode)
+                  if (isMobile && sidebarOpen && !placementMode) {
+                    setSidebarOpen(false);
+                  }
+                }}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                snapToGrid={isSettingsLoaded ? showGrid : false}
+                snapGrid={snapGrid}
+                minZoom={0.1}
+                maxZoom={2}
+                proOptions={proOptions}
+                style={isMobile && placementMode ? placementStyle : defaultStyle}
+                // Multi-selection configuration
+                multiSelectionKeyCode="Meta"
+                selectionOnDrag={true}
+                selectNodesOnDrag={false}
+                selectionMode={"partial" as SelectionMode}
+                nodesFocusable={true}
+                edgesFocusable={true}
+                // Disable interactions when viewer is in focus mode or in placement mode
+                panOnDrag={!focusedViewerId && !(isMobile && placementMode)}
+                zoomOnScroll={!focusedViewerId && !(isMobile && placementMode)}
+                zoomOnPinch={!focusedViewerId && !(isMobile && placementMode)}
+                zoomOnDoubleClick={!focusedViewerId && !(isMobile && placementMode)}
+                elementsSelectable={!(isMobile && placementMode)}
+                nodesConnectable={!focusedViewerId && !(isMobile && placementMode)}
+                nodesDraggable={!focusedViewerId && !(isMobile && placementMode)}
+              >
+                <Controls />
+                {isSettingsLoaded && showGrid && <Background color="#aaa" gap={16} />}
+                {isSettingsLoaded && showMinimap && <MiniMap />}
+                <Panel position="bottom-right">
+                  <div className="bg-card rounded-md p-2 text-xs text-muted-foreground">
+                    {currentWorkflow ? currentWorkflow.name : "IFCflow - v0.1.0"}
+                  </div>
+                </Panel>
+              </ReactFlow>
+            </div>
           </ViewerFocusProvider>
         </div>
       </div>
