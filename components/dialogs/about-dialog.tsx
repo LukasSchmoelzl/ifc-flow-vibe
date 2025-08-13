@@ -95,11 +95,23 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                             <CardContent className="space-y-3">
                                 <div>
                                     <div className="text-sm font-medium">Version</div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            IFCflow
-                                        </span>
-                                        <Badge variant="outline">v0.1.0</Badge>
+                                    <div className="flex justify-between items-center gap-2">
+                                        <span className="text-muted-foreground">IFCflow</span>
+                                        <Badge variant="outline">v0.2.0</Badge>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="text-sm font-medium">Credits</div>
+                                    <div className="flex justify-between items-center gap-2">
+                                        <span className="text-muted-foreground">Made with <span aria-label="heart" role="img">❤️</span> by</span>
+                                        <Button
+                                            variant="link"
+                                            className="p-0 h-auto text-muted-foreground hover:text-primary"
+                                            asChild
+                                        >
+                                            <a href="https://www.lt.plus/" target="_blank" rel="noopener noreferrer">Louis Trümpler</a>
+                                        </Button>
                                     </div>
                                 </div>
 
