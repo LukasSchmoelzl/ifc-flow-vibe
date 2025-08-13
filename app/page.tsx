@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -55,24 +55,15 @@ import { useTheme } from "next-themes";
 import { ViewerFocusProvider } from "@/components/contexts/viewer-focus-context";
 import { nodeCategories } from "@/components/sidebar";
 
-// Define custom node types
-const nodeTypes: NodeTypes = {
-  ifcNode: IfcNode,
-  geometryNode: GeometryNode,
-  filterNode: FilterNode,
-  transformNode: TransformNode,
-  viewerNode: ViewerNode,
-  quantityNode: QuantityNode,
-  propertyNode: PropertyNode,
-  classificationNode: ClassificationNode,
-  spatialNode: SpatialNode,
-  exportNode: ExportNode,
-  relationshipNode: RelationshipNode,
-  analysisNode: AnalysisNode,
-  watchNode: WatchNode,
-  parameterNode: ParameterNode,
-  pythonNode: PythonNode,
-};
+// Import the centralized nodeTypes to prevent React Flow warning
+import { nodeTypes } from "@/components/nodes";
+
+// Define all ReactFlow props outside the component to prevent warnings
+const edgeTypes = {};
+const snapGrid: [number, number] = [15, 15];
+const proOptions = { hideAttribution: true };
+const defaultStyle = { cursor: 'default' };
+const placementStyle = { cursor: 'crosshair' };
 
 // Custom node style to highlight selected nodes
 const nodeStyle = {
@@ -99,11 +90,8 @@ const generateId = () => {
   return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
-// Helper function to check if viewport dimensions match mobile breakpoint
-const getViewportClass = () => {
-  if (typeof window === 'undefined') return '';
-  return window.innerWidth < 768 ? 'mobile' : 'desktop';
-};
+// Removed getViewportClass to prevent hydration mismatch
+// Using isMobile hook instead which properly handles SSR
 
 // Create a wrapper component that uses the ReactFlow hooks
 function FlowWithProvider() {
@@ -117,6 +105,8 @@ function FlowWithProvider() {
   const { settings } = useAppSettings();
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
+
+  // nodeTypes and edgeTypes are now defined outside the component
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // View settings
@@ -532,6 +522,8 @@ function FlowWithProvider() {
     return nodeId; // fallback to ID if not found
   }, []);
 
+
+
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -548,10 +540,19 @@ function FlowWithProvider() {
         return;
       }
 
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+      // Get the cursor position in flow coordinates
+      // Use screenToFlowPosition for consistent coordinate transformation
+      const cursorPosition = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
+
+      // Position the node with its top-left corner at the cursor position
+      // No offset needed - we want exact cursor positioning
+      const position = {
+        x: cursorPosition.x,
+        y: cursorPosition.y,
+      };
 
       // Save current state to history before adding new node
       saveToHistory(nodes, edges);
@@ -672,9 +673,49 @@ function FlowWithProvider() {
 
     setIsRunning(true);
     try {
-      const executor = new WorkflowExecutor(nodes, edges);
+      // Create a real-time node update callback
+      const onNodeUpdate = (nodeId: string, newData: any) => {
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.id === nodeId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  ...newData,
+                },
+              };
+            }
+            return node;
+          })
+        );
+      };
+
+      const executor = new WorkflowExecutor(nodes, edges, onNodeUpdate);
       const results = await executor.execute();
       setExecutionResults(results);
+
+      // Get the updated nodes from the executor (includes inputData for watch nodes)
+      const updatedNodes = executor.getUpdatedNodes();
+
+      // Update the React Flow nodes with the execution results
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          // Find the corresponding updated node from the executor
+          const updatedNode = updatedNodes.find((n: any) => n.id === node.id);
+          if (updatedNode && updatedNode.data) {
+            // Merge the updated data while preserving React Flow properties
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                ...updatedNode.data,
+              },
+            };
+          }
+          return node;
+        })
+      );
 
       toast({
         title: "Workflow Complete",
@@ -689,7 +730,7 @@ function FlowWithProvider() {
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, nodes, edges, toast]);
+  }, [isRunning, nodes, edges, setNodes, toast]);
 
   // Helper function to get current flow object
   const getFlowObject = useCallback(() => {
@@ -749,9 +790,75 @@ function FlowWithProvider() {
 
   // Listen for export completion events
   useEffect(() => {
-    const handleExportComplete = (event: CustomEvent) => {
-      const data = event.detail;
-      downloadExportedFile(data, "export", "workflow-export");
+    const handleExportComplete = async (event: CustomEvent) => {
+      const { model, exportFileName, originalFileName } = event.detail;
+
+      try {
+        // Get the original IFC file buffer
+        const originalFile = getIfcFile(originalFileName);
+        if (!originalFile) {
+          toast({
+            title: "Export Error",
+            description: "Original IFC file not found. Please reload the file and try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Convert file to ArrayBuffer if needed
+        const arrayBuffer = await originalFile.arrayBuffer();
+
+        // Create a new worker for the export
+        const worker = new Worker('/ifcWorker.js');
+
+        // Set up message handler for export result
+        worker.onmessage = (e) => {
+          if (e.data.type === 'ifcExported') {
+            // Download the exported IFC file
+            // The worker sends an ArrayBuffer, convert to Blob
+            const blob = new Blob([e.data.data], { type: 'application/x-step' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = e.data.fileName || exportFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast({
+              title: "Export Successful",
+              description: `IFC file exported as ${e.data.fileName || exportFileName}`,
+            });
+
+            worker.terminate();
+          } else if (e.data.type === 'error') {
+            toast({
+              title: "Export Error",
+              description: e.data.message || "Failed to export IFC file",
+              variant: "destructive",
+            });
+            worker.terminate();
+          }
+        };
+
+        // Send export request to worker
+        worker.postMessage({
+          action: 'exportIfc',
+          model: model,
+          fileName: exportFileName,
+          arrayBuffer: arrayBuffer,
+          messageId: Date.now().toString()
+        }, [arrayBuffer]);
+
+      } catch (error) {
+        console.error("Error exporting IFC:", error);
+        toast({
+          title: "Export Error",
+          description: error instanceof Error ? error.message : "Failed to export IFC file",
+          variant: "destructive",
+        });
+      }
     };
 
     const eventListenerWrapper = (event: Event) => {
@@ -850,7 +957,7 @@ function FlowWithProvider() {
   }, [isMobile, placementMode, selectedNodeType, reactFlowInstance, nodes, edges, saveToHistory, setNodes, toast]);
 
   return (
-    <div className={`flex h-screen w-full bg-background ${getViewportClass()}`}>
+    <div className="flex h-screen w-full bg-background">
       {/* Unified Sidebar - Mobile & Desktop */}
       <div className={`
         ${isMobile
@@ -991,14 +1098,13 @@ function FlowWithProvider() {
                 }
               }}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               snapToGrid
-              snapGrid={[15, 15]}
+              snapGrid={snapGrid}
               minZoom={0.1}
               maxZoom={2}
-              proOptions={{ hideAttribution: true }}
-              style={{
-                cursor: isMobile && placementMode ? 'crosshair' : 'default'
-              }}
+              proOptions={proOptions}
+              style={isMobile && placementMode ? placementStyle : defaultStyle}
               // Disable interactions when viewer is in focus mode or in placement mode
               panOnDrag={!focusedViewerId && !(isMobile && placementMode)}
               zoomOnScroll={!focusedViewerId && !(isMobile && placementMode)}

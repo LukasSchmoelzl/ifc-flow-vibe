@@ -7,7 +7,6 @@ import {
   manageClassifications,
   spatialQuery,
   queryRelationships,
-  performAnalysis,
   exportData,
   downloadExportedFile,
   loadIfcFile,
@@ -16,6 +15,7 @@ import {
   extractGeometryWithGeom,
   runPythonScript,
 } from "@/lib/ifc-utils";
+import { performAnalysis } from "@/lib/ifc/analysis-utils";
 
 // Add TypeScript interfaces at the top of the file
 interface PropertyInfo {
@@ -79,10 +79,12 @@ export class WorkflowExecutor {
   private nodeResults: Map<string, any> = new Map();
   private isRunning = false;
   private abortController: AbortController | null = null;
+  private onNodeUpdate?: (nodeId: string, data: any) => void;
 
-  constructor(nodes: any[], edges: any[]) {
+  constructor(nodes: any[], edges: any[], onNodeUpdate?: (nodeId: string, data: any) => void) {
     this.nodes = nodes;
     this.edges = edges;
+    this.onNodeUpdate = onNodeUpdate;
   }
 
   // Add getter for the final nodes list
@@ -161,11 +163,24 @@ export class WorkflowExecutor {
         // Log the request
         console.log("Processing ifcNode", { node });
 
-        if (node.data.modelInfo) {
-          // If we already have model info, use it
-          console.log("Using modelInfo from node data", node.data.modelInfo);
+        // Priority 1: Check if node has a model (from file upload in IFC node)
+        if (node.data.model) {
+          // Use the model directly from the node data
+          console.log("Using model from node data", node.data.model);
+          result = node.data.model;
+
+          // Ensure the model has a file reference for downstream nodes
+          if (!result.file && node.data.file) {
+            result.file = node.data.file;
+          }
+        }
+        // Priority 2: Check for cached model info
+        else if (node.data.modelInfo) {
+          console.log("Using cached modelInfo from node data", node.data.modelInfo);
           result = node.data.modelInfo;
-        } else if (node.data.file) {
+        }
+        // Priority 3: Check if there's a file to load
+        else if (node.data.file) {
           try {
             // If there's a file in the node data, load it
             const file = node.data.file;
@@ -181,8 +196,24 @@ export class WorkflowExecutor {
               }`
             );
           }
-        } else {
-          // Try to get the last loaded model
+        }
+        // Priority 4: Check if this is an empty node from saved workflow
+        else if (node.data.isEmptyNode) {
+          // This is an empty IFC node from a saved workflow
+          const fileName = node.data.fileName || node.data.properties?.filename || "Unknown File";
+          console.warn(
+            `IFC node requires file to be reloaded: ${fileName}`
+          );
+          result = {
+            id: `empty-model-${Date.now()}`,
+            name: `Reload Required: ${fileName}`,
+            elements: [],
+            errorMessage:
+              `Please reload the IFC file: ${fileName}. Saved workflows do not include IFC file data.`,
+          };
+        }
+        // Priority 5: Last resort - try to get the last loaded model
+        else {
           const lastLoaded = getLastLoadedModel();
           if (lastLoaded) {
             // Use the last loaded model if available
@@ -663,6 +694,26 @@ export class WorkflowExecutor {
             inputType = "quantityResults";
             itemCount = Object.keys(processedData.groups).length; // Count the number of groups
           }
+          // CHECK: Room assignment results
+          else if (processedData.elementSpaceMap && processedData.spaceElementsMap && processedData.summary) {
+            inputType = "roomAssignment";
+            itemCount = processedData.summary.totalSpaces || 0;
+          }
+          // CHECK: Space metrics results
+          else if (processedData.spaces && processedData.totals && processedData.totals.totalArea !== undefined) {
+            inputType = "spaceMetrics";
+            itemCount = processedData.totals.spaceCount || 0;
+          }
+          // CHECK: Circulation analysis results
+          else if (processedData.circulationArea !== undefined && processedData.programArea !== undefined && processedData.circulationRatio !== undefined) {
+            inputType = "circulation";
+            itemCount = (processedData.circulationSpaces || 0) + (processedData.programSpaces || 0);
+          }
+          // CHECK: Occupancy analysis results
+          else if (processedData.spaces && Array.isArray(processedData.spaces) && processedData.summary && processedData.summary.totalOccupancy !== undefined) {
+            inputType = "occupancy";
+            itemCount = processedData.spaces.length;
+          }
           // Fallback for generic objects
           else {
             inputType = "object";
@@ -728,36 +779,126 @@ export class WorkflowExecutor {
         break;
 
       case "analysisNode":
-        // Analysis
+        // Analysis - focused on space analysis
+        console.log(`Processing analysis node ${nodeId}`, { inputValues, node });
+
         if (!inputValues.input) {
-          console.warn(`No input provided to analysis node ${nodeId}`);
-          result = {};
+          console.warn(`No input provided to analysis node ${nodeId}. InputValues:`, inputValues);
+          result = {
+            error: "No input",
+            message: "Please connect an IFC node to analyze spaces"
+          };
         } else {
-          result = performAnalysis(
-            inputValues.input,
-            inputValues.reference || [],
-            node.data.properties?.analysisType || "clash",
-            {
-              tolerance: Number.parseFloat(
-                node.data.properties?.tolerance || 10
-              ),
-              metric: node.data.properties?.metric || "area",
+          // Get the source model for space analysis
+          let sourceModel = null;
+
+          // Try to find the model from the input chain
+          if (inputValues.input && typeof inputValues.input === 'object') {
+            // Check if input is a model object
+            if (inputValues.input.file && inputValues.input.elements) {
+              sourceModel = inputValues.input;
             }
-          );
+            // Check if input has a model reference
+            else if (inputValues.input.model) {
+              sourceModel = inputValues.input.model;
+            }
+            // Check if input is an array of elements with model reference
+            else if (Array.isArray(inputValues.input) && inputValues.input.length > 0 && inputValues.input[0]?.model) {
+              sourceModel = inputValues.input[0].model;
+            }
+          }
+
+          // Fallback to last loaded model if no model found in input chain
+          if (!sourceModel) {
+            sourceModel = getLastLoadedModel();
+          }
+
+          // Ensure input is in the right format (array of elements)
+          let elementsToAnalyze = inputValues.input;
+          if (!Array.isArray(elementsToAnalyze)) {
+            if (elementsToAnalyze.elements) {
+              elementsToAnalyze = elementsToAnalyze.elements;
+            } else {
+              elementsToAnalyze = [];
+            }
+          }
+
+          // Update node to show loading state
+          this.updateNodeDataInList(nodeId, {
+            ...node.data,
+            isLoading: true,
+            error: null,
+          });
+
+          try {
+            // Create progress callback to update node with live progress messages
+            const onProgress = (message: string) => {
+              // Get current progress messages or initialize empty array
+              const currentMessages = node.data.progressMessages || [];
+
+              // Add new message and keep only last 6 messages
+              const updatedMessages = [...currentMessages, message].slice(-6);
+
+              // Update node with new progress messages
+              this.updateNodeDataInList(nodeId, {
+                ...node.data,
+                isLoading: true,
+                progressMessages: updatedMessages,
+                error: null,
+              });
+            };
+
+            result = await performAnalysis(
+              elementsToAnalyze,
+              [], // No reference elements needed for space analysis
+              "space", // Always space analysis for now
+              {
+                metric: node.data.properties?.metric || "room_assignment",
+                model: sourceModel, // Pass the model for space analysis
+              },
+              onProgress // Pass the progress callback
+            );
+
+            // Update node with results
+            this.updateNodeDataInList(nodeId, {
+              ...node.data,
+              isLoading: false,
+              result: result,
+              error: null,
+              progressMessages: [], // Clear progress messages when complete
+            });
+          } catch (error) {
+            // Update node with error
+            this.updateNodeDataInList(nodeId, {
+              ...node.data,
+              isLoading: false,
+              result: null,
+              error: error instanceof Error ? error.message : String(error),
+              progressMessages: [], // Clear progress messages on error
+            });
+            result = {
+              error: error instanceof Error ? error.message : String(error),
+              message: "Analysis failed"
+            };
+          }
         }
         break;
 
       case "pythonNode": {
         console.log("Processing pythonNode", { node, inputValues });
 
-        // Python nodes can work with or without input
-        const model = inputValues.input as IfcModel;
+        // Python nodes can work with various input types
+        // Try to get the model from the last loaded model if input is not a model
+        let model: IfcModel | null = null;
 
-        // Validate we have a model with a file for the IFC context
-        if (inputValues.input && (!model || !model.name)) {
-          console.warn(`Invalid model provided to python node ${nodeId}`);
-          result = null;
-          break;
+        // Check if input is a model
+        if (inputValues.input && inputValues.input.name && inputValues.input.elements) {
+          model = inputValues.input as IfcModel;
+        } else {
+          // Input is not a model (could be analysis results, etc.)
+          // Get the last loaded model for IFC context
+          model = getLastLoadedModel();
+          console.log(`Python node using last loaded model: ${model?.name}`);
         }
 
         this.updateNodeDataInList(nodeId, {
@@ -808,9 +949,13 @@ export class WorkflowExecutor {
           result = "";
         } else {
           let exportInput = inputValues.input;
+          const exportFormat = node.data.properties?.format || "csv";
+          const exportFileName = node.data.properties?.fileName || "export";
+
+          console.log(`Export node: format=${exportFormat}, fileName=${exportFileName}`);
 
           // Check if this is GLB export and we need to extract geometry
-          if (node.data.properties?.format === "glb") {
+          if (exportFormat === "glb") {
             console.log("GLB export detected - checking if geometry extraction is needed");
 
             // Check if input has geometry data
@@ -832,17 +977,25 @@ export class WorkflowExecutor {
 
           result = await exportData(
             exportInput,
-            node.data.properties?.format || "csv",
-            node.data.properties?.fileName || "export"
+            exportFormat,
+            exportFileName
           );
+
+          console.log(`Export result for format ${exportFormat}:`, typeof result,
+            typeof result === 'string' ? result.length :
+              result instanceof ArrayBuffer ? result.byteLength :
+                result);
+
+          // Only download directly for non-IFC formats
+          // IFC format is handled by event listener
           if (
             result !== undefined &&
-            node.data.properties?.format?.toLowerCase() !== "ifc"
+            exportFormat.toLowerCase() !== "ifc"
           ) {
             downloadExportedFile(
               result,
-              node.data.properties?.format || "csv",
-              node.data.properties?.fileName || "export"
+              exportFormat,
+              exportFileName
             );
           }
         }
@@ -959,8 +1112,11 @@ export class WorkflowExecutor {
     this.nodes = this.nodes.map((n) =>
       n.id === nodeId ? { ...n, data: newData } : n
     );
-    // Note: This only updates the executor's internal list.
-    // ReactFlow's state needs to be updated separately after execution completes.
+
+    // Call the real-time update callback if provided
+    if (this.onNodeUpdate) {
+      this.onNodeUpdate(nodeId, newData);
+    }
   }
 
   // Execute geometry node with actual geometry extraction
