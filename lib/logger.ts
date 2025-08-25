@@ -3,22 +3,37 @@ import path from 'path';
 import fs from 'fs';
 
 // Create logs directory if it doesn't exist
-const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
+// In serverless environments (like Vercel/Lambda), use /tmp directory
+// In local development, use ./logs directory
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production';
+const logsDir = isServerless ? path.join('/tmp', 'logs') : path.join(process.cwd(), 'logs');
+
+try {
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+    }
+} catch (error) {
+    // If we can't create the logs directory, fall back to console-only logging
+    console.warn('Warning: Could not create logs directory, falling back to console logging:', error);
 }
 
-const logger = winston.createLogger({
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-    format: winston.format.combine(
-        winston.format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
-        }),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-    ),
-    defaultMeta: { service: 'ifc-flow-map' },
-    transports: [
+// Create transports array - start with console transport
+const transports: winston.transport[] = [];
+
+// Try to add file transports, but fall back gracefully if they fail
+let fileLoggingAvailable = false;
+try {
+    // Test if we can write to the logs directory
+    const testFile = path.join(logsDir, '.test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    fileLoggingAvailable = true;
+} catch (error) {
+    console.warn('File logging not available, using console only:', error);
+}
+
+if (fileLoggingAvailable) {
+    transports.push(
         // Error logs
         new winston.transports.File({
             filename: path.join(logsDir, 'error.log'),
@@ -53,21 +68,34 @@ const logger = winston.createLogger({
 
         // All logs
         new winston.transports.File({
-            filename: path.join(logsDir, 'combined.log',),
+            filename: path.join(logsDir, 'combined.log'),
             maxsize: 5242880, // 5MB
             maxFiles: 5
         })
-    ]
+    );
+}
+
+const logger = winston.createLogger({
+    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    format: winston.format.combine(
+        winston.format.timestamp({
+            format: 'YYYY-MM-DD HH:mm:ss'
+        }),
+        winston.format.errors({ stack: true }),
+        winston.format.json()
+    ),
+    defaultMeta: { service: 'ifc-flow-map' },
+    transports
 });
 
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
+// Add console transport in development or when file logging is not available
+if (process.env.NODE_ENV !== 'production' || !fileLoggingAvailable) {
     logger.add(new winston.transports.Console({
         format: winston.format.combine(
             winston.format.colorize(),
             winston.format.simple()
         ),
-        level: 'warn' // Only show warnings and errors in console
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'warn' // Show more in production when file logging fails
     }));
 }
 
