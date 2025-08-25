@@ -168,6 +168,83 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Custom scrollbar for AI chat node - force visibility on node hover */
+  .custom-scrollbar {
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+    overflow-y: scroll;
+    /* Force scrollbar space to be reserved */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 6px;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Force scrollbar to appear on node hover - always visible when hovering */
+  .ai-node-container:hover .custom-scrollbar {
+    scrollbar-width: auto !important;
+    scrollbar-color: rgba(156, 163, 175, 0.8) transparent !important;
+    overflow-y: scroll !important;
+  }
+
+  .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar {
+    width: 12px !important;
+    height: 12px !important;
+    display: block !important;
+  }
+
+  .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 6px !important;
+  }
+
+  .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.8) !important;
+    border-radius: 6px !important;
+    border: 2px solid rgba(243, 244, 246, 0.5) !important;
+    min-height: 20px !important;
+  }
+
+  .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.9) !important;
+    border-color: rgba(243, 244, 246, 0.8) !important;
+  }
+
+  /* Dark theme scrollbar */
+  .dark .ai-node-container:hover .custom-scrollbar {
+    scrollbar-color: rgba(75, 85, 99, 0.8) transparent !important;
+  }
+
+  .dark .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .dark .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.8) !important;
+    border-color: rgba(31, 41, 55, 0.5) !important;
+  }
+
+  .dark .ai-node-container:hover .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.9) !important;
+    border-color: rgba(31, 41, 55, 0.8) !important;
+  }
 }
 
 @layer base {

@@ -1,4 +1,4 @@
-import type { IfcElement, IfcModel } from "@/lib/ifc/ifc-loader"
+import type { IfcElement, IfcModel } from "@/lib/ifc-utils"
 
 // Analysis functions
 export async function performAnalysis(
@@ -68,7 +68,7 @@ export async function performAnalysis(
   }
 }
 
-// Real space analysis implementation using IfcOpenShell
+// Space analysis implementation using IfcOpenShell
 async function performRealSpaceAnalysis(
   model: IfcModel,
   elements: IfcElement[],

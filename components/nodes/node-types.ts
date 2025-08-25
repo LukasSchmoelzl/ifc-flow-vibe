@@ -1,3 +1,5 @@
+import type { IfcModel } from "@/lib/ifc-utils"
+
 // Common base interface for all node data
 export interface BaseNodeData {
     label: string;
@@ -88,6 +90,17 @@ export interface PythonNodeData extends BaseNodeData {
         percentage: number;
         message?: string;
     } | null;
+}
+
+// AI chat node data
+export interface AiNodeData extends BaseNodeData {
+    messages?: Array<{ role: string; content: string }>;
+    isLoading?: boolean;
+    model?: IfcModel | null;
+    aiModelId?: string;
+    width?: number;
+    height?: number;
+    outputData?: any;
 }
 
 // Property node data

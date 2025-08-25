@@ -1,4 +1,4 @@
-import type { IfcElement } from "@/lib/ifc/ifc-loader"
+import type { IfcElement } from "@/lib/ifc-utils"
 
 // Quantity extraction functions
 export function extractQuantities(
@@ -81,7 +81,7 @@ export function formatUnitSymbol(unitSymbol: string | null | undefined): string 
   }
 
   // Handle common cases with superscripts
-  let formatted = unitSymbol
+  const formatted = unitSymbol
     .replace(/m2/gi, "m²") // Square meters
     .replace(/m3/gi, "m³") // Cubic meters
     .replace(/ft2/gi, "ft²") // Square feet
