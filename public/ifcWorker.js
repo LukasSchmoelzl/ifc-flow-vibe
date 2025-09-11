@@ -2821,7 +2821,8 @@ try:
       continue
 
   # If we didn't get many elements, try a broader approach
-  if len(all_elements) < 100:
+  # Use a lower threshold as some valid IFC files may have fewer elements
+  if len(all_elements) < 10:
     print("Python: Limited elements found, trying broader extraction...")
     try:
       # Get all elements and filter

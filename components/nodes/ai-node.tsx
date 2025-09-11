@@ -472,7 +472,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       await navigator.clipboard.writeText(textToCopy);
       // Message copied to clipboard
     } catch (error) {
-
+      console.warn('Copy to clipboard failed:', error);
     }
   }, []);
 
@@ -527,41 +527,27 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
   // Helper function to propagate ALL data to connected nodes
   const propagateAllData = useCallback((data: any) => {
     const edges = getEdges();
-    const nodes = getNodes();
 
     // Find edges that connect from this AI node's output
     const outgoingEdges = edges.filter(edge => edge.source === id && edge.sourceHandle === 'output');
 
-    for (const edge of outgoingEdges) {
-      const targetNode = nodes.find(n => n.id === edge.target);
-
-      if (targetNode) {
-        // Propagating data downstream
-
-        // Update the target node's inputData with raw data
-        // Use immediate update to avoid race conditions
-        setNodes((currentNodes) => {
-          const newNodes = currentNodes.map((n) => {
-            if (n.id === targetNode.id) {
-              const updatedNode = {
-                ...n,
-                data: {
-                  ...n.data,
-                  inputData: data,
-                  // Also store the model if propagating to another AI node
-                  ...(targetNode.type === 'aiNode' && data.model ? { model: data.model } : {})
-                }
-              };
-              // Updated node with full data
-              return updatedNode;
-            }
-            return n;
-          });
-          return newNodes;
-        });
-      }
-    }
-  }, [id, getEdges, getNodes, setNodes]);
+    // Batch all updates to avoid N state updates per propagation
+    const targetIds = new Set(outgoingEdges.map(e => e.target));
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        if (!targetIds.has(n.id)) return n;
+        const isAi = n.type === 'aiNode';
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            inputData: data,
+            ...(isAi && (data as any).model ? { model: (data as any).model } : {})
+          }
+        };
+      })
+    );
+  }, [id, getEdges, setNodes]);
 
   // Helper function to propagate STRUCTURED tool results to ALL connected downstream nodes
   const propagateToWatchNodes = useCallback((toolResults: ToolResult[]) => {
@@ -674,9 +660,9 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
           return {
             type: 'quantityResults',
             value: {
-              groups: { [result.elementType || 'Items']: result.value || 0 },
+              groups: { [result.elementType || 'Items']: (result.count ?? result.value ?? 0) },
               unit: 'count',
-              total: result.value || 0,
+              total: (result.count ?? result.value ?? 0),
               quantityType: 'count'
             }
           };
@@ -687,9 +673,9 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
           return {
             type: 'quantityResults',
             value: {
-              groups: { [elementTypeName]: result.value || 0 },
+              groups: { [elementTypeName]: (typeof result.value === 'number' ? result.value : Number(result.value) || 0) },
               unit: result.unit || (result.type === 'area' ? 'm²' : 'm³'),
-              total: result.value || 0,
+              total: (typeof result.value === 'number' ? result.value : Number(result.value) || 0),
               quantityType: result.type
             }
           };
@@ -1069,7 +1055,12 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
 
 
     const prevData = prevDataRef.current;
-    const messagesChanged = JSON.stringify(combined) !== JSON.stringify(prevData.messages);
+    // Use compact signature to avoid O(n) JSON stringify of full messages each render
+    const sigOf = (arr: Message[]) =>
+      arr.map(m => `${m.id}|${m.seq}|${m.createdAt}|${m.role}|${m.content?.length || 0}|${m.toolResults?.length || 0}`).join('~');
+    const newSig = sigOf(combined);
+    const oldSig = sigOf(prevData.messages);
+    const messagesChanged = newSig !== oldSig;
     const loadingChanged = isLoading !== prevData.isLoading;
 
     if (messagesChanged || loadingChanged) {
@@ -1951,12 +1942,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       throw new Error("No IFC model connected");
     }
     // Worker now builds a sql.js DB after extraction; attempt query regardless of sqliteSuccess flag
-    try {
-      return await querySqliteDatabase(currentModel, query);
-    } catch (error) {
-
-      throw error;
-    }
+    return await querySqliteDatabase(currentModel, query);
   }, [getConnectedModelData]);
 
   // Helper to expand older IFC class variants (e.g., IfcWallStandardCase) and combine results
@@ -2064,8 +2050,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
     const dataPackage = {
       type: 'model',
       value: currentModel,
-      count: currentModel.totalElements,
-      model: currentModel
+      count: currentModel.totalElements
     };
 
     // Propagate to all connected nodes

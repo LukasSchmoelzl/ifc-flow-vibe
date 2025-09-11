@@ -63,10 +63,7 @@ export function cacheIfcFile(file: File) {
   if (file && file.name) {
     if (!ifcFileCache.has(file.name)) {
       ifcFileCache.set(file.name, file);
-
     }
-  } else {
-
   }
 }
 
@@ -400,7 +397,6 @@ export async function loadIfcFile(
     ifcWorker.removeEventListener("message", progressHandler);
 
 
-    // Use the elements directly from the loadComplete result (no need for extractData)
     const elements = modelInfo.elements || [];
 
 
@@ -423,14 +419,10 @@ export async function loadIfcFile(
 
     cacheIfcFile(file);
 
-    // Wait for SQLite database to be ready before returning model
-
-    try {
-      const warmupResult = await warmupSqliteDatabase(model);
-
-    } catch (error) {
-
-    }
+    // Warm up SQLite database in background (non-blocking)
+    warmupSqliteDatabase(model).catch(error => {
+      console.warn(`SQLite warm-up failed for model ${model.id}:`, error);
+    });
 
     return model;
   } catch (err) {
@@ -1944,8 +1936,7 @@ export async function exportData(
 
   // Handle null/undefined input from Python scripts
   if (input === null || input === undefined) {
-
-    return format === "json" ? "[]" : "";
+    return "";
   }
 
   if (Array.isArray(input)) {

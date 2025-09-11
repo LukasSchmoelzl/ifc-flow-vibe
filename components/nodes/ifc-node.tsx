@@ -5,6 +5,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
 import { NodeLoadingIndicator } from "./node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "./node-types";
+import { getElementTypeColor, formatElementType } from "../../lib/ifc/element-utils";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
@@ -247,36 +248,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
     input.click();
   }, [id, setNodes, setProgress]);
 
-  // Helper function to get element type color
-  const getElementTypeColor = (type: string) => {
-    const typeLower = type.toLowerCase();
-    if (typeLower.includes('wall')) return 'text-green-600 dark:text-green-400';
-    if (typeLower.includes('slab') || typeLower.includes('floor') || typeLower.includes('roof')) return 'text-blue-600 dark:text-blue-400';
-    if (typeLower.includes('beam') || typeLower.includes('column')) return 'text-orange-600 dark:text-orange-400';
-    if (typeLower.includes('door') || typeLower.includes('window')) return 'text-purple-600 dark:text-purple-400';
-    if (typeLower.includes('buildingelementproxy') || typeLower.includes('furnishing')) return 'text-red-600 dark:text-red-400';
-    return 'text-gray-600 dark:text-gray-400';
-  };
-
-  // Helper function to format element type name
-  const formatElementType = (type: string) => {
-    // Handle different IFC prefix variations and remove them
-    let cleanType = type
-      .replace(/^IFC/i, '') // Remove IFC prefix (case insensitive)
-      .replace(/^ifc/i, '') // Also handle lowercase ifc
-      .replace(/^Ifc/, ''); // Handle title case Ifc
-
-    // Add spaces before capital letters (but keep existing spaces)
-    cleanType = cleanType.replace(/([A-Z])/g, ' $1').trim();
-
-    // Handle special cases and clean up
-    cleanType = cleanType
-      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .trim();
-
-    // Title case the final result
-    return cleanType.replace(/\b\w/g, l => l.toUpperCase());
-  };
 
   // Render model info section if model is loaded
   const renderModelInfo = () => {
