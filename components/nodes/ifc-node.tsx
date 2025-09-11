@@ -5,6 +5,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
 import { NodeLoadingIndicator } from "./node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "./node-types";
+import { getElementTypeColor, formatElementType } from "../../lib/ifc/element-utils";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
@@ -84,7 +85,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
             handleFileUpload(
               file,
               (model) => {
-                console.log("IFC model loaded:", model);
                 // Briefly set progress to 100% before updating node state
                 setProgress({ percentage: 100, message: "Processing complete" });
                 // Update node with model, clear loading/progress
@@ -105,10 +105,10 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
                   })
                 );
                 // No need to clear progress here as isLoading: false will hide the indicator
-                // setProgress({ percentage: 0, message: "" }); 
+                // setProgress({ percentage: 0, message: "" });
               },
               (error) => {
-                console.error("Error loading IFC file:", error);
+
                 // Optionally set progress to 100 on error too, or keep last state
                 // setProgress({ percentage: 100, message: "Error occurred" });
                 // Update node with error, clear loading/progress
@@ -188,7 +188,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
           handleFileUpload(
             file,
             (model) => {
-              console.log("IFC model loaded:", model);
               // Briefly set progress to 100% before updating node state
               setProgress({ percentage: 100, message: "Processing complete" });
               // Update node with model, clear loading/progress
@@ -212,7 +211,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
               // setProgress({ percentage: 0, message: "" });
             },
             (error) => {
-              console.error("Error loading IFC file:", error);
+
               // Optionally set progress to 100 on error too, or keep last state
               // setProgress({ percentage: 100, message: "Error occurred" });
               // Update node with error, clear loading/progress
@@ -249,31 +248,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
     input.click();
   }, [id, setNodes, setProgress]);
 
-  // Helper function to get element type color
-  const getElementTypeColor = (type: string) => {
-    const typeLower = type.toLowerCase();
-    if (typeLower.includes('wall')) return 'text-green-600 dark:text-green-400';
-    if (typeLower.includes('slab') || typeLower.includes('floor') || typeLower.includes('roof')) return 'text-blue-600 dark:text-blue-400';
-    if (typeLower.includes('beam') || typeLower.includes('column')) return 'text-orange-600 dark:text-orange-400';
-    if (typeLower.includes('door') || typeLower.includes('window')) return 'text-purple-600 dark:text-purple-400';
-    if (typeLower.includes('buildingelementproxy') || typeLower.includes('furnishing')) return 'text-red-600 dark:text-red-400';
-    return 'text-gray-600 dark:text-gray-400';
-  };
-
-  // Helper function to format element type name
-  const formatElementType = (type: string) => {
-    // Handle different IFC prefix variations and remove them
-    let cleanType = type
-      .replace(/^ifc/i, ''); // Remove IFC prefix (case-insensitive)
-
-    // Clean up whitespace and apply title case
-    return cleanType
-        .replace(/\s+/g, ' ')  // Normalize whitespace
-        .trim()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-  };
 
   // Render model info section if model is loaded
   const renderModelInfo = () => {
@@ -284,8 +258,8 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
     // Sort elements by count (most common first)
     const sortedElements = elementCounts
       ? Object.entries(elementCounts)
-          .filter(([, count]) => (count as number) > 0)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
+        .filter(([, count]) => (count as number) > 0)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
       : [];
 
     return (

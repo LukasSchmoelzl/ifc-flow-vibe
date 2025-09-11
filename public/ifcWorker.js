@@ -25,7 +25,7 @@ async function ensureIfc2sqlPyCode() {
     ifc2sqlPyCodeCache = await res.text();
     return ifc2sqlPyCodeCache;
   } catch (e) {
-    console.warn('Failed to load ifc2sql.py from /public:', e);
+
     ifc2sqlPyCodeCache = null;
     return null;
   }
@@ -139,22 +139,22 @@ async function cleanupFallbackDatabases() {
         const fallbackKeys = keys.filter(k => k.includes(':v2'));
 
         if (fallbackKeys.length > 0) {
-          console.log(`Cleaning up ${fallbackKeys.length} fallback database(s)...`);
+
           const deleteTx = db.transaction(['kvStore'], 'readwrite');
           const deleteStore = deleteTx.objectStore('kvStore');
 
           for (const key of fallbackKeys) {
             deleteStore.delete(key);
-            console.log(`Deleted fallback database: ${key}`);
+
           }
 
           deleteTx.oncomplete = () => {
-            console.log('Fallback database cleanup complete');
+
             resolve();
           };
           deleteTx.onerror = () => reject(deleteTx.error);
         } else {
-          console.log('No fallback databases found to clean up');
+
           resolve();
         }
       };
@@ -163,7 +163,7 @@ async function cleanupFallbackDatabases() {
 
     db.close();
   } catch (error) {
-    console.warn('Failed to cleanup fallback databases:', error);
+
   }
 }
 
@@ -192,12 +192,12 @@ async function initPyodide() {
   });
 
   try {
-    console.log("initPyodide: Starting Pyodide initialization");
+
     // Load Pyodide
     pyodide = await loadPyodide({
       indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
     });
-    console.log("initPyodide: Pyodide loaded successfully");
+
 
     self.postMessage({
       type: "progress",
@@ -205,10 +205,10 @@ async function initPyodide() {
       percentage: 30,
     });
 
-    console.log("initPyodide: Loading micropip, numpy, typing-extensions");
+
     // Load micropip for package installation and numpy for computations
     await pyodide.loadPackage(["micropip", "numpy", "typing-extensions"]);
-    console.log("initPyodide: Basic packages loaded");
+
 
     // Bypass Emscripten version compatibility check for wheels
     await pyodide.runPythonAsync(`
@@ -238,7 +238,7 @@ async function initPyodide() {
       pySqliteReady = true;
     } catch (e) {
       pySqliteReady = false;
-      console.warn('Python sqlite3 not available in Pyodide, using sql.js path');
+
     }
 
     // Ensure shapely is available before importing ifcopenshell.util.shape from ifc2sql.py
@@ -251,7 +251,7 @@ async function initPyodide() {
       await pyodide.loadPackage(["shapely"]);
       await pyodide.runPythonAsync(`import shapely\nprint('shapely available')`);
     } catch (e) {
-      console.warn('Failed to load shapely package:', e);
+
       // Proceed; if ifc2sql.py needs shapely it will error with clear message
     }
 
@@ -368,7 +368,7 @@ except Exception as e:
 self.onmessage = async (event) => {
   try {
     const { action, data, messageId } = event.data;
-    console.log(`Worker received message: ${action}`, { data, messageId });
+
 
     switch (action) {
       case "init":
@@ -378,23 +378,15 @@ self.onmessage = async (event) => {
         break;
 
       case "loadIfc":
-        console.log("Starting to load IFC file...", {
-          filename: data.filename,
-          size: data.arrayBuffer.byteLength,
-        });
         await handleLoadIfc({ ...data, messageId });
         break;
 
       case "loadIfcFast":
-        console.log("Starting to load IFC file (fast)...", {
-          filename: data.filename,
-          size: data.arrayBuffer.byteLength,
-        });
         await handleLoadIfcFast({ ...data, messageId });
         break;
 
       case "extractData":
-        console.log("Starting to extract data...", { types: data.types });
+
         await handleExtractData({ ...data, messageId });
         break;
 
@@ -405,48 +397,40 @@ self.onmessage = async (event) => {
           fileName: event.data.fileName,
           arrayBuffer: event.data.arrayBuffer
         };
-        console.log("Starting to export modified IFC file...", {
-          filename: exportData.fileName,
-          elementCount: exportData.model?.elements?.length || 0,
-        });
         await handleExportIfc({ ...exportData, messageId });
         break;
 
       case "extractGeometry":
-        console.log("Starting to extract geometry using GEOM...", {
-          elementType: data.elementType,
-          includeOpenings: data.includeOpenings,
-        });
         await handleExtractGeometry({ ...data, messageId });
         break;
 
       case "extractQuantities":
-        console.log("Starting quantity extraction...", data);
+
         await handleExtractQuantities(data, messageId);
         break;
 
       case "runPython":
-        console.log("Running custom Python code...");
+
         await handleRunPython({ ...data, messageId });
         break;
 
       case "querySqlite":
-        console.log("Starting SQLite query...", { query: data.query, modelId: data.modelId });
+
         await handleSqliteQuery({ ...data, messageId });
         break;
 
       case "exportSqlite":
-        console.log("Starting SQLite export...");
+
         await handleSqliteExport({ ...data, messageId });
         break;
 
       case "warmSqlite":
-        console.log("Pre-warming SQLite (sql.js)...");
+
         await handleWarmSqlite({ ...data, messageId });
         break;
 
       case "buildSqlite":
-        console.log("Building SQLite database in background...");
+
         await handleBuildSqlite({ ...data, messageId });
         break;
 
@@ -454,7 +438,7 @@ self.onmessage = async (event) => {
         throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {
-    console.error("Worker onmessage error:", error);
+
     self.postMessage({
       type: "error",
       message: error.message,
@@ -476,14 +460,10 @@ function postSqliteStatus(status, modelKey, extra) {
 // Handle loading an IFC file
 async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
   try {
-    console.log("handleLoadIfc: Starting to process file", {
-      filename,
-      size: arrayBuffer.byteLength,
-    });
 
     // Make sure Pyodide is initialized
     await initPyodide();
-    console.log("handleLoadIfc: Pyodide initialized");
+
 
     self.postMessage({
       type: "progress",
@@ -493,11 +473,11 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
     });
 
     try {
-      console.log("handleLoadIfc: Writing file to Pyodide filesystem");
+
       // Create a virtual file in the Pyodide file system
       const uint8Array = new Uint8Array(arrayBuffer);
       pyodide.FS.writeFile("model.ifc", uint8Array);
-      console.log("handleLoadIfc: File written to filesystem");
+
 
       // Use IfcOpenShell to load the file and extract basic information
       self.postMessage({
@@ -518,7 +498,7 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
       // Add error handling for Python execution
       try {
-        console.log("handleLoadIfc: Running Python to process IFC");
+
 
         // Create a dedicated namespace for this operation
         const namespace = pyodide.globals.get("dict")();
@@ -723,7 +703,7 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
         // Check if there was an error
         const success = namespace.get("success");
-        console.log("Python execution success:", success);
+
 
         if (!success) {
           const errorMsg = namespace.get("error_msg");
@@ -733,7 +713,7 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
         // Get the actual result from the namespace
         const result = namespace.get("result_json");
-        console.log("Got result from Python namespace:", !!result);
+
 
         if (!result) {
           throw new Error("Python execution did not produce a result");
@@ -748,59 +728,49 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
           model_id: modelInfo.model_id
         };
 
-        console.log("handleLoadIfc: Model info extracted and cached", {
-          schema: modelInfo.schema,
-          filename: modelInfo.filename,
-          totalElements: modelInfo.total_elements,
-          modelId: modelInfo.model_id,
-          jsCache: JSON.stringify(ifcModelCache),
-        });
 
         // If Ifc2Sql created a SQLite DB, persist it to IndexedDB for client-side queries
         try {
           if (modelInfo.sqlite_success && modelInfo.sqlite_db) {
-            console.log("handleLoadIfc: Persisting Ifc2Sql DB to IndexedDB", {
-              sqlite_db: modelInfo.sqlite_db,
-            });
-            console.log("handleLoadIfc: Reading comprehensive database from Pyodide filesystem:", modelInfo.sqlite_db);
+
             const dbBytes = pyodide.FS.readFile(modelInfo.sqlite_db);
-            console.log("handleLoadIfc: Comprehensive database read from filesystem, size:", dbBytes.length, "bytes");
-            console.log("handleLoadIfc: Comprehensive database size:", (dbBytes.length / 1024).toFixed(2), "KB");
+
+
 
             const key = `model-sqlite-db:${modelInfo.model_id || modelInfo.filename || 'default'}`;
             currentSqlKey = key;
-            console.log("handleLoadIfc: Storing comprehensive database with key:", key);
+
 
             // Clear any existing cached database first to ensure we use the new comprehensive one
             try {
               await idbDelete(key);
-              console.log("handleLoadIfc: Cleared existing cached database");
+
             } catch (deleteError) {
-              console.log("handleLoadIfc: No existing cache to clear or delete failed:", deleteError.message);
+
             }
 
             await idbPut(key, dbBytes);
-            console.log("handleLoadIfc: SQLite DB persisted to IndexedDB (comprehensive database)");
-            console.log("handleLoadIfc: Stored database size:", dbBytes.length, "bytes");
+
+
 
             // Verify the storage worked
             try {
               const verifyBytes = await idbGet(key);
               if (verifyBytes && verifyBytes.length === dbBytes.length) {
-                console.log("handleLoadIfc: ✅ Comprehensive database storage verified successfully");
+
               } else {
-                console.log("handleLoadIfc: ❌ Database storage verification failed");
-                console.log("handleLoadIfc: Expected size:", dbBytes.length, "Got size:", verifyBytes ? verifyBytes.length : 'null');
+
+
               }
             } catch (verifyError) {
-              console.log("handleLoadIfc: ❌ Could not verify database storage:", verifyError.message);
+
             }
           } else {
-            console.log("handleLoadIfc: Ifc2Sql DB not available; sql.js fallback will build after extraction");
-            console.log("handleLoadIfc: sqlite_db:", modelInfo.sqlite_db, "sqlite_success:", modelInfo.sqlite_success);
+
+
           }
         } catch (e) {
-          console.warn("handleLoadIfc: Failed to persist Ifc2Sql DB to IndexedDB", e);
+
         }
 
         // Clean up
@@ -820,17 +790,17 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
           messageId,
           ...modelInfo, // Spread the properties directly instead of nesting
         });
-        console.log("handleLoadIfc: Sent loadComplete message");
+
       } catch (pythonError) {
-        console.error("Python execution error:", pythonError);
+
         throw new Error(`Python error: ${pythonError.message}`);
       }
     } catch (fileProcessingError) {
-      console.error("Error processing IFC file:", fileProcessingError);
+
       throw fileProcessingError;
     }
   } catch (error) {
-    console.error("handleLoadIfc error:", error);
+
     self.postMessage({
       type: "error",
       message: `Error loading IFC file: ${error.message}`,
@@ -843,11 +813,11 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 // Extract more detailed information from the IFC file
 async function handleExtractData({ types = ["IfcWall"], messageId }) {
   try {
-    console.log("handleExtractData: Starting to extract data for types", types);
+
 
     // Make sure Pyodide is initialized
     await initPyodide();
-    console.log("handleExtractData: Pyodide initialized");
+
 
     self.postMessage({
       type: "progress",
@@ -858,13 +828,10 @@ async function handleExtractData({ types = ["IfcWall"], messageId }) {
 
     // Create a Python array of the requested types
     const typesStr = JSON.stringify(types);
-    console.log(`handleExtractData: Processing types: ${typesStr}`);
+
 
     // Add error handling for Python execution
     try {
-      console.log(
-        "handleExtractData: Running Python to extract elements using IfcOpenShell 0.8.1"
-      );
 
       // Create a dedicated namespace for this operation
       const namespace = pyodide.globals.get("dict")();
@@ -1077,7 +1044,7 @@ async function handleExtractData({ types = ["IfcWall"], messageId }) {
 
       // Check if there was an error
       const success = namespace.get("success");
-      console.log("Python extraction success:", success);
+
 
       if (!success) {
         const errorMsg = namespace.get("error_msg");
@@ -1087,7 +1054,7 @@ async function handleExtractData({ types = ["IfcWall"], messageId }) {
 
       // Get the actual result from the namespace
       const elementsJson = namespace.get("elements_json");
-      console.log("Got elements from Python namespace:", !!elementsJson);
+
 
       if (!elementsJson) {
         throw new Error(
@@ -1097,9 +1064,6 @@ async function handleExtractData({ types = ["IfcWall"], messageId }) {
 
       // Parse the result JSON
       const elements = JSON.parse(elementsJson);
-      console.log(
-        `handleExtractData: Successfully processed ${elements.length} elements`
-      );
 
       // Clean up
       namespace.destroy();
@@ -1118,18 +1082,18 @@ async function handleExtractData({ types = ["IfcWall"], messageId }) {
         elements: elements,
         messageId,
       });
-      console.log("handleExtractData: Sent dataExtracted message");
+
 
       // No fallback database - only use comprehensive database from ifc2sql
       const modelKey = (ifcModelCache && (ifcModelCache.model_id || ifcModelCache.filename)) || 'default';
       currentSqlKey = `model-sqlite-db:${modelKey}`;
-      console.log("handleExtractData: Using comprehensive database key:", currentSqlKey);
+
     } catch (pythonError) {
-      console.error("Python execution error:", pythonError);
+
       throw new Error(`Python error: ${pythonError.message}`);
     }
   } catch (error) {
-    console.error("handleExtractData error:", error);
+
     self.postMessage({
       type: "error",
       message: `Error extracting data: ${error.message}`,
@@ -1166,13 +1130,6 @@ async function handleExportIfc(data) {
     const originalFilename =
       (ifcModelCache && ifcModelCache.filename) || fileName;
 
-    console.log("Export - Model info:", {
-      modelId: modelId,
-      originalFilename: originalFilename,
-      elements: model.elements ? model.elements.length : 0,
-      sourceFilename: ifcModelCache?.filename,
-      jsCache: JSON.stringify(ifcModelCache),
-    });
 
     // Get or initialize pyodide
     const pyodide = await initPyodide();
@@ -1201,16 +1158,9 @@ async function handleExportIfc(data) {
 
     try {
       // Write the provided buffer to the filesystem
-      console.log(
-        "handleExportIfc: Writing provided IFC data to model.ifc before modification..."
-      );
       pyodide.FS.writeFile("model.ifc", new Uint8Array(arrayBuffer));
-      console.log("handleExportIfc: Successfully wrote model.ifc");
+
     } catch (fsError) {
-      console.error(
-        "handleExportIfc: Error writing model.ifc to Pyodide filesystem:",
-        fsError
-      );
       throw new Error(
         `Failed to prepare IFC file in virtual filesystem: ${fsError.message}`
       );
@@ -1579,7 +1529,7 @@ async function handleExportIfc(data) {
 
       // Check if there was an error
       const success = namespace.get("success");
-      console.log("Python export success:", success);
+
 
       if (!success) {
         const errorMsg = namespace.get("error_msg");
@@ -1630,11 +1580,11 @@ async function handleExportIfc(data) {
       // Clean up after sending
       namespace.destroy();
     } catch (pythonError) {
-      console.error("Python execution error during export:", pythonError);
+
       throw new Error(`Python export error: ${pythonError.message}`);
     }
   } catch (error) {
-    console.error("handleExportIfc error:", error);
+
     self.postMessage({
       type: "error",
       message: `Error exporting IFC: ${error.message}`,
@@ -1651,10 +1601,6 @@ async function handleExtractGeometry({
   messageId,
 }) {
   try {
-    console.log("handleExtractGeometry: Starting", {
-      elementType,
-      includeOpenings,
-    });
 
     await initPyodide();
 
@@ -1663,9 +1609,6 @@ async function handleExtractGeometry({
         "Valid ArrayBuffer not received in handleExtractGeometry."
       );
     }
-    console.log(
-      `handleExtractGeometry: Received ArrayBuffer with size ${arrayBuffer.byteLength}`
-    );
 
     // *** Mount buffer directly using FS.createDataFile ***
     const VFS_PATH = "/data"; // A directory in VFS
@@ -1686,15 +1629,8 @@ async function handleExtractGeometry({
         true,
         true
       );
-      console.log(
-        `handleExtractGeometry: Mounted ArrayBuffer to VFS at ${VFS_FULL_PATH}`
-      );
       mountSuccessful = true;
     } catch (mountError) {
-      console.error(
-        "handleExtractGeometry: Error mounting buffer to VFS:",
-        mountError
-      );
       throw new Error(
         `Failed to mount IFC data in worker: ${mountError.message}`
       );
@@ -2012,7 +1948,7 @@ except Exception as e:
           }
         } catch (e) {
           // Ignore errors in progress updates
-          console.log("Progress update error (non-critical):", e);
+
         }
       }, 500); // Check progress every 500ms
 
@@ -2032,22 +1968,12 @@ except Exception as e:
       const resultJson = namespace.get("result_json");
       const elements = JSON.parse(resultJson);
 
-      console.log(
-        `handleExtractGeometry: Extracted geometry for ${elements.length} elements`
-      );
 
       // Clean up VFS file
       if (mountSuccessful) {
         try {
           pyodide.FS.unlink(VFS_FULL_PATH);
-          console.log(
-            `handleExtractGeometry: Cleaned up VFS file ${VFS_FULL_PATH}`
-          );
         } catch (unlinkError) {
-          console.warn(
-            `handleExtractGeometry: Could not unlink ${VFS_FULL_PATH}`,
-            unlinkError
-          );
         }
       }
 
@@ -2068,7 +1994,7 @@ except Exception as e:
         messageId,
       });
     } catch (error) {
-      console.error("handleExtractGeometry: Python execution error:", error);
+
 
       // Clean up
       if (mountSuccessful) {
@@ -2087,7 +2013,7 @@ except Exception as e:
       throw new Error(`Python geometry extraction failed: ${error.message}`);
     }
   } catch (error) {
-    console.error("handleExtractGeometry JavaScript Error:", error);
+
     const errorMessage =
       error instanceof Error ? error.message : error.toString();
 
@@ -2133,11 +2059,11 @@ async function handleExtractQuantities(data, messageId) {
       throw new Error("ArrayBuffer for IFC file was not provided or is invalid.");
     }
     try {
-      console.log("Writing provided IFC data to model.ifc for quantity extraction...");
+
       pyodide.FS.writeFile("model.ifc", new Uint8Array(arrayBuffer));
-      console.log("Successfully wrote model.ifc for quantity extraction.");
+
     } catch (fsError) {
-      console.error("Error writing model.ifc to Pyodide filesystem:", fsError);
+
       throw new Error(`Failed to prepare IFC file in VFS: ${fsError.message}`);
     }
     // -------------------------------------
@@ -2408,7 +2334,7 @@ async function handleRunPython({ script, arrayBuffer, inputData, properties, mes
         pyodide.FS.writeFile("model.ifc", new Uint8Array(arrayBuffer));
         hasIfcFile = true;
       } catch (fsError) {
-        console.warn("Could not write IFC file to filesystem:", fsError);
+
       }
     }
 
@@ -2463,10 +2389,43 @@ try:
     
     # Execute user script with all variables available
     print("Python: Executing user script...")
+
+    # Execute user script safely and capture a result if available
+    import ast
+
+    # First, execute the entire script (variables, functions, prints, etc.)
     exec(user_script)
+
+    # Try to capture the last expression's value from the script
+    last_value = None
+    try:
+        parsed = ast.parse(user_script, mode='exec')
+        last_stmt = parsed.body[-1] if parsed.body else None
+        if isinstance(last_stmt, ast.Expr):
+            last_expr = ast.Expression(last_stmt.value)
+            compiled = compile(last_expr, filename='<user_script_last_expr>', mode='eval')
+            last_value = eval(compiled)
+            print(f"Python: Last expression evaluated - type: {type(last_value)}")
+        else:
+            print("Python: No evaluable last expression detected")
+    except Exception as eval_err:
+        print(f"Python: Could not evaluate last expression: {eval_err}")
+
+    # Use explicit 'result' if user set it to a non-None value; otherwise fallback to last_value
+    try:
+        _r = result  # noqa: F821
+        if _r is None and last_value is not None:
+            result = last_value
+            print("Python: Using last expression value as result")
+        else:
+            print(f"Python: Using user-defined result - type: {type(result)}")
+    except NameError:
+        result = last_value
+        print("Python: No 'result' defined; using last expression value")
+
     success = True
     print("Python: User script executed successfully")
-    
+
     # Serialize result - handle None and complex objects
     if result is None:
         result_json = "null"
@@ -2519,12 +2478,12 @@ except Exception as e:
 // Handle SQLite database queries
 async function handleSqliteQuery({ query, modelId, messageId }) {
   try {
-    console.log("handleSqliteQuery: Processing query (sql.js)", { query, modelId });
+
     await initSqlJsModule();
 
     // Always use the comprehensive database
     let key = currentSqlKey || (modelId ? `model-sqlite-db:${modelId}` : 'model-sqlite-db');
-    console.log("handleSqliteQuery: Using database key:", key);
+
 
     await ensureDbLoaded(key);
     if (!sqliteDb) {
@@ -2535,9 +2494,9 @@ async function handleSqliteQuery({ query, modelId, messageId }) {
     try {
       const tables = sqliteDb.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
       const tableNames = tables.length > 0 ? tables[0].values.map(row => row[0]) : [];
-      console.log("handleSqliteQuery: Available tables in database:", tableNames.slice(0, 10), `(${tableNames.length} total)`);
+
     } catch (debugError) {
-      console.warn("handleSqliteQuery: Could not list tables:", debugError.message);
+
     }
     // Normalize or synthesize SQL if a natural language prompt was provided
     // Permit standard SELECT queries and CTEs that start with WITH
@@ -2649,7 +2608,7 @@ async function handleSqliteQuery({ query, modelId, messageId }) {
         return obj;
       });
     }
-    console.log("handleSqliteQuery: Query successful", { resultCount: rows.length });
+
     self.postMessage({
       type: "sqliteResult",
       messageId,
@@ -2657,7 +2616,7 @@ async function handleSqliteQuery({ query, modelId, messageId }) {
       query: rewritten,
     });
   } catch (error) {
-    console.error("handleSqliteQuery error:", error);
+
     self.postMessage({
       type: "error",
       message: `Error executing SQLite query: ${error.message}`,
@@ -2669,19 +2628,19 @@ async function handleSqliteQuery({ query, modelId, messageId }) {
 // Export the current sql.js database bytes back to the main thread
 async function handleSqliteExport({ modelId, messageId }) {
   try {
-    console.log("handleSqliteExport: Preparing export", { modelId });
+
 
     // First try to get the comprehensive database from IndexedDB (created by ifc2sql.py Patcher)
     const key = currentSqlKey || (modelId ? `model-sqlite-db:${modelId}` : 'model-sqlite-db');
-    console.log("handleSqliteExport: Checking for comprehensive database with key:", key);
-    console.log("handleSqliteExport: currentSqlKey is:", currentSqlKey);
+
+
 
     try {
       const comprehensiveDbBytes = await idbGet(key);
       if (comprehensiveDbBytes) {
-        console.log("handleSqliteExport: Found comprehensive database in IndexedDB!");
-        console.log("handleSqliteExport: Comprehensive database size:", comprehensiveDbBytes.byteLength, "bytes");
-        console.log("handleSqliteExport: Comprehensive database size:", (comprehensiveDbBytes.byteLength / 1024).toFixed(2), "KB");
+
+
+
 
         // Quick analysis of the comprehensive database
         try {
@@ -2689,10 +2648,10 @@ async function handleSqliteExport({ modelId, messageId }) {
           const tempDb = new SQLModule.Database(new Uint8Array(comprehensiveDbBytes));
           const result = tempDb.exec("SELECT name FROM sqlite_master WHERE type='table'");
           const tableCount = result.length > 0 ? result[0].values.length : 0;
-          console.log("handleSqliteExport: Comprehensive database contains", tableCount, "tables");
+
           tempDb.close();
         } catch (analysisError) {
-          console.log("handleSqliteExport: Could not analyze comprehensive database:", analysisError.message);
+
         }
 
         self.postMessage({
@@ -2708,7 +2667,7 @@ async function handleSqliteExport({ modelId, messageId }) {
       throw new Error(`Failed to export database: ${idbError.message}`);
     }
   } catch (error) {
-    console.error("handleSqliteExport error:", error);
+
     self.postMessage({
       type: "error",
       message: `Error exporting SQLite DB: ${error.message}`,
@@ -2751,7 +2710,7 @@ async function handleWarmSqlite({ modelKey, messageId }) {
 
     self.postMessage({ type: "sqliteWarmed", messageId, key: preferredKey, tableCount });
   } catch (error) {
-    console.error("handleWarmSqlite error:", error);
+
     self.postMessage({ type: "error", message: `Error warming SQLite: ${error.message}`, messageId });
   }
 }
@@ -2862,7 +2821,8 @@ try:
       continue
 
   # If we didn't get many elements, try a broader approach
-  if len(all_elements) < 100:
+  # Use a lower threshold as some valid IFC files may have fewer elements
+  if len(all_elements) < 10:
     print("Python: Limited elements found, trying broader extraction...")
     try:
       # Get all elements and filter
@@ -2938,12 +2898,12 @@ except Exception as e:
       try {
         await handleBuildSqlite({ modelKey: result.model_id || result.filename, dbKey });
       } catch (e) {
-        console.error('Background SQLite build failed:', e);
+
         try { postSqliteStatus('error', result.model_id || result.filename, { message: e.message }); } catch { }
       }
     }, 0);
   } catch (error) {
-    console.error("handleLoadIfcFast error:", error);
+
     self.postMessage({ type: "error", message: `Error loading IFC (fast): ${error.message}`, messageId });
   }
 }
@@ -3037,7 +2997,7 @@ except Exception as e:
     try { postSqliteStatus('ready', modelKey, { tableCount: pyRes.table_count }); } catch { }
     self.postMessage({ type: 'sqliteBuilt', key, tableCount: pyRes.table_count, byteLength: dbBytes.length });
   } catch (error) {
-    console.error('handleBuildSqlite error:', error);
+
     try { postSqliteStatus('error', modelKey, { message: error.message }); } catch { }
     if (messageId) {
       self.postMessage({ type: 'error', message: `Error building SQLite: ${error.message}`, messageId });
