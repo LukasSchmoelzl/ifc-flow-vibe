@@ -416,56 +416,13 @@ export async function loadIfcFile(
     clearTimeout(timeout);
     console.log("Received model info:", modelInfo);
 
-    // Now request the detailed element data
-    const messageId2 = `extract_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    console.log("Starting element extraction with ID:", messageId2);
-    allowedProgressIds.add(messageId2);
-
-    const elementResult = await new Promise((resolve, reject) => {
-      workerPromiseResolvers.set(messageId2, { resolve, reject });
-
-      // Request all types that have at least one element, plus IfcSpace for queries
-      const types = Object.entries(modelInfo.element_counts)
-        .filter(([_, count]) => (count as number) > 0)
-        .map(([type]) => type);
-      if (!types.includes('IfcSpace')) {
-        types.push('IfcSpace');
-      }
-
-      console.log("Extracting element types:", types);
-
-      // Send the request
-      ifcWorker!.postMessage({
-        action: "extractData",
-        messageId: messageId2,
-        data: { types },
-      });
-
-      // Set a timeout to detect if the worker doesn't respond (larger for big files)
-      setTimeout(() => {
-        if (workerPromiseResolvers.has(messageId2)) {
-          console.error(
-            "Worker did not respond to extractData within timeout period"
-          );
-          reject(
-            new Error(
-              "Worker did not respond to extractData within the timeout period"
-            )
-          );
-          workerPromiseResolvers.delete(messageId2);
-        }
-      }, 180000); // 3 minute timeout for element extraction
-    });
-
     // Remove the progress event listener
     ifcWorker.removeEventListener("message", progressHandler);
     console.log("Progress listener removed");
 
-    // Combine the information into our model structure
-    const { elements } = elementResult as any;
-    console.log(`Extracted ${elements.length} elements from IFC file`);
+    // Use the elements directly from the loadComplete result (no need for extractData)
+    const elements = modelInfo.elements || [];
+    console.log(`Loaded ${elements.length} elements directly from IFC file`);
 
     const model: IfcModel = {
       id: `model-${Date.now()}`,

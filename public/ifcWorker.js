@@ -2780,18 +2780,132 @@ try:
       'Name': getattr(p,'Name', None) or 'Unnamed Project',
       'Description': getattr(p,'Description', None) or ''
     }
-  counts = {}
-  for t in ["IfcWall","IfcSlab","IfcBeam","IfcColumn","IfcDoor","IfcWindow","IfcRoof","IfcStair","IfcFurnishingElement"]:
+  # FAST extraction of ALL elements from the IFC file
+  print("Python: Fast extraction of all IFC elements...")
+
+  # Get all elements in the model using by_type for better performance
+  all_elements = []
+  element_counts = {}
+
+  # Smart discovery: Find ALL elements that inherit from IfcBuildingElement
+  print("Python: Discovering elements that inherit from IfcBuildingElement...")
+
+  # Discover element types that are building elements (inherit from IfcBuildingElement)
+  discovered_types = set()
+
+  # First pass: discover building element types by checking inheritance
+  for element in f:
     try:
-      counts[t] = len(f.by_type(t))
-    except Exception:
-      counts[t] = 0
+      element_type = element.is_a()
+
+      # Check if this element is an IfcBuildingElement or inherits from it
+      # We also include some key spatial and project elements
+      try:
+        if element.is_a('IfcBuildingElement'):
+          discovered_types.add(element_type)
+        elif element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']:
+          discovered_types.add(element_type)
+      except Exception:
+        # If is_a() fails, try string-based check as fallback
+        if element_type.startswith('IFC') and ('BUILDINGELEMENT' in element_type or element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']):
+          discovered_types.add(element_type)
+
+    except Exception as e:
+      continue
+
+  print(f"Python: Found {len(discovered_types)} building element types")
+
+  # Convert set to sorted list for consistent ordering
+  element_types_to_extract = sorted(list(discovered_types))
+
+  # Second pass: extract all elements by their discovered types
+  for element_type in element_types_to_extract:
+    try:
+      elements_of_type = f.by_type(element_type)
+      if elements_of_type:
+        element_counts[element_type] = len(elements_of_type)
+
+        # Process elements efficiently
+        for element in elements_of_type:
+          try:
+            # Create minimal element dictionary
+            element_dict = {
+              'expressId': element.id(),
+              'type': element_type,
+              'properties': {},
+              'psets': {}
+            }
+
+            # Extract only essential properties (fast)
+            if hasattr(element, 'GlobalId') and element.GlobalId:
+              element_dict['properties']['GlobalId'] = element.GlobalId
+            if hasattr(element, 'Name') and element.Name:
+              element_dict['properties']['Name'] = element.Name
+
+            # Add type-specific essential properties for common types
+            if element_type == 'IFCBUILDINGSTOREY' and hasattr(element, 'Elevation'):
+              element_dict['properties']['Elevation'] = element.Elevation
+            elif element_type == 'IFCPROJECT' and hasattr(element, 'LongName') and element.LongName:
+              element_dict['properties']['LongName'] = element.LongName
+            elif element_type == 'IFCSITE' and hasattr(element, 'RefLatitude'):
+              # Could add site-specific properties if needed
+              pass
+
+            all_elements.append(element_dict)
+
+          except Exception as e:
+            # Skip problematic elements but continue
+            continue
+
+    except Exception as e:
+      # Skip element types that don't exist
+      continue
+
+  # If we didn't get many elements, try a broader approach
+  if len(all_elements) < 100:
+    print("Python: Limited elements found, trying broader extraction...")
+    try:
+      # Get all elements and filter
+      for element in f:
+        element_type = element.is_a()
+        if element_type not in element_counts:
+          element_counts[element_type] = 0
+        element_counts[element_type] += 1
+
+        element_dict = {
+          'expressId': element.id(),
+          'type': element_type,
+          'properties': {},
+          'psets': {}
+        }
+
+        # Minimal properties only
+        if hasattr(element, 'GlobalId') and element.GlobalId:
+          element_dict['properties']['GlobalId'] = element.GlobalId
+        if hasattr(element, 'Name') and element.Name:
+          element_dict['properties']['Name'] = element.Name
+
+        all_elements.append(element_dict)
+    except Exception as e:
+      print(f"Python: Error in fallback extraction: {e}")
+
+  print(f"Python: Successfully extracted {len(all_elements)} elements")
+  print(f"Python: Element types found: {len(element_counts)}")
+
+  # Debug: Show top element types
+  if element_counts:
+    sorted_types = sorted(element_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    print("Python: Top 5 element types:")
+    for etype, count in sorted_types:
+      print(f"  {etype}: {count}")
+
   result_obj = {
     'filename': '${filename}',
     'schema': schema,
     'project': project_info,
-    'element_counts': counts,
-    'total_elements': sum(counts.values()),
+    'element_counts': element_counts,
+    'total_elements': len(all_elements),
+    'elements': all_elements,
     'model_id': '${filename}'
   }
   result_json = json.dumps(result_obj)
@@ -2930,5 +3044,3 @@ except Exception as e:
     }
   }
 }
-
-// (Removed duplicate enhanced initPyodide; using the primary init above that installs the IfcOpenShell wasm wheel)
