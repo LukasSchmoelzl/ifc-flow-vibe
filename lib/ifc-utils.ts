@@ -1,5 +1,4 @@
 // IfcOpenShell integration for IFC data processing via Pyodide web worker
-// Remove web-ifc imports as we're using pure IfcOpenShell now
 import {
   Scene,
   Mesh,
@@ -64,33 +63,18 @@ export function cacheIfcFile(file: File) {
   if (file && file.name) {
     if (!ifcFileCache.has(file.name)) {
       ifcFileCache.set(file.name, file);
-      console.log(`Cached File object: ${file.name}`);
     }
-  } else {
-    console.warn("Attempted to cache an invalid File object.");
   }
 }
 
 // Function to get the last loaded model
 export function getLastLoadedModel(): IfcModel | null {
-  console.log("🔍 Getting last loaded model:", {
-    hasModel: !!_lastLoadedModel,
-    modelId: _lastLoadedModel?.id,
-    modelName: _lastLoadedModel?.name,
-    elementCount: _lastLoadedModel?.elements?.length
-  });
   return _lastLoadedModel;
 }
 
 // Function to set the last loaded model (for debugging/testing)
 export function setLastLoadedModel(model: IfcModel | null): void {
   _lastLoadedModel = model;
-  console.log("📝 Set last loaded model:", {
-    hasModel: !!model,
-    modelId: model?.id,
-    modelName: model?.name,
-    elementCount: model?.elements?.length
-  });
 }
 
 // Function to retrieve a stored File object
@@ -152,7 +136,7 @@ export async function initializeWorker(): Promise<void> {
   }
 
   try {
-    console.log("Initializing IFC worker...");
+
     // Guard: only create Web Worker in browser context
     if (typeof window === 'undefined' || typeof Worker === 'undefined') {
       throw new Error('Worker is not defined');
@@ -164,11 +148,11 @@ export async function initializeWorker(): Promise<void> {
     ifcWorker.onmessage = (event) => {
       const { type, messageId, error, ...data } = event.data;
 
-      console.log(`Worker message received: ${type}`, { messageId });
+
 
       // Handle different message types
       if (type === "error") {
-        console.error("Worker error:", data.message, data.stack);
+
         // Resolve the corresponding promise
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers
@@ -177,58 +161,55 @@ export async function initializeWorker(): Promise<void> {
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "initialized") {
-        console.log("Worker initialized");
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve();
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "loadComplete") {
-        console.log("IFC load complete with schema:", data.schema);
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           // Pass the complete model info object, not just a nested property
           workerPromiseResolvers.get(messageId)!.resolve(data);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "dataExtracted") {
-        console.log(`Data extracted: ${data.elements.length} elements`);
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "ifcExported") {
-        console.log(`IFC exported: ${data.fileName}`);
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "geometry") {
-        console.log(
-          `Geometry extracted: ${data.elements?.length || 0} elements`
-        );
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data.elements || []);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "extractQuantities") {
-        console.log("Received extractQuantities message");
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "quantityResults") {
-        console.log("Received quantity results:", data);
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data.data);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "pythonResult") {
-        console.log("Received python result:", data);
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data.result);
           workerPromiseResolvers.delete(messageId);
         }
       } else if (type === "sqliteResult") {
-        console.log("Received SQLite result:", { query: data.query, resultCount: data.result?.length || 0 });
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data.result);
           workerPromiseResolvers.delete(messageId);
@@ -243,7 +224,7 @@ export async function initializeWorker(): Promise<void> {
           }
         } catch { }
       } else if (type === "sqliteExport") {
-        console.log("Received SQLite export bytes", { byteLength: (data.bytes && data.bytes.length) || 0 });
+
         if (messageId && workerPromiseResolvers.has(messageId)) {
           workerPromiseResolvers.get(messageId)!.resolve(data.bytes);
           workerPromiseResolvers.delete(messageId);
@@ -285,7 +266,6 @@ export async function initializeWorker(): Promise<void> {
           }
         }
       }
-      // Progress messages don't resolve promises
     };
 
     // Initialize the worker
@@ -300,7 +280,7 @@ export async function initializeWorker(): Promise<void> {
       // Set a timeout for initialization
       setTimeout(() => {
         if (workerPromiseResolvers.has(messageId)) {
-          console.error("Worker did not initialize within timeout period");
+
           reject(new Error("Worker initialization timed out"));
           workerPromiseResolvers.delete(messageId);
         }
@@ -308,9 +288,9 @@ export async function initializeWorker(): Promise<void> {
     });
 
     isWorkerInitialized = true;
-    console.log("Worker initialized successfully");
+
   } catch (err) {
-    console.error("Error initializing worker:", err);
+
     throw new Error(
       `Failed to initialize worker: ${err instanceof Error ? err.message : String(err)
       }`
@@ -323,12 +303,12 @@ export async function loadIfcFile(
   file: File,
   onProgress?: (progress: number, message?: string) => void
 ): Promise<IfcModel> {
-  console.log("Loading IFC file:", file.name);
+
 
   try {
     // Initialize the worker if needed
     await initializeWorker();
-    console.log("Worker initialized for file load:", file.name);
+
 
     if (!ifcWorker) {
       throw new Error("IFC worker initialization failed");
@@ -348,27 +328,24 @@ export async function loadIfcFile(
 
     // Add the progress event listener
     ifcWorker.addEventListener("message", progressHandler);
-    console.log("Added progress listener for file:", file.name);
+
 
     // Store the File object in the cache
     ifcFileCache.set(file.name, file);
-    console.log(`Stored File object for ${file.name} in cache.`);
+
 
     // Read the file as ArrayBuffer - this instance will be transferred
     const arrayBuffer = await file.arrayBuffer();
-    console.log(
-      `File read as ArrayBuffer: ${file.name}, size: ${arrayBuffer.byteLength} bytes`
-    );
 
     // Generate a unique message ID
     const messageId = `load_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
-    console.log("Generated message ID for file load:", messageId);
+
     allowedProgressIds.add(messageId);
 
     // Create a promise for this operation
-    console.log("Sending loadIfcFast message to worker");
+
     const result = await new Promise((resolve, reject) => {
       workerPromiseResolvers.set(messageId, { resolve, reject });
 
@@ -383,27 +360,27 @@ export async function loadIfcFile(
           },
         },
         [arrayBuffer]
-      ); // Transfer the arrayBuffer to avoid copying
+      );
 
-      console.log("Message sent to worker with ID:", messageId);
+
 
       // Set a timeout to detect if the worker doesn't respond at all
       setTimeout(() => {
         if (workerPromiseResolvers.has(messageId)) {
-          console.error("Worker did not respond within timeout period");
+
           reject(new Error("Worker did not respond within the timeout period"));
           workerPromiseResolvers.delete(messageId);
         }
       }, 30000); // 30 second timeout for initial response
     });
 
-    console.log("Received loadIfc result:", result);
+
 
     // Set up a timeout to detect stalled processing
     const timeout = setTimeout(() => {
       const resolver = workerPromiseResolvers.get(messageId);
       if (resolver) {
-        console.warn("IFC processing taking longer than expected.");
+
         // We don't reject, just warn
       }
     }, 60000); // 60 second timeout
@@ -414,58 +391,14 @@ export async function loadIfcFile(
 
     // Clear the timeout
     clearTimeout(timeout);
-    console.log("Received model info:", modelInfo);
 
-    // Now request the detailed element data
-    const messageId2 = `extract_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    console.log("Starting element extraction with ID:", messageId2);
-    allowedProgressIds.add(messageId2);
-
-    const elementResult = await new Promise((resolve, reject) => {
-      workerPromiseResolvers.set(messageId2, { resolve, reject });
-
-      // Request all types that have at least one element, plus IfcSpace for queries
-      const types = Object.entries(modelInfo.element_counts)
-        .filter(([_, count]) => (count as number) > 0)
-        .map(([type]) => type);
-      if (!types.includes('IfcSpace')) {
-        types.push('IfcSpace');
-      }
-
-      console.log("Extracting element types:", types);
-
-      // Send the request
-      ifcWorker!.postMessage({
-        action: "extractData",
-        messageId: messageId2,
-        data: { types },
-      });
-
-      // Set a timeout to detect if the worker doesn't respond (larger for big files)
-      setTimeout(() => {
-        if (workerPromiseResolvers.has(messageId2)) {
-          console.error(
-            "Worker did not respond to extractData within timeout period"
-          );
-          reject(
-            new Error(
-              "Worker did not respond to extractData within the timeout period"
-            )
-          );
-          workerPromiseResolvers.delete(messageId2);
-        }
-      }, 180000); // 3 minute timeout for element extraction
-    });
 
     // Remove the progress event listener
     ifcWorker.removeEventListener("message", progressHandler);
-    console.log("Progress listener removed");
 
-    // Combine the information into our model structure
-    const { elements } = elementResult as any;
-    console.log(`Extracted ${elements.length} elements from IFC file`);
+
+    const elements = modelInfo.elements || [];
+
 
     const model: IfcModel = {
       id: `model-${Date.now()}`,
@@ -480,30 +413,20 @@ export async function loadIfcFile(
       sqliteSuccess: modelInfo.sqlite_success,
     };
 
-    console.log("Model created successfully:", {
-      id: model.id,
-      name: model.name,
-      schema: model.schema,
-      totalElements: model.totalElements,
-      hasFileObject: !!model.file,
-    });
 
     // Store as the last loaded model
     _lastLoadedModel = model;
-    console.log(
-      "Stored as last loaded model with",
-      model.elements.length,
-      "elements"
-    );
 
     cacheIfcFile(file);
 
-    // Non-blocking warm-up of sql.js DB in the worker
-    try { warmupSqliteDatabase(model).catch(() => { }); } catch { }
+    // Warm up SQLite database in background (non-blocking)
+    warmupSqliteDatabase(model).catch(error => {
+      console.warn(`SQLite warm-up failed for model ${model.id}:`, error);
+    });
 
     return model;
   } catch (err) {
-    console.error("Error loading IFC file:", err);
+
     throw new Error(
       `Failed to load IFC file: ${err instanceof Error ? err.message : String(err)
       }`
@@ -516,7 +439,7 @@ export async function querySqliteDatabase(
   model: IfcModel,
   query: string
 ): Promise<any[]> {
-  console.log("Querying SQLite database:", { modelId: model.id, query });
+
 
   try {
     // Initialize the worker if needed (browser only)
@@ -556,12 +479,12 @@ export async function querySqliteDatabase(
     });
 
     const sqliteResult = result as any;
-    console.log("SQLite query result:", sqliteResult);
+
 
     return sqliteResult;
 
   } catch (error) {
-    console.error("Error querying SQLite database:", error);
+
     throw new Error(
       `Failed to query SQLite database: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -570,7 +493,7 @@ export async function querySqliteDatabase(
 
 // Export the sql.js database bytes for the given model
 export async function exportSqliteDatabase(model: IfcModel): Promise<Uint8Array> {
-  console.log("Exporting SQLite database bytes:", { modelId: model.id });
+
   await initializeWorker();
   if (!ifcWorker) throw new Error("IFC worker initialization failed");
 
@@ -636,16 +559,9 @@ export function extractGeometry(
   elementType = "all",
   includeOpenings = true
 ): IfcElement[] {
-  console.log(
-    `Extracting geometry (Standard): Type=${elementType}, Openings=${includeOpenings}, Input Elements=${model?.elements?.length || 0
-    }`
-  );
 
   // Ensure we have a model and elements to work with
   if (!model || !model.elements || model.elements.length === 0) {
-    console.warn(
-      "extractGeometry (Standard): Received model without elements, returning empty array."
-    );
     return [];
   }
 
@@ -672,9 +588,6 @@ export function extractGeometry(
         targetTypes.includes(element.type.toUpperCase())
       );
     } else {
-      console.warn(
-        `extractGeometry (Standard): Unknown element type '${elementType}', processing all.`
-      );
     }
   }
 
@@ -685,9 +598,6 @@ export function extractGeometry(
     );
   }
 
-  console.log(
-    `Extracting geometry (Standard): Returning ${filteredElements.length} elements.`
-  );
   return filteredElements;
 }
 
@@ -698,13 +608,10 @@ export async function extractGeometryWithGeom(
   includeOpenings = true,
   onProgress?: (progress: number, message?: string) => void
 ): Promise<IfcElement[]> {
-  console.log(
-    `Extracting simplified geometry: Type=${elementType}, Openings=${includeOpenings}`
-  );
 
   // Ensure we have a model
   if (!model || !model.file) {
-    console.warn("extractGeometryWithGeom: No model or file provided");
+
     return [];
   }
 
@@ -715,7 +622,7 @@ export async function extractGeometryWithGeom(
       : (model.file as File);
 
   if (!file) {
-    console.error("extractGeometryWithGeom: Could not retrieve file object");
+
     throw new Error("Could not retrieve IFC file for geometry extraction");
   }
 
@@ -753,9 +660,6 @@ export async function extractGeometryWithGeom(
       // Set a timeout to detect if the worker doesn't respond
       const timeout = setTimeout(() => {
         if (workerPromiseResolvers.has(messageId)) {
-          console.error(
-            "Worker did not respond to geometry extraction within timeout period"
-          );
           reject(
             new Error(
               "Worker did not respond to geometry extraction within the timeout period"
@@ -785,12 +689,6 @@ export async function extractGeometryWithGeom(
         },
       });
 
-      console.log("Sending geometry extraction request to worker", {
-        messageId,
-        elementType,
-        includeOpenings,
-        arrayBufferSize: arrayBuffer.byteLength,
-      });
 
       // Send request to worker
       ifcWorker!.postMessage(
@@ -809,13 +707,10 @@ export async function extractGeometryWithGeom(
 
     // Wait for response
     const elements = await resultPromise;
-    console.log(
-      `extractGeometryWithGeom: Received ${elements.length} elements with geometry`
-    );
 
     return elements;
   } catch (error) {
-    console.error("Error extracting geometry with GEOM:", error);
+
     throw new Error(
       `Failed to extract geometry: ${error instanceof Error ? error.message : String(error)
       }`
@@ -830,11 +725,11 @@ export function filterElements(
   operator: string,
   value: string
 ): IfcElement[] {
-  console.log("Filtering elements:", property, operator, value);
+
 
   // Add a check for undefined or empty elements
   if (!elements || elements.length === 0) {
-    console.warn("No elements to filter");
+
     return [];
   }
 
@@ -901,11 +796,11 @@ export function transformElements(
   rotation: [number, number, number] = [0, 0, 0],
   scale: [number, number, number] = [1, 1, 1]
 ): IfcElement[] {
-  console.log("Transforming elements:", translation, rotation, scale);
+
 
   // Add a check for undefined or empty elements
   if (!elements || elements.length === 0) {
-    console.warn("No elements to transform");
+
     return [];
   }
 
@@ -944,13 +839,10 @@ export async function extractQuantities(
   // Option to ignore unknown references when grouping
   ignoreUnknownRefs = false
 ): Promise<QuantityResults> {
-  console.log("Requesting quantity extraction from worker:", quantityType, groupBy, model.name);
+
 
   // Ensure we have elements and a filename
   if (!model || !model.elements || model.elements.length === 0 || !model.name) {
-    console.warn(
-      "No elements or model name provided for quantity extraction by worker"
-    );
     // Return default empty structure
     return { groups: { Total: 0 }, unit: "", total: 0 };
   }
@@ -959,11 +851,11 @@ export async function extractQuantities(
   try {
     const sqlBased = await computeQuantitiesFromSql(model, quantityType, groupBy, ignoreUnknownRefs);
     if (sqlBased) {
-      console.log("Using SQL-based quantity results");
+
       return sqlBased;
     }
   } catch (e) {
-    console.warn("SQL-based quantity computation failed; falling back to worker path", e);
+
   }
 
   // Ensure worker is initialized (fallback path)
@@ -985,7 +877,7 @@ export async function extractQuantities(
 
   // Read the ArrayBuffer from the File
   const arrayBuffer = await file.arrayBuffer();
-  console.log(`Got arrayBuffer for quantity extraction: ${arrayBuffer.byteLength} bytes`);
+
   // ----------------------------------------
 
   try {
@@ -997,7 +889,7 @@ export async function extractQuantities(
       try {
         updateNodeCallback(messageId);
       } catch (e) {
-        console.error("Error in updateNodeCallback:", e);
+
       }
     }
     // -----------------------------------------------------------------------
@@ -1022,9 +914,6 @@ export async function extractQuantities(
       // Timeout for the worker response
       const timeout = setTimeout(() => {
         if (workerPromiseResolvers.has(messageId)) {
-          console.error(
-            "Worker did not respond to quantity extraction within timeout period"
-          );
           reject(
             new Error(
               "Worker timeout during quantity extraction"
@@ -1054,14 +943,6 @@ export async function extractQuantities(
         },
       });
 
-      console.log("Sending quantity extraction request to worker", {
-        messageId,
-        filename: model.name, // Worker needs filename to use correct file context
-        elementIds,
-        quantityType,
-        groupBy,
-        arrayBuffer: "ArrayBuffer" // Log without stringify
-      });
 
       // Send the request to the worker
       ifcWorker!.postMessage({
@@ -1079,11 +960,11 @@ export async function extractQuantities(
 
     // Await the actual results from the worker
     const results = await resultPromise;
-    console.log("Received quantity results from worker:", results);
+
     return results;
 
   } catch (error) {
-    console.error("Error during quantity extraction via worker:", error);
+
     throw new Error(
       `Quantity extraction failed: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -1246,7 +1127,7 @@ async function computeQuantitiesFromSql(
 
       if (availableTypeTables.length === 0) {
         // Fallback to class grouping if no type tables exist
-        console.log("No type tables found, falling back to class grouping");
+
         const sql = `${allq} SELECT m.ifc_class AS groupKey, SUM(q.v) AS total FROM E2Q e JOIN ALLQ q ON e.ElementQuantityId = q.ElementQuantityId JOIN id_map m ON e.element_id = m.ifc_id${idFilter} GROUP BY m.ifc_class ORDER BY total DESC`;
         const rows = await querySqliteDatabase(model, sql);
         const groups: Record<string, number> = {}; let total = 0;
@@ -1323,12 +1204,6 @@ export function manageProperties(
 ): IfcElement[] {
   const { action, propertyName, propertyValue, targetPset = "any" } = options;
 
-  // console.log(`Managing properties:`, {
-  //   action,
-  //   propertyName,
-  //   propertyValue,
-  //   targetPset,
-  // });
 
   // Check if propertyValue is a mapping object (element-specific values)
   const isMapping = propertyValue &&
@@ -1340,51 +1215,20 @@ export function manageProperties(
   let elementsModified = 0;
 
   if (isMapping) {
-    // console.log("Detected element-specific value mapping");
-
-    // Handle different mapping formats
-    if (propertyValue.mappings) {
-      // Format: { mappings: { GlobalId: value } }
-      elementValueMap = propertyValue.mappings;
-    } else if (propertyValue.elements && Array.isArray(propertyValue.elements)) {
-      // Format: { elements: [{ GlobalId: "...", SpaceName: "..." }] }
-      propertyValue.elements.forEach((elem: any) => {
-        if (elem.GlobalId) {
-          // Use the property that matches propertyName, or a common field
-          elementValueMap[elem.GlobalId] = elem[propertyName] || elem.SpaceName || elem.value;
-        }
-      });
-    }
-
-    console.log(`Found ${Object.keys(elementValueMap).length} element-specific values in mapping`);
-  }
-
-  // Debug the first element to understand structure
-  if (elements && elements.length > 0) {
-    console.log("First element structure:", {
-      id: elements[0].id,
-      type: elements[0].type,
-      hasProperties: !!elements[0].properties,
-      hasPsets: !!elements[0].psets,
-      hasQtos: !!elements[0].qtos,
-    });
   }
 
   // Check for undefined or empty elements
   if (!elements || elements.length === 0) {
-    console.warn("No elements provided to manageProperties");
     return [];
   }
 
   // Make sure elements is an array
   if (!Array.isArray(elements)) {
-    console.warn("Elements is not an array");
     return [];
   }
 
   // Handle empty property name
   if (!propertyName) {
-    console.warn("No property name provided");
     return elements;
   }
 
@@ -1645,7 +1489,7 @@ export function manageProperties(
         break;
 
       default:
-        console.warn(`Unknown action: ${action}`);
+
     }
 
     return updatedElement;
@@ -1653,7 +1497,6 @@ export function manageProperties(
 
   // Log summary if using mapping
   if (isMapping && elementsModified > 0) {
-    console.log(`✓ Set "${actualPropertyName}" for ${elementsModified} elements in "${effectiveTargetPset}"`);
   }
 
   return result;
@@ -1666,10 +1509,10 @@ export function manageClassifications(
   action = "get",
   code = ""
 ): IfcElement[] {
-  console.log("Managing classifications:", system, action, code);
+
 
   if (!elements || elements.length === 0) {
-    console.warn("No elements for classification management");
+
     return [];
   }
 
@@ -1768,15 +1611,15 @@ export function spatialQuery(
   queryType = "contained",
   distance = 1.0
 ): IfcElement[] {
-  console.log("Spatial query:", queryType, distance);
+
 
   if (!elements || elements.length === 0) {
-    console.warn("No elements for spatial query");
+
     return [];
   }
 
   if (!referenceElements || referenceElements.length === 0) {
-    console.warn("No reference elements for spatial query");
+
     return [];
   }
 
@@ -1827,7 +1670,7 @@ export function spatialQuery(
       });
 
     default:
-      console.warn(`Unknown spatial query type: ${queryType}`);
+
       return [];
   }
 }
@@ -1838,10 +1681,10 @@ export function queryRelationships(
   relationType = "containment",
   direction = "outgoing"
 ): IfcElement[] {
-  console.log("Relationship query:", relationType, direction);
+
 
   if (!elements || elements.length === 0) {
-    console.warn("No elements for relationship query");
+
     return [];
   }
 
@@ -1885,10 +1728,10 @@ export function performAnalysis(
   analysisType = "clash",
   options: Record<string, any> = {}
 ): any {
-  console.log("Performing analysis:", analysisType, options);
+
 
   if (!elements || elements.length === 0) {
-    console.warn("No elements for analysis");
+
     return { error: "No elements to analyze" };
   }
 
@@ -2047,15 +1890,12 @@ export async function exportData(
   format = "csv",
   fileName = "export"
 ): Promise<string | ArrayBuffer | void> {
-  console.log("Exporting data:", format, fileName);
+
 
   // If format is IFC, dispatch an event to handle export in main thread
   if (format.toLowerCase() === "ifc") {
     const sourceModel = getLastLoadedModel();
     if (!sourceModel || !sourceModel.name) {
-      console.error(
-        "Cannot export IFC: Source model or its name not found. Please load a file first."
-      );
       return Promise.reject("Cannot export IFC: Source model not found.");
     }
 
@@ -2066,7 +1906,7 @@ export async function exportData(
     } else if (input && input.elements) {
       elementsToUse = input.elements;
     } else {
-      console.error("Cannot export IFC: Invalid input data structure.");
+
       return Promise.reject("Cannot export IFC: Invalid input data.");
     }
 
@@ -2079,9 +1919,6 @@ export async function exportData(
 
     // Dispatch an event to trigger the export process in the main thread
     // Pass BOTH the desired export filename AND the original filename for buffer lookup
-    console.log(
-      `Dispatching ifc:export event for ${fileName}.ifc (original: ${sourceModel.name})`
-    );
     window.dispatchEvent(
       new CustomEvent("ifc:export", {
         detail: {
@@ -2096,6 +1933,12 @@ export async function exportData(
 
   // For other formats (CSV, JSON, Excel, GLB), process the data here
   let rows: any[];
+
+  // Handle null/undefined input from Python scripts
+  if (input === null || input === undefined) {
+    return "";
+  }
+
   if (Array.isArray(input)) {
     rows = input;
   } else if (input && typeof input === "object") {
@@ -2115,40 +1958,91 @@ export async function exportData(
       }));
     } else if (Array.isArray(input.elements)) {
       rows = input.elements;
-    } else {
+    } else if (input.detailed_data && Array.isArray(input.detailed_data)) {
+      // Handle Python script output with detailed_data array
+      rows = input.detailed_data;
+    } else if (input.summary_data && Array.isArray(input.summary_data)) {
+      // Handle Python script output with summary_data array
+      rows = input.summary_data;
+    } else if (input.rows && Array.isArray(input.rows)) {
+      // Handle generic data with rows array
+      rows = input.rows;
+    } else if (input.data && Array.isArray(input.data)) {
+      // Handle data transform output
+      rows = input.data;
+    } else if (typeof input === 'object' && Object.keys(input).length > 0) {
+      // Handle single object - wrap in array
       rows = [input];
+    } else {
+      // Fallback for primitive values
+      rows = [{ value: input }];
     }
   } else {
     rows = [{ value: input }];
   }
 
   if (!rows || rows.length === 0) {
-    console.warn(`No elements provided to exportData for format ${format}`);
+
     return format === "json" ? "[]" : "";
   }
 
-  // Determine headers from row data
+  // Determine headers from row data - improved for multiple data structures
   const headerSet = new Set<string>();
   rows.forEach((el) => {
     if (!el || typeof el !== "object") {
       headerSet.add("value");
       return;
     }
-    Object.keys(el.properties || {}).forEach((key) => headerSet.add(key));
-    Object.entries(el.psets || {}).forEach(([pset, props]) => {
-      if (typeof props === "object" && props !== null) {
-        Object.keys(props as any).forEach((prop) =>
-          headerSet.add(`${pset}.${prop}`)
-        );
-      }
-    });
+
+    // Handle IFC-style elements with properties and psets
+    if (el.properties) {
+      Object.keys(el.properties).forEach((key) => headerSet.add(key));
+    }
+
+    if (el.psets) {
+      Object.entries(el.psets).forEach(([pset, props]) => {
+        if (typeof props === "object" && props !== null) {
+          Object.keys(props as any).forEach((prop) =>
+            headerSet.add(`${pset}.${prop}`)
+          );
+        }
+      });
+    }
+
+    // Handle flat objects (like Python script output)
     Object.keys(el).forEach((key) => {
-      if (key !== "properties" && key !== "psets" && key !== "geometry") {
+      // Skip IFC-specific fields when we have flat object structure
+      if (key !== "properties" && key !== "psets" && key !== "geometry" &&
+        key !== "elements" && key !== "model" && key !== "type" &&
+        key !== "value" && key !== "error" && key !== "message") {
         headerSet.add(key);
       }
     });
+
+    // Handle nested objects by flattening keys with dot notation
+    function extractNestedKeys(obj: any, prefix = '') {
+      if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+        Object.keys(obj).forEach(key => {
+          const fullKey = prefix ? `${prefix}.${key}` : key;
+          // Only add if it's not a complex nested object/array
+          if (typeof obj[key] !== 'object' || obj[key] === null ||
+            Array.isArray(obj[key]) || key === 'geometry') {
+            headerSet.add(fullKey);
+          } else {
+            // Recursively extract nested keys for simple objects
+            extractNestedKeys(obj[key], fullKey);
+          }
+        });
+      }
+    }
+
+    // Extract nested keys if this is a complex object
+    if (el.properties && typeof el.properties === 'object') {
+      extractNestedKeys(el.properties);
+    }
   });
-  const headers = Array.from(headerSet);
+
+  const headers = Array.from(headerSet).sort(); // Sort for consistent column order
 
   switch (format.toLowerCase()) {
     case "json": {
@@ -2156,14 +2050,41 @@ export async function exportData(
         const row: Record<string, any> = {};
         headers.forEach((header) => {
           const parts = header.split(".");
-          if (parts.length === 1) {
-            row[header] = element.properties?.[header] ?? element[header];
-          } else if (
-            parts.length === 2 &&
-            element.psets &&
-            element.psets[parts[0]]
-          ) {
-            row[header] = element.psets[parts[0]][parts[1]];
+          if (parts.length > 1) {
+            // Navigate through nested object structure
+            let currentObj: any = element;
+            for (const part of parts) {
+              if (currentObj && typeof currentObj === 'object') {
+                if (currentObj[part] !== undefined) {
+                  currentObj = currentObj[part];
+                } else if (part === 'properties' && currentObj.properties) {
+                  currentObj = currentObj.properties;
+                } else if (currentObj.psets && currentObj.psets[part]) {
+                  currentObj = currentObj.psets[part];
+                } else {
+                  currentObj = undefined;
+                  break;
+                }
+              } else {
+                currentObj = undefined;
+                break;
+              }
+            }
+            row[header] = currentObj;
+          } else {
+            // Handle single-level properties
+            if (element[header] !== undefined) {
+              row[header] = element[header];
+            } else if (element.properties && element.properties[header] !== undefined) {
+              row[header] = element.properties[header];
+            } else if (element.psets) {
+              const psetMatch = Object.entries(element.psets).find(([psetName, psetProps]) =>
+                typeof psetProps === 'object' && psetProps !== null && (psetProps as any)[header] !== undefined
+              );
+              if (psetMatch) {
+                row[header] = (psetMatch[1] as any)[header];
+              }
+            }
           }
         });
         return row;
@@ -2179,16 +2100,45 @@ export async function exportData(
         const row: Record<string, any> = {};
         headers.forEach((header) => {
           const parts = header.split(".");
-          if (parts.length === 1) {
-            row[header] = element.properties?.[header] ?? element[header] ?? "";
-          } else if (
-            parts.length === 2 &&
-            element.psets &&
-            element.psets[parts[0]]
-          ) {
-            row[header] = element.psets[parts[0]][parts[1]] ?? "";
+          if (parts.length > 1) {
+            // Navigate through nested object structure
+            let currentObj: any = element;
+            for (const part of parts) {
+              if (currentObj && typeof currentObj === 'object') {
+                if (currentObj[part] !== undefined) {
+                  currentObj = currentObj[part];
+                } else if (part === 'properties' && currentObj.properties) {
+                  currentObj = currentObj.properties;
+                } else if (currentObj.psets && currentObj.psets[part]) {
+                  currentObj = currentObj.psets[part];
+                } else {
+                  currentObj = undefined;
+                  break;
+                }
+              } else {
+                currentObj = undefined;
+                break;
+              }
+            }
+            row[header] = currentObj ?? "";
           } else {
-            row[header] = "";
+            // Handle single-level properties
+            if (element[header] !== undefined) {
+              row[header] = element[header];
+            } else if (element.properties && element.properties[header] !== undefined) {
+              row[header] = element.properties[header];
+            } else if (element.psets) {
+              const psetMatch = Object.entries(element.psets).find(([psetName, psetProps]) =>
+                typeof psetProps === 'object' && psetProps !== null && (psetProps as any)[header] !== undefined
+              );
+              if (psetMatch) {
+                row[header] = (psetMatch[1] as any)[header];
+              } else {
+                row[header] = "";
+              }
+            } else {
+              row[header] = "";
+            }
           }
         });
         return row;
@@ -2215,12 +2165,12 @@ export async function exportData(
       const { withActiveViewer, hasActiveModel } = await import('./ifc/viewer-manager');
 
       if (hasActiveModel()) {
-        console.log("Exporting GLB from active viewer with real geometry");
+
 
         const viewerResult = withActiveViewer(viewer => {
           const modelGroup = viewer.getModelGroup();
           if (!modelGroup) {
-            console.warn("No model group available in viewer for GLB export");
+
             return null;
           }
 
@@ -2228,7 +2178,7 @@ export async function exportData(
           let elementsToExport: number[] = [];
           if (Array.isArray(rows) && rows.length > 0 && rows[0].expressId !== undefined) {
             elementsToExport = rows.map((el: any) => el.expressId).filter(id => id !== undefined);
-            console.log(`Exporting ${elementsToExport.length} specific elements to GLB`);
+
           }
 
           // Create a temporary scene for export
@@ -2247,7 +2197,7 @@ export async function exportData(
             });
           } else {
             // Export entire model
-            console.log("Exporting entire model to GLB");
+
             modelGroup.traverse(child => {
               if (child instanceof Mesh) {
                 const clonedMesh = child.clone();
@@ -2284,7 +2234,7 @@ export async function exportData(
       }
 
       // Fallback to original method if no viewer available
-      console.log("No active viewer, falling back to element geometry data for GLB export");
+
       const scene = new Scene();
       let validMeshCount = 0;
 
@@ -2294,19 +2244,19 @@ export async function exportData(
             // Validate geometry data structure
             const vertices = element.geometry.vertices;
             if (!Array.isArray(vertices) && !(vertices instanceof Float32Array)) {
-              console.warn("Invalid vertices data type for element", element.id);
+
               return;
             }
 
             // Ensure vertices array length is divisible by 3
             const vertArray = Array.isArray(vertices) ? new Float32Array(vertices) : vertices;
             if (vertArray.length % 3 !== 0) {
-              console.warn(`Invalid vertices count (${vertArray.length}) for element ${element.id}, must be divisible by 3`);
+
               return;
             }
 
             if (vertArray.length === 0) {
-              console.warn("Empty vertices array for element", element.id);
+
               return;
             }
 
@@ -2352,13 +2302,13 @@ export async function exportData(
             scene.add(mesh);
             validMeshCount++;
           } catch (error) {
-            console.warn(`Failed to create mesh for element ${element.id}:`, error);
+
           }
         }
       });
 
       if (validMeshCount === 0) {
-        console.warn("No valid geometry found for GLB export, creating placeholder");
+
         // Create a simple placeholder cube
         const geo = new BufferGeometry();
         const vertices = new Float32Array([
@@ -2382,7 +2332,7 @@ export async function exportData(
         scene.add(mesh);
       }
 
-      console.log(`Created GLB scene with ${validMeshCount} valid meshes`);
+
 
       const exporter = new GLTFExporter();
       const res = await exporter.parseAsync(scene, { binary: true });
@@ -2411,16 +2361,55 @@ export async function exportData(
         const row = headers
           .map((header) => {
             let value: any = "";
+
+            // Handle dotted notation (nested properties)
             const parts = header.split(".");
-            if (parts.length === 1) {
-              value = element.properties?.[header] ?? element[header];
-            } else if (
-              parts.length === 2 &&
-              element.psets &&
-              element.psets[parts[0]]
-            ) {
-              value = element.psets[parts[0]][parts[1]];
+            if (parts.length > 1) {
+              // Navigate through nested object structure
+              let currentObj: any = element;
+              for (const part of parts) {
+                if (currentObj && typeof currentObj === 'object') {
+                  // First try direct property access
+                  if (currentObj[part] !== undefined) {
+                    currentObj = currentObj[part];
+                  }
+                  // Then try IFC-style properties
+                  else if (part === 'properties' && currentObj.properties) {
+                    currentObj = currentObj.properties;
+                  }
+                  // Then try IFC-style psets
+                  else if (currentObj.psets && currentObj.psets[part]) {
+                    currentObj = currentObj.psets[part];
+                  } else {
+                    currentObj = undefined;
+                    break;
+                  }
+                } else {
+                  currentObj = undefined;
+                  break;
+                }
+              }
+              value = currentObj;
+            } else {
+              // Handle single-level properties with fallback logic
+              if (element[header] !== undefined) {
+                // Direct property access (for flat objects like Python output)
+                value = element[header];
+              } else if (element.properties && element.properties[header] !== undefined) {
+                // IFC-style properties
+                value = element.properties[header];
+              } else if (element.psets) {
+                // Check if this header corresponds to a pset property
+                const psetMatch = Object.entries(element.psets).find(([psetName, psetProps]) =>
+                  typeof psetProps === 'object' && psetProps !== null && (psetProps as any)[header] !== undefined
+                );
+                if (psetMatch) {
+                  value = (psetMatch[1] as any)[header];
+                }
+              }
             }
+
+            // Convert to string and handle CSV escaping
             const strValue = String(value === undefined || value === null ? "" : value);
             if (strValue.includes(",") || strValue.includes('"') || strValue.includes("\n")) {
               return `"${strValue.replace(/"/g, '""')}"`;
@@ -2489,7 +2478,7 @@ export async function runPythonScript(
     if (file) {
       arrayBuffer = await file.arrayBuffer();
     } else {
-      console.warn(`Could not retrieve cached file object for ${model.name}`);
+
     }
   }
 

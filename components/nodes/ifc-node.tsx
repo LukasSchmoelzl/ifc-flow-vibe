@@ -5,6 +5,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
 import { NodeLoadingIndicator } from "./node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "./node-types";
+import { getElementTypeColor, formatElementType } from "../../lib/ifc/element-utils";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
@@ -84,7 +85,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
             handleFileUpload(
               file,
               (model) => {
-                console.log("IFC model loaded:", model);
                 // Briefly set progress to 100% before updating node state
                 setProgress({ percentage: 100, message: "Processing complete" });
                 // Update node with model, clear loading/progress
@@ -105,10 +105,10 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
                   })
                 );
                 // No need to clear progress here as isLoading: false will hide the indicator
-                // setProgress({ percentage: 0, message: "" }); 
+                // setProgress({ percentage: 0, message: "" });
               },
               (error) => {
-                console.error("Error loading IFC file:", error);
+
                 // Optionally set progress to 100 on error too, or keep last state
                 // setProgress({ percentage: 100, message: "Error occurred" });
                 // Update node with error, clear loading/progress
@@ -188,7 +188,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
           handleFileUpload(
             file,
             (model) => {
-              console.log("IFC model loaded:", model);
               // Briefly set progress to 100% before updating node state
               setProgress({ percentage: 100, message: "Processing complete" });
               // Update node with model, clear loading/progress
@@ -212,7 +211,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
               // setProgress({ percentage: 0, message: "" });
             },
             (error) => {
-              console.error("Error loading IFC file:", error);
+
               // Optionally set progress to 100 on error too, or keep last state
               // setProgress({ percentage: 100, message: "Error occurred" });
               // Update node with error, clear loading/progress
@@ -249,63 +248,110 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
     input.click();
   }, [id, setNodes, setProgress]);
 
+
   // Render model info section if model is loaded
   const renderModelInfo = () => {
     if (!data.model) return null;
 
     const { schema, project, elementCounts, totalElements } = data.model;
 
+    // Sort elements by count (most common first)
+    const sortedElements = elementCounts
+      ? Object.entries(elementCounts)
+        .filter(([, count]) => (count as number) > 0)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+      : [];
+
     return (
-      <div className="mt-2 pt-2 border-t border-gray-200">
-        <div className="flex items-center gap-1 text-blue-600 font-medium">
+      <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium mb-2">
           <Info className="w-4 h-4" />
-          <span>IFC Info</span>
+          <span>IFC Model Info</span>
         </div>
 
-        <div className="mt-2 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">Schema:</span>
-            <span className="font-medium">{schema || "Unknown"}</span>
-          </div>
-
-          {project && (
-            <div className="flex items-center gap-1">
-              <Building className="w-4 h-4 text-gray-500" />
-              <span className="flex-1 truncate" title={project.Name}>
-                {project.Name || "Unnamed Project"}
-              </span>
+        <div className="space-y-2">
+          {/* Schema and Project Info */}
+          <div className="grid grid-cols-1 gap-1 text-xs">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 dark:text-gray-400">Schema:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{schema || "Unknown"}</span>
             </div>
-          )}
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">Elements:</span>
-            <span className="font-medium">{totalElements}</span>
+            {project?.Name && (
+              <div className="flex items-center gap-1">
+                <Building className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                <span className="flex-1 truncate text-gray-900 dark:text-gray-100" title={project.Name}>
+                  {project.Name}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Toggle button for element counts */}
+          {/* Total Elements with Progress Bar */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Total Elements:</span>
+              <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{totalElements?.toLocaleString() || 0}</span>
+            </div>
+            {totalElements && totalElements > 0 && (
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (totalElements / 10000) * 100)}%` }}
+                  title={`${totalElements} elements loaded`}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Element Types Toggle */}
           <button
-            className="text-xs text-blue-500 hover:text-blue-700 font-medium flex items-center"
+            className="w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center justify-center py-1 px-2 rounded border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent double-click from triggering
+              e.stopPropagation();
               setElementsExpanded(!elementsExpanded);
             }}
           >
-            {elementsExpanded ? "Hide element counts" : "Show element counts"}
-            <span className="ml-1">{elementsExpanded ? "▲" : "▼"}</span>
+            {elementsExpanded ? "Hide" : "Show"} Element Types
+            <span className="ml-1 text-xs">{elementsExpanded ? "▲" : "▼"}</span>
           </button>
 
-          {/* Counts for common element types - only show when expanded */}
-          {elementsExpanded && (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm pt-1">
-              {elementCounts && Object.entries(elementCounts).map(([type, count]) =>
-                count > 0 ? (
-                  <div key={type} className="flex justify-between">
-                    <span className="text-gray-500">
-                      {type.replace("Ifc", "")}:
-                    </span>
-                    <span className="font-medium">{count}</span>
+          {/* Element Types List */}
+          {elementsExpanded && sortedElements.length > 0 && (
+            <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+              <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Element Breakdown ({sortedElements.length} types)
+              </div>
+              {sortedElements.slice(0, 15).map(([type, count]) => {
+                const percentage = totalElements ? ((count as number) / totalElements) * 100 : 0;
+                return (
+                  <div key={type} className="flex items-center justify-between py-0.5 px-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <div
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${getElementTypeColor(type)}`}
+                        title={`${type} elements`}
+                      />
+                      <span className="text-gray-700 dark:text-gray-300 truncate" title={type}>
+                        {formatElementType(type)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {(count as number).toLocaleString()}
+                      </span>
+                      {percentage >= 1 && (
+                        <span className="text-gray-500 dark:text-gray-400 text-[10px]">
+                          ({percentage.toFixed(1)}%)
+                        </span>
+                      )}
+                    </div>
                   </div>
-                ) : null
+                );
+              })}
+              {sortedElements.length > 15 && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1">
+                  ... and {sortedElements.length - 15} more types
+                </div>
               )}
             </div>
           )}

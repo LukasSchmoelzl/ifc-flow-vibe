@@ -419,6 +419,7 @@ const loadModelListFromEnv = (): UiModelOption[] => {
 const AI_MODELS: UiModelOption[] = loadModelListFromEnv();
 
 export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiNodeData>) => {
+
   const [messages, setMessages] = useState<Message[]>((data.messages as Message[]) || []);
   // Local assistant messages created on the client (e.g., client-side tool results)
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -429,12 +430,9 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
     data.aiModelId || (AI_MODELS[0]?.slug || AI_MODELS[0]?.id || 'openai/gpt-5-mini')
   );
 
-  // (Removed DB status overlay and tracking)
-
   // Use ref to ensure transport always has latest model
   const selectedModelRef = useRef(selectedModel);
   selectedModelRef.current = selectedModel;
-
 
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -474,7 +472,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       await navigator.clipboard.writeText(textToCopy);
       // Message copied to clipboard
     } catch (error) {
-      console.error('Failed to copy message:', error);
+      console.warn('Copy to clipboard failed:', error);
     }
   }, []);
 
@@ -529,41 +527,27 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
   // Helper function to propagate ALL data to connected nodes
   const propagateAllData = useCallback((data: any) => {
     const edges = getEdges();
-    const nodes = getNodes();
 
     // Find edges that connect from this AI node's output
     const outgoingEdges = edges.filter(edge => edge.source === id && edge.sourceHandle === 'output');
 
-    for (const edge of outgoingEdges) {
-      const targetNode = nodes.find(n => n.id === edge.target);
-
-      if (targetNode) {
-        // Propagating data downstream
-
-        // Update the target node's inputData with raw data
-        // Use immediate update to avoid race conditions
-        setNodes((currentNodes) => {
-          const newNodes = currentNodes.map((n) => {
-            if (n.id === targetNode.id) {
-              const updatedNode = {
-                ...n,
-                data: {
-                  ...n.data,
-                  inputData: data,
-                  // Also store the model if propagating to another AI node
-                  ...(targetNode.type === 'aiNode' && data.model ? { model: data.model } : {})
-                }
-              };
-              // Updated node with full data
-              return updatedNode;
-            }
-            return n;
-          });
-          return newNodes;
-        });
-      }
-    }
-  }, [id, getEdges, getNodes, setNodes]);
+    // Batch all updates to avoid N state updates per propagation
+    const targetIds = new Set(outgoingEdges.map(e => e.target));
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        if (!targetIds.has(n.id)) return n;
+        const isAi = n.type === 'aiNode';
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            inputData: data,
+            ...(isAi && (data as any).model ? { model: (data as any).model } : {})
+          }
+        };
+      })
+    );
+  }, [id, getEdges, setNodes]);
 
   // Helper function to propagate STRUCTURED tool results to ALL connected downstream nodes
   const propagateToWatchNodes = useCallback((toolResults: ToolResult[]) => {
@@ -676,9 +660,9 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
           return {
             type: 'quantityResults',
             value: {
-              groups: { [result.elementType || 'Items']: result.value || 0 },
+              groups: { [result.elementType || 'Items']: (result.count ?? result.value ?? 0) },
               unit: 'count',
-              total: result.value || 0,
+              total: (result.count ?? result.value ?? 0),
               quantityType: 'count'
             }
           };
@@ -689,9 +673,9 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
           return {
             type: 'quantityResults',
             value: {
-              groups: { [elementTypeName]: result.value || 0 },
+              groups: { [elementTypeName]: (typeof result.value === 'number' ? result.value : Number(result.value) || 0) },
               unit: result.unit || (result.type === 'area' ? 'm²' : 'm³'),
-              total: result.value || 0,
+              total: (typeof result.value === 'number' ? result.value : Number(result.value) || 0),
               quantityType: result.type
             }
           };
@@ -988,7 +972,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
           });
         }
       } catch (error) {
-        console.error('Error parsing tool result:', error, apiResult);
+
         // Fallback to string representation
         results.push({
           type: 'analysis',
@@ -1071,7 +1055,12 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
 
 
     const prevData = prevDataRef.current;
-    const messagesChanged = JSON.stringify(combined) !== JSON.stringify(prevData.messages);
+    // Use compact signature to avoid O(n) JSON stringify of full messages each render
+    const sigOf = (arr: Message[]) =>
+      arr.map(m => `${m.id}|${m.seq}|${m.createdAt}|${m.role}|${m.content?.length || 0}|${m.toolResults?.length || 0}`).join('~');
+    const newSig = sigOf(combined);
+    const oldSig = sigOf(prevData.messages);
+    const messagesChanged = newSig !== oldSig;
     const loadingChanged = isLoading !== prevData.isLoading;
 
     if (messagesChanged || loadingChanged) {
@@ -1314,6 +1303,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
 
     for (const edge of incomingEdges) {
       const sourceNode = nodes.find(n => n.id === edge.source);
+
       if (sourceNode && sourceNode.type === 'ifcNode' && sourceNode.data.model) {
         return sourceNode.data.model;
       }
@@ -1337,9 +1327,11 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
         // Send token if we have one and haven't established a session yet
         const shouldSendToken = currentTurnstileToken && currentTurnstileToken !== 'used';
 
-        // Sending request
+        // Check SQLite readiness
+        const hasSqlite = currentModel ? (currentModel.sqliteSuccess && !!currentModel.sqliteDb) : false;
 
-        return {
+        // Sending request
+        const requestData = {
           model: currentSelectedModel,
           modelData: currentModel ? {
             id: currentModel.id,
@@ -1347,12 +1339,15 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
             schema: currentModel.schema,
             totalElements: currentModel.totalElements,
             elementCounts: currentModel.elementCounts,
-            hasSqlite: currentModel.sqliteSuccess && !!currentModel.sqliteDb,
+            hasSqlite: hasSqlite,
             supportsClientQueries: true
           } : null,
           turnstileToken: shouldSendToken ? currentTurnstileToken : undefined, // Only send token once
           sessionVerified: currentIsNodeVerified // Indicate this is a verified session
         };
+
+
+        return requestData;
       }
     });
   }, []); // No dependencies - transport will always use current ref values
@@ -1380,7 +1375,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       }, 2000); // Delay to ensure first request completes
 
       // Store verification in node data or session
-      // AI Node verified
+      // AI Node verified and ready for chat
     }
   }, [isTurnstileVerified, turnstileToken, isNodeVerified, id, resetTurnstile]);
 
@@ -1421,7 +1416,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       return false; // Disabled to prevent duplicate requests
     },
     onError: (error) => {
-      console.error('🔧 [AI-NODE] Chat error:', error);
+
 
       // Handle rate limiting errors
       if (error.message?.includes('Rate limit exceeded') || error.message?.includes('429')) {
@@ -1478,7 +1473,6 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       // Check if the message contains a client query request
       if (message.role === 'assistant' && Array.isArray((message as any).parts)) {
         const parts = (message as any).parts;
-        // Checking message parts for client queries
 
         // Look for tool results that need client execution
         for (const part of parts) {
@@ -1592,7 +1586,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
                 };
               }
             } catch (error) {
-              console.error('❌ Client query failed:', error);
+
 
               // Create a single assistant error message locally
               const now = Date.now();
@@ -1948,12 +1942,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       throw new Error("No IFC model connected");
     }
     // Worker now builds a sql.js DB after extraction; attempt query regardless of sqliteSuccess flag
-    try {
-      return await querySqliteDatabase(currentModel, query);
-    } catch (error) {
-      console.error("SQLite query failed:", error);
-      throw error;
-    }
+    return await querySqliteDatabase(currentModel, query);
   }, [getConnectedModelData]);
 
   // Helper to expand older IFC class variants (e.g., IfcWallStandardCase) and combine results
@@ -2061,8 +2050,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
     const dataPackage = {
       type: 'model',
       value: currentModel,
-      count: currentModel.totalElements,
-      model: currentModel
+      count: currentModel.totalElements
     };
 
     // Propagate to all connected nodes
@@ -2094,6 +2082,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
       }
     }, 0);
   }, [getConnectedModelData, propagateAllData]);
+
 
   return (
     <div
@@ -2172,7 +2161,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
                     }
                   }, 0);
                 } catch (error) {
-                  console.error('SQLite export failed:', error);
+
                   const errorMessage: Message = {
                     role: 'assistant',
                     content: `SQLite export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -2366,6 +2355,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
                   // Blocking message - Turnstile not verified
                   return;
                 }
+
                 // Close model picker if it's open
                 if (showModelPicker) {
                   setShowModelPicker(false);
