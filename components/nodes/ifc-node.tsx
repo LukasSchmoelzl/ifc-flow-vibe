@@ -84,7 +84,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
             handleFileUpload(
               file,
               (model) => {
-                console.log("IFC model loaded:", model);
                 // Briefly set progress to 100% before updating node state
                 setProgress({ percentage: 100, message: "Processing complete" });
                 // Update node with model, clear loading/progress
@@ -105,10 +104,10 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
                   })
                 );
                 // No need to clear progress here as isLoading: false will hide the indicator
-                // setProgress({ percentage: 0, message: "" }); 
+                // setProgress({ percentage: 0, message: "" });
               },
               (error) => {
-                console.error("Error loading IFC file:", error);
+
                 // Optionally set progress to 100 on error too, or keep last state
                 // setProgress({ percentage: 100, message: "Error occurred" });
                 // Update node with error, clear loading/progress
@@ -188,7 +187,6 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
           handleFileUpload(
             file,
             (model) => {
-              console.log("IFC model loaded:", model);
               // Briefly set progress to 100% before updating node state
               setProgress({ percentage: 100, message: "Processing complete" });
               // Update node with model, clear loading/progress
@@ -212,7 +210,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
               // setProgress({ percentage: 0, message: "" });
             },
             (error) => {
-              console.error("Error loading IFC file:", error);
+
               // Optionally set progress to 100 on error too, or keep last state
               // setProgress({ percentage: 100, message: "Error occurred" });
               // Update node with error, clear loading/progress
@@ -289,8 +287,8 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
     // Sort elements by count (most common first)
     const sortedElements = elementCounts
       ? Object.entries(elementCounts)
-          .filter(([, count]) => (count as number) > 0)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
+        .filter(([, count]) => (count as number) > 0)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
       : [];
 
     return (
