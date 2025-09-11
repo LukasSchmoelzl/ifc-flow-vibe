@@ -264,20 +264,15 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
   const formatElementType = (type: string) => {
     // Handle different IFC prefix variations and remove them
     let cleanType = type
-      .replace(/^IFC/i, '') // Remove IFC prefix (case insensitive)
-      .replace(/^ifc/i, '') // Also handle lowercase ifc
-      .replace(/^Ifc/, ''); // Handle title case Ifc
+      .replace(/^ifc/i, ''); // Remove IFC prefix (case-insensitive)
 
-    // Add spaces before capital letters (but keep existing spaces)
-    cleanType = cleanType.replace(/([A-Z])/g, ' $1').trim();
-
-    // Handle special cases and clean up
-    cleanType = cleanType
-      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .trim();
-
-    // Title case the final result
-    return cleanType.replace(/\b\w/g, l => l.toUpperCase());
+    // Clean up whitespace and apply title case
+    return cleanType
+        .replace(/\s+/g, ' ')  // Normalize whitespace
+        .trim()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
   };
 
   // Render model info section if model is loaded
@@ -328,7 +323,8 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                 <div
                   className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: '100%' }}
+                  style={{ width: `${Math.min(100, (totalElements / 10000) * 100)}%` }}
+                  title={`${totalElements} elements loaded`}
                 />
               </div>
             )}
