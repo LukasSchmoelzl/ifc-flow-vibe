@@ -287,21 +287,10 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
             )}
           </div>
 
-          {/* Total Elements with Progress Bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Total Elements:</span>
-              <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{totalElements?.toLocaleString() || 0}</span>
-            </div>
-            {totalElements && totalElements > 0 && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                <div
-                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, (totalElements / 10000) * 100)}%` }}
-                  title={`${totalElements} elements loaded`}
-                />
-              </div>
-            )}
+          {/* Total Elements */}
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Total Elements:</span>
+            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{totalElements?.toLocaleString() || 0}</span>
           </div>
 
           {/* Element Types Toggle */}

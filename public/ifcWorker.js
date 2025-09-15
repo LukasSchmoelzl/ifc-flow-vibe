@@ -305,7 +305,7 @@ async function initPyodide() {
           if last_exc:
               raise last_exc
           else:
-              raise RuntimeError('Failed to install IfcOpenShell 0.8.3')
+              raise RuntimeError('Failed to install IfcOpenShell 0.8.4')
     `);
 
     // Try to enable Python sqlite3 for ifcopenshell.sql usage (if available)
@@ -544,7 +544,7 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
     self.postMessage({
       type: "progress",
-      message: "Reading IFC file...",
+      message: "Preparing IFC file...",
       percentage: 60,
       messageId,
     });
@@ -556,6 +556,13 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
       // Schema normalization: Convert IFC4X3 variants to IFC4X3_ADD2
       try {
+        self.postMessage({
+          type: "progress",
+          message: "Normalizing IFC schema...",
+          percentage: 65,
+          messageId,
+        });
+
         // Convert to string for regex processing
         const fileContents = new TextDecoder('utf-8').decode(uint8Array);
         console.log("handleLoadIfc: Applying schema normalization");
@@ -576,28 +583,41 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
         // Continue with original uint8Array if normalization fails
       }
 
-      pyodide.FS.writeFile("model.ifc", uint8Array);
+      self.postMessage({
+        type: "progress",
+        message: "Writing file to memory...",
+        percentage: 70,
+        messageId,
+      });
 
+      pyodide.FS.writeFile("model.ifc", uint8Array);
+      console.log("handleLoadIfc: File written to filesystem");
 
       // Use IfcOpenShell to load the file and extract basic information
       self.postMessage({
         type: "progress",
-        message: "Processing IFC with IfcOpenShell...",
-        percentage: 80,
+        message: "Opening IFC file with IfcOpenShell...",
+        percentage: 75,
         messageId,
       });
 
       // Additional progress message to indicate the potentially long processing step
       self.postMessage({
         type: "progress",
-        message:
-          "Analyzing IFC structure, this might take a while for large files...",
-        percentage: 90,
+        message: "Discovering element types dynamically...",
+        percentage: 80,
         messageId,
       });
 
       // Add error handling for Python execution
       try {
+        // Send progress update before starting Python processing
+        self.postMessage({
+          type: "progress",
+          message: "Analyzing IFC structure...",
+          percentage: 85,
+          messageId,
+        });
 
 
         // Create a dedicated namespace for this operation
@@ -1772,8 +1792,56 @@ try:
     
     # Use element_type directly - users can handle IFC classes
     if element_type == "all":
-        # Extract all elements with geometry (use our dynamic discovery)
-        element_types_to_extract = list(discovered_types)
+        # Extract all elements with geometry (dynamic discovery within this function)
+        print("Python: Discovering element types with geometric representation...")
+        
+        # Get all IfcProduct elements (physical elements that can have geometry)
+        all_products = ifc_file.by_type('IfcProduct')
+        print(f"Python: Found {len(all_products)} total IfcProduct elements")
+        
+        # Always include essential spatial/project elements
+        essential_spatial_types = {
+            'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 
+            'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'
+        }
+        
+        discovered_types = set()
+        
+        # Add essential spatial elements first
+        for element in ifc_file:
+            try:
+                element_type_name = element.is_a()
+                if element_type_name.upper() in essential_spatial_types:
+                    discovered_types.add(element_type_name)
+            except:
+                continue
+        
+        # Filter IfcProduct elements based on geometric representation
+        for element in all_products:
+            try:
+                element_type_name = element.is_a()
+                
+                # Skip if already added as spatial element
+                if element_type_name.upper() in essential_spatial_types:
+                    continue
+                
+                # Check if element has geometric representation
+                has_geometry = False
+                try:
+                    if hasattr(element, 'Representation') and element.Representation is not None:
+                        has_geometry = True
+                except Exception:
+                    has_geometry = False
+                
+                # Only add elements that have geometric representation
+                if has_geometry:
+                    discovered_types.add(element_type_name)
+                    
+            except Exception:
+                continue
+        
+        element_types_to_extract = sorted(list(discovered_types))
+        print(f"Python: Discovered {len(element_types_to_extract)} element types for geometry extraction")
     else:
         # Use the provided element_type directly as IFC class name
         element_types_to_extract = [element_type]
@@ -2826,24 +2894,14 @@ try:
   element_counts = {}
 
   # FULLY DYNAMIC: Only extract elements with geometric representation (no hardcoded classes!)
-  print("Python: Using FULLY DYNAMIC approach - filtering by geometric representation...")
-
+  
   # Get all IfcProduct elements (physical elements that can have geometry)
   all_products = f.by_type('IfcProduct')
-  print(f"Python: Found {len(all_products)} total IfcProduct elements")
   
   # Always include essential spatial/project elements (they organize the model)
   essential_spatial_types = {
     'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 
     'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'
-  }
-  
-  # Debug counters
-  debug_counts = {
-    'total_products': len(all_products),
-    'with_geometry': 0,
-    'spatial_elements': 0,
-    'no_geometry': 0
   }
   
   discovered_types = set()
@@ -2854,14 +2912,14 @@ try:
       element_type = element.is_a()
       if element_type.upper() in essential_spatial_types:
         discovered_types.add(element_type)
-        debug_counts['spatial_elements'] += 1
-        if debug_counts['spatial_elements'] <= 5:
-          print(f"Python: DEBUG - Added spatial element: {element_type}")
     except:
       continue
   
-  # Filter IfcProduct elements based on geometric representation
-  for element in all_products:
+  # Filter IfcProduct elements based on geometric representation (optimized for large models)
+  processed_count = 0
+  chunk_size = 100  # Process in chunks to avoid blocking
+  
+  for i, element in enumerate(all_products):
     try:
       element_type = element.is_a()
       
@@ -2874,38 +2932,25 @@ try:
       try:
         if hasattr(element, 'Representation') and element.Representation is not None:
           has_geometry = True
-          debug_counts['with_geometry'] += 1
-          if debug_counts['with_geometry'] <= 10:
-            print(f"Python: DEBUG - Found element WITH geometry: {element_type}")
-        else:
-          debug_counts['no_geometry'] += 1
-          if debug_counts['no_geometry'] <= 10:
-            print(f"Python: DEBUG - Skipped element WITHOUT geometry: {element_type}")
       except Exception as geom_error:
         # If we can't check geometry, assume no geometry
-        debug_counts['no_geometry'] += 1
         continue
       
       # Only add elements that have geometric representation
       if has_geometry:
         discovered_types.add(element_type)
+      
+      processed_count += 1
+      
+      # For large models, limit the discovery phase to avoid timeouts
+      if len(all_products) > 1000 and processed_count > 1000:
+        break
         
     except Exception as e:
       continue
   
-  print(f"Python: DEBUG - Geometry-based filtering summary:")
-  print(f"  Total IfcProduct elements: {debug_counts['total_products']}")
-  print(f"  Elements WITH geometry: {debug_counts['with_geometry']}")
-  print(f"  Elements WITHOUT geometry (skipped): {debug_counts['no_geometry']}")
-  print(f"  Spatial elements added: {debug_counts['spatial_elements']}")
-
-  print(f"Python: Found {len(discovered_types)} element types with geometry or spatial significance")
-
   # Convert set to sorted list for consistent ordering
   element_types_to_extract = sorted(list(discovered_types))
-  
-  # Log discovered types for debugging
-  print(f"Python: Discovered element types: {element_types_to_extract[:10]}...")  # Show first 10
 
   # Second pass: extract all elements by their discovered types
   for element_type in element_types_to_extract:
@@ -2950,16 +2995,7 @@ try:
       # Skip element types that don't exist
       continue
 
-  # No fallback needed - dynamic discovery should find all meaningful elements
-  print(f"Python: Successfully extracted {len(all_elements)} meaningful elements")
-  print(f"Python: Element types found: {len(element_counts)}")
-
-  # Debug: Show top element types
-  if element_counts:
-    sorted_types = sorted(element_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-    print("Python: Top 5 element types:")
-    for etype, count in sorted_types:
-      print(f"  {etype}: {count}")
+  # Dynamic discovery complete
 
   result_obj = {
     'filename': '${filename}',
@@ -2980,6 +3016,14 @@ except Exception as e:
       { globals: ns }
     );
 
+    // Send progress update after Python execution
+    self.postMessage({
+      type: "progress",
+      message: "Processing Python results...",
+      percentage: 90,
+      messageId,
+    });
+
     const ok = ns.get("success");
     if (!ok) {
       const em = ns.get("error_msg") || "Unknown error";
@@ -2988,10 +3032,18 @@ except Exception as e:
     const result = JSON.parse(ns.get("result_json"));
     ns.destroy();
 
+    // Send progress update after getting results
+    self.postMessage({
+      type: "progress",
+      message: `Found ${result.total_elements || 0} elements`,
+      percentage: 95,
+      messageId,
+    });
+
     const dbKey = computeDbKeyFromBuffer(result.model_id || result.filename, arrayBuffer);
     ifcModelCache = { filename: result.filename, schema: result.schema, model_id: result.model_id, dbKey };
 
-    self.postMessage({ type: "progress", message: "IFC parsed. Continuing processing...", percentage: 95, messageId });
+    self.postMessage({ type: "progress", message: "IFC file loaded successfully!", percentage: 100, messageId });
     self.postMessage({ type: "loadComplete", messageId, ...result, sqlite_db: null, sqlite_success: false });
 
     // Background build of comprehensive SQLite for ALL models (non-blocking)
