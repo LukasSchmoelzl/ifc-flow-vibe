@@ -365,25 +365,29 @@ export async function loadIfcFile(
 
 
       // Set a timeout to detect if the worker doesn't respond at all
+      // Use longer timeout for large files
+      const timeoutDuration = file.size > 100 * 1024 * 1024 ? 120000 : 60000; // 2 min for >100MB, 1 min otherwise
       setTimeout(() => {
         if (workerPromiseResolvers.has(messageId)) {
-
-          reject(new Error("Worker did not respond within the timeout period"));
+          console.warn(`Worker timeout after ${timeoutDuration / 1000}s for file size ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+          reject(new Error(`Worker did not respond within ${timeoutDuration / 1000} seconds for large file processing`));
           workerPromiseResolvers.delete(messageId);
         }
-      }, 30000); // 30 second timeout for initial response
+      }, timeoutDuration);
     });
 
 
 
     // Set up a timeout to detect stalled processing
+    // Use much longer timeout for large files
+    const processingTimeoutDuration = file.size > 100 * 1024 * 1024 ? 300000 : 120000; // 5 min for >100MB, 2 min otherwise
     const timeout = setTimeout(() => {
       const resolver = workerPromiseResolvers.get(messageId);
       if (resolver) {
-
-        // We don't reject, just warn
+        console.warn(`Processing timeout after ${processingTimeoutDuration / 1000}s for file size ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+        // We don't reject, just warn - let it continue processing
       }
-    }, 60000); // 60 second timeout
+    }, processingTimeoutDuration);
 
     // The model info is directly in the result
     // Using 'as any' to bypass TypeScript type checking

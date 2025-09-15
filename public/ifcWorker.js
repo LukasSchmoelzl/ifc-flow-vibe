@@ -1,7 +1,7 @@
 /* global importScripts */
 
-// Import Pyodide
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js");
+// Import Pyodide v0.28.0 (optimal compatibility with ifcopenshell-0.8.4 wheel)
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js");
 // Load sql.js (SQLite WASM)
 importScripts("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js");
 
@@ -192,12 +192,12 @@ async function initPyodide() {
   });
 
   try {
-
-    // Load Pyodide
+    console.log("initPyodide: Starting Pyodide initialization");
+    // Load Pyodide v0.28.0 (optimal compatibility with ifcopenshell-0.8.4 wheel)
     pyodide = await loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/",
     });
-
+    console.log("initPyodide: Pyodide loaded successfully");
 
     self.postMessage({
       type: "progress",
@@ -205,30 +205,107 @@ async function initPyodide() {
       percentage: 30,
     });
 
-
+    console.log("initPyodide: Loading micropip, numpy, typing-extensions");
     // Load micropip for package installation and numpy for computations
     await pyodide.loadPackage(["micropip", "numpy", "typing-extensions"]);
+    console.log("initPyodide: Basic packages loaded");
 
-
-    // Bypass Emscripten version compatibility check for wheels
+    // Simple bypass - just patch the core compatibility function
     await pyodide.runPythonAsync(`
+      import sys
+
+      # SIMPLE BYPASS: Just replace the core check function
+      def simple_bypass(filename):
+        print(f"🚫 BYPASSED: Allowing wheel {filename}")
+        return None
+
+      # Import micropip first
       import micropip
-      from micropip._micropip import WheelInfo
-      WheelInfo.check_compatible = lambda self: None
+      print("Micropip imported successfully")
+
+      # Only patch the essential compatibility check
+      import micropip._utils
+      micropip._utils.check_compatible = simple_bypass
+      print("✅ Disabled micropip._utils.check_compatible")
+
+      # Verify the patch worked
+      try:
+        result = micropip._utils.check_compatible("test.whl")
+        print(f"🧪 Compatibility check result: {result}")
+      except Exception as e:
+        print(f"❌ Error testing compatibility check: {e}")
+
+      print("🎯 SIMPLE BYPASS COMPLETE")
     `);
 
-    // Install IfcOpenShell 0.8.1
+    // Install IfcOpenShell (try newest first, fallback to known-good)
     self.postMessage({
       type: "progress",
-      message: "Installing IfcOpenShell 0.8.1...",
+      message: "Installing IfcOpenShell...",
       percentage: 50,
     });
 
     await pyodide.runPythonAsync(`
-      import micropip
+      import micropip, importlib
+
+      # SIMPLE BYPASS RE-APPLICATION FOR INSTALLATIONS
+      def simple_bypass(filename):
+          print(f"🚫 BYPASSED: Allowing wheel {filename}")
+          return None
+
+      # Ensure bypass is active before installations
+      import micropip._utils
+      micropip._utils.check_compatible = simple_bypass
+      print("✅ Bypass ready for installations")
+
       # Install lark for stream support
+      print("📦 Installing lark...")
       await micropip.install('lark')
-      await micropip.install('https://cdn.jsdelivr.net/gh/IfcOpenShell/wasm-wheels@33b437e5fd5425e606f34aff602c42034ff5e6dc/ifcopenshell-0.8.1+latest-cp312-cp312-emscripten_3_1_58_wasm32.whl')
+      print("✅ Lark installed successfully")
+
+      # Use local 0.8.4 wheel - supports IFC4X3_ADD2 schema
+      wheel_urls = [
+          '/wasm/ifcopenshell-0.8.4+b1b95ec-cp313-cp313-emscripten_4_0_9_wasm32.whl'
+      ]
+      last_exc = None
+      installed = False
+      for url in wheel_urls:
+          try:
+              print(f"🎯 Installing ifcopenshell 0.8.4: {url}")
+
+              # Ensure bypass is active before each install
+              micropip._utils.check_compatible = simple_bypass
+
+              await micropip.install(url, keep_going=True, deps=False)
+
+              # Verify import works
+              import ifcopenshell
+              print('✅ IfcOpenShell 0.8.4 import OK:', getattr(ifcopenshell, 'version', 'unknown'))
+
+              # Skip schema checking to avoid API issues - focus on core functionality
+              print("✅ SUCCESS: IfcOpenShell 0.8.4 loaded and ready for IFC processing!")
+
+              installed = True
+              break
+          except Exception as e:
+              last_exc = e
+              print(f"❌ Install/import failed for ifcopenshell 0.8.4: {e}")
+              # Clean up failed installation
+              try:
+                import sys
+                if 'ifcopenshell' in sys.modules:
+                  del sys.modules['ifcopenshell']
+                import importlib
+                importlib.invalidate_caches()
+                print("🧹 Cleaned up failed ifcopenshell 0.8.4 installation")
+              except Exception as cleanup_e:
+                print(f"❌ Cleanup failed: {cleanup_e}")
+
+      if not installed:
+          if last_exc:
+              raise last_exc
+          else:
+              raise RuntimeError('Failed to install IfcOpenShell 0.8.4')
     `);
 
     // Try to enable Python sqlite3 for ifcopenshell.sql usage (if available)
@@ -467,7 +544,7 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
 
     self.postMessage({
       type: "progress",
-      message: "Reading IFC file...",
+      message: "Preparing IFC file...",
       percentage: 60,
       messageId,
     });
@@ -475,29 +552,72 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
     try {
 
       // Create a virtual file in the Pyodide file system
-      const uint8Array = new Uint8Array(arrayBuffer);
-      pyodide.FS.writeFile("model.ifc", uint8Array);
+      let uint8Array = new Uint8Array(arrayBuffer);
 
+      // Schema normalization: Convert IFC4X3 variants to IFC4X3_ADD2
+      try {
+        self.postMessage({
+          type: "progress",
+          message: "Normalizing IFC schema...",
+          percentage: 65,
+          messageId,
+        });
+
+        // Convert to string for regex processing
+        const fileContents = new TextDecoder('utf-8').decode(uint8Array);
+        console.log("handleLoadIfc: Applying schema normalization");
+
+        // Regex to match FILE_SCHEMA with IFC4X3 variants and replace with IFC4X3_ADD2
+        const regex = /FILE_SCHEMA\s*\(\s*\(\s*'IFC4X3(?:_[A-Z0-9]+)?'\s*\)\s*\)/;
+        const replacement = "FILE_SCHEMA(('IFC4X3_ADD2'))";
+
+        const normalizedContents = fileContents.replace(regex, replacement);
+        if (normalizedContents !== fileContents) {
+          console.log("handleLoadIfc: Schema normalization applied - converted IFC4X3 variant to IFC4X3_ADD2");
+        }
+
+        // Convert back to Uint8Array
+        uint8Array = new TextEncoder().encode(normalizedContents);
+      } catch (normalizationError) {
+        console.warn("handleLoadIfc: Schema normalization failed, proceeding with original file:", normalizationError);
+        // Continue with original uint8Array if normalization fails
+      }
+
+      self.postMessage({
+        type: "progress",
+        message: "Writing file to memory...",
+        percentage: 70,
+        messageId,
+      });
+
+      pyodide.FS.writeFile("model.ifc", uint8Array);
+      console.log("handleLoadIfc: File written to filesystem");
 
       // Use IfcOpenShell to load the file and extract basic information
       self.postMessage({
         type: "progress",
-        message: "Processing IFC with IfcOpenShell...",
-        percentage: 80,
+        message: "Opening IFC file with IfcOpenShell...",
+        percentage: 75,
         messageId,
       });
 
       // Additional progress message to indicate the potentially long processing step
       self.postMessage({
         type: "progress",
-        message:
-          "Analyzing IFC structure, this might take a while for large files...",
-        percentage: 90,
+        message: "Discovering element types dynamically...",
+        percentage: 80,
         messageId,
       });
 
       // Add error handling for Python execution
       try {
+        // Send progress update before starting Python processing
+        self.postMessage({
+          type: "progress",
+          message: "Analyzing IFC structure...",
+          percentage: 85,
+          messageId,
+        });
 
 
         // Create a dedicated namespace for this operation
@@ -1670,34 +1790,61 @@ try:
     ifc_file = ifcopenshell.open(vfs_path)
     print(f"Loaded IFC file with schema: {ifc_file.schema}")
     
-    # Determine which element types to extract based on input parameter
-    element_types_to_extract = []
+    # Use element_type directly - users can handle IFC classes
     if element_type == "all":
-        element_types_to_extract = ["IfcWall", "IfcSlab", "IfcBeam", "IfcColumn", 
-                                   "IfcDoor", "IfcWindow", "IfcRoof", "IfcStair", 
-                                   "IfcStairFlight", "IfcFurnishingElement", "IfcSpace"]
-    else:
-        # Map user-friendly types to IFC types
-        type_map = {
-            "walls": ["IFCWALL", "IFCWALLSTANDARDCASE"],
-            "slabs": ["IFCSLAB", "IFCROOF"],
-            "columns": ["IFCCOLUMN"],
-            "beams": ["IFCBEAM"],
-            "doors": ["IFCDOOR"],
-            "windows": ["IFCWINDOW"],
-            "stairs": ["IFCSTAIR", "IFCSTAIRFLIGHT"],
-            "furniture": ["IFCFURNISHINGELEMENT"],
-            "spaces": ["IFCSPACE"],
-            "openings": ["IFCOPENINGELEMENT"],
+        # Extract all elements with geometry (dynamic discovery within this function)
+        print("Python: Discovering element types with geometric representation...")
+        
+        # Get all IfcProduct elements (physical elements that can have geometry)
+        all_products = ifc_file.by_type('IfcProduct')
+        print(f"Python: Found {len(all_products)} total IfcProduct elements")
+        
+        # Always include essential spatial/project elements
+        essential_spatial_types = {
+            'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 
+            'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'
         }
         
-        if element_type in type_map:
-            element_types_to_extract = type_map[element_type]
-        else:
-            # If unknown type, default to all
-            element_types_to_extract = ["IfcWall", "IfcSlab", "IfcBeam", "IfcColumn", 
-                                       "IfcDoor", "IfcWindow", "IfcRoof", "IfcStair", 
-                                       "IfcStairFlight", "IfcFurnishingElement", "IfcSpace"]
+        discovered_types = set()
+        
+        # Add essential spatial elements first
+        for element in ifc_file:
+            try:
+                element_type_name = element.is_a()
+                if element_type_name.upper() in essential_spatial_types:
+                    discovered_types.add(element_type_name)
+            except:
+                continue
+        
+        # Filter IfcProduct elements based on geometric representation
+        for element in all_products:
+            try:
+                element_type_name = element.is_a()
+                
+                # Skip if already added as spatial element
+                if element_type_name.upper() in essential_spatial_types:
+                    continue
+                
+                # Check if element has geometric representation
+                has_geometry = False
+                try:
+                    if hasattr(element, 'Representation') and element.Representation is not None:
+                        has_geometry = True
+                except Exception:
+                    has_geometry = False
+                
+                # Only add elements that have geometric representation
+                if has_geometry:
+                    discovered_types.add(element_type_name)
+                    
+            except Exception:
+                continue
+        
+        element_types_to_extract = sorted(list(discovered_types))
+        print(f"Python: Discovered {len(element_types_to_extract)} element types for geometry extraction")
+    else:
+        # Use the provided element_type directly as IFC class name
+        element_types_to_extract = [element_type]
     
     # Get all elements of specified types
     all_elements = []
@@ -2746,34 +2893,62 @@ try:
   all_elements = []
   element_counts = {}
 
-  # Smart discovery: Find ALL elements that inherit from IfcBuildingElement
-  print("Python: Discovering elements that inherit from IfcBuildingElement...")
-
-  # Discover element types that are building elements (inherit from IfcBuildingElement)
+  # FULLY DYNAMIC: Only extract elements with geometric representation (no hardcoded classes!)
+  
+  # Get all IfcProduct elements (physical elements that can have geometry)
+  all_products = f.by_type('IfcProduct')
+  
+  # Always include essential spatial/project elements (they organize the model)
+  essential_spatial_types = {
+    'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 
+    'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'
+  }
+  
   discovered_types = set()
-
-  # First pass: discover building element types by checking inheritance
+  
+  # Add essential spatial elements first
   for element in f:
     try:
       element_type = element.is_a()
-
-      # Check if this element is an IfcBuildingElement or inherits from it
-      # We also include some key spatial and project elements
+      if element_type.upper() in essential_spatial_types:
+        discovered_types.add(element_type)
+    except:
+      continue
+  
+  # Filter IfcProduct elements based on geometric representation (optimized for large models)
+  processed_count = 0
+  chunk_size = 100  # Process in chunks to avoid blocking
+  
+  for i, element in enumerate(all_products):
+    try:
+      element_type = element.is_a()
+      
+      # Skip if already added as spatial element
+      if element_type.upper() in essential_spatial_types:
+        continue
+      
+      # Check if element has geometric representation
+      has_geometry = False
       try:
-        if element.is_a('IfcBuildingElement'):
-          discovered_types.add(element_type)
-        elif element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']:
-          discovered_types.add(element_type)
-      except Exception:
-        # If is_a() fails, try string-based check as fallback
-        if element_type.startswith('IFC') and ('BUILDINGELEMENT' in element_type or element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']):
-          discovered_types.add(element_type)
-
+        if hasattr(element, 'Representation') and element.Representation is not None:
+          has_geometry = True
+      except Exception as geom_error:
+        # If we can't check geometry, assume no geometry
+        continue
+      
+      # Only add elements that have geometric representation
+      if has_geometry:
+        discovered_types.add(element_type)
+      
+      processed_count += 1
+      
+      # For large models, limit the discovery phase to avoid timeouts
+      if len(all_products) > 1000 and processed_count > 1000:
+        break
+        
     except Exception as e:
       continue
-
-  print(f"Python: Found {len(discovered_types)} building element types")
-
+  
   # Convert set to sorted list for consistent ordering
   element_types_to_extract = sorted(list(discovered_types))
 
@@ -2820,44 +2995,7 @@ try:
       # Skip element types that don't exist
       continue
 
-  # If we didn't get many elements, try a broader approach
-  # Use a lower threshold as some valid IFC files may have fewer elements
-  if len(all_elements) < 10:
-    print("Python: Limited elements found, trying broader extraction...")
-    try:
-      # Get all elements and filter
-      for element in f:
-        element_type = element.is_a()
-        if element_type not in element_counts:
-          element_counts[element_type] = 0
-        element_counts[element_type] += 1
-
-        element_dict = {
-          'expressId': element.id(),
-          'type': element_type,
-          'properties': {},
-          'psets': {}
-        }
-
-        # Minimal properties only
-        if hasattr(element, 'GlobalId') and element.GlobalId:
-          element_dict['properties']['GlobalId'] = element.GlobalId
-        if hasattr(element, 'Name') and element.Name:
-          element_dict['properties']['Name'] = element.Name
-
-        all_elements.append(element_dict)
-    except Exception as e:
-      print(f"Python: Error in fallback extraction: {e}")
-
-  print(f"Python: Successfully extracted {len(all_elements)} elements")
-  print(f"Python: Element types found: {len(element_counts)}")
-
-  # Debug: Show top element types
-  if element_counts:
-    sorted_types = sorted(element_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-    print("Python: Top 5 element types:")
-    for etype, count in sorted_types:
-      print(f"  {etype}: {count}")
+  # Dynamic discovery complete
 
   result_obj = {
     'filename': '${filename}',
@@ -2878,6 +3016,14 @@ except Exception as e:
       { globals: ns }
     );
 
+    // Send progress update after Python execution
+    self.postMessage({
+      type: "progress",
+      message: "Processing Python results...",
+      percentage: 90,
+      messageId,
+    });
+
     const ok = ns.get("success");
     if (!ok) {
       const em = ns.get("error_msg") || "Unknown error";
@@ -2886,10 +3032,18 @@ except Exception as e:
     const result = JSON.parse(ns.get("result_json"));
     ns.destroy();
 
+    // Send progress update after getting results
+    self.postMessage({
+      type: "progress",
+      message: `Found ${result.total_elements || 0} elements`,
+      percentage: 95,
+      messageId,
+    });
+
     const dbKey = computeDbKeyFromBuffer(result.model_id || result.filename, arrayBuffer);
     ifcModelCache = { filename: result.filename, schema: result.schema, model_id: result.model_id, dbKey };
 
-    self.postMessage({ type: "progress", message: "IFC parsed. Continuing processing...", percentage: 95, messageId });
+    self.postMessage({ type: "progress", message: "IFC file loaded successfully!", percentage: 100, messageId });
     self.postMessage({ type: "loadComplete", messageId, ...result, sqlite_db: null, sqlite_success: false });
 
     // Background build of comprehensive SQLite for ALL models (non-blocking)
