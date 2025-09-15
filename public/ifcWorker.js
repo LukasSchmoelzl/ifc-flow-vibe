@@ -1,6 +1,6 @@
 /* global importScripts */
 
-// Import Pyodide
+// Import Pyodide v0.28.0 (optimal compatibility with ifcopenshell-0.8.4 wheel)
 importScripts("https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js");
 // Load sql.js (SQLite WASM)
 importScripts("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js");
@@ -192,12 +192,12 @@ async function initPyodide() {
   });
 
   try {
-
-    // Load Pyodide
+    console.log("initPyodide: Starting Pyodide initialization");
+    // Load Pyodide v0.28.0 (optimal compatibility with ifcopenshell-0.8.4 wheel)
     pyodide = await loadPyodide({
       indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/",
     });
-
+    console.log("initPyodide: Pyodide loaded successfully");
 
     self.postMessage({
       type: "progress",
@@ -205,30 +205,107 @@ async function initPyodide() {
       percentage: 30,
     });
 
-
+    console.log("initPyodide: Loading micropip, numpy, typing-extensions");
     // Load micropip for package installation and numpy for computations
     await pyodide.loadPackage(["micropip", "numpy", "typing-extensions"]);
+    console.log("initPyodide: Basic packages loaded");
 
-
-    // Bypass Emscripten version compatibility check for wheels
+    // Simple bypass - just patch the core compatibility function
     await pyodide.runPythonAsync(`
+      import sys
+
+      # SIMPLE BYPASS: Just replace the core check function
+      def simple_bypass(filename):
+        print(f"🚫 BYPASSED: Allowing wheel {filename}")
+        return None
+
+      # Import micropip first
       import micropip
-      from micropip._micropip import WheelInfo
-      WheelInfo.check_compatible = lambda self: None
+      print("Micropip imported successfully")
+
+      # Only patch the essential compatibility check
+      import micropip._utils
+      micropip._utils.check_compatible = simple_bypass
+      print("✅ Disabled micropip._utils.check_compatible")
+
+      # Verify the patch worked
+      try:
+        result = micropip._utils.check_compatible("test.whl")
+        print(f"🧪 Compatibility check result: {result}")
+      except Exception as e:
+        print(f"❌ Error testing compatibility check: {e}")
+
+      print("🎯 SIMPLE BYPASS COMPLETE")
     `);
 
-    // Install IfcOpenShell 0.8.4
+    // Install IfcOpenShell (try newest first, fallback to known-good)
     self.postMessage({
       type: "progress",
-      message: "Installing IfcOpenShell 0.8.4...",
+      message: "Installing IfcOpenShell...",
       percentage: 50,
     });
 
     await pyodide.runPythonAsync(`
-      import micropip
+      import micropip, importlib
+
+      # SIMPLE BYPASS RE-APPLICATION FOR INSTALLATIONS
+      def simple_bypass(filename):
+          print(f"🚫 BYPASSED: Allowing wheel {filename}")
+          return None
+
+      # Ensure bypass is active before installations
+      import micropip._utils
+      micropip._utils.check_compatible = simple_bypass
+      print("✅ Bypass ready for installations")
+
       # Install lark for stream support
+      print("📦 Installing lark...")
       await micropip.install('lark')
-      await micropip.install('/wasm/ifcopenshell-0.8.4+b1b95ec-cp313-cp313-emscripten_4_0_9_wasm32.whl')
+      print("✅ Lark installed successfully")
+
+      # Use local 0.8.4 wheel - supports IFC4X3_ADD2 schema
+      wheel_urls = [
+          '/wasm/ifcopenshell-0.8.4+b1b95ec-cp313-cp313-emscripten_4_0_9_wasm32.whl'
+      ]
+      last_exc = None
+      installed = False
+      for url in wheel_urls:
+          try:
+              print(f"🎯 Installing ifcopenshell 0.8.4: {url}")
+
+              # Ensure bypass is active before each install
+              micropip._utils.check_compatible = simple_bypass
+
+              await micropip.install(url, keep_going=True, deps=False)
+
+              # Verify import works
+              import ifcopenshell
+              print('✅ IfcOpenShell 0.8.4 import OK:', getattr(ifcopenshell, 'version', 'unknown'))
+
+              # Skip schema checking to avoid API issues - focus on core functionality
+              print("✅ SUCCESS: IfcOpenShell 0.8.4 loaded and ready for IFC processing!")
+
+              installed = True
+              break
+          except Exception as e:
+              last_exc = e
+              print(f"❌ Install/import failed for ifcopenshell 0.8.4: {e}")
+              # Clean up failed installation
+              try:
+                import sys
+                if 'ifcopenshell' in sys.modules:
+                  del sys.modules['ifcopenshell']
+                import importlib
+                importlib.invalidate_caches()
+                print("🧹 Cleaned up failed ifcopenshell 0.8.4 installation")
+              except Exception as cleanup_e:
+                print(f"❌ Cleanup failed: {cleanup_e}")
+
+      if not installed:
+          if last_exc:
+              raise last_exc
+          else:
+              raise RuntimeError('Failed to install IfcOpenShell 0.8.3')
     `);
 
     // Try to enable Python sqlite3 for ifcopenshell.sql usage (if available)
@@ -1693,34 +1770,13 @@ try:
     ifc_file = ifcopenshell.open(vfs_path)
     print(f"Loaded IFC file with schema: {ifc_file.schema}")
     
-    # Determine which element types to extract based on input parameter
-    element_types_to_extract = []
+    # Use element_type directly - users can handle IFC classes
     if element_type == "all":
-        element_types_to_extract = ["IfcWall", "IfcSlab", "IfcBeam", "IfcColumn", 
-                                   "IfcDoor", "IfcWindow", "IfcRoof", "IfcStair", 
-                                   "IfcStairFlight", "IfcFurnishingElement", "IfcSpace"]
+        # Extract all elements with geometry (use our dynamic discovery)
+        element_types_to_extract = list(discovered_types)
     else:
-        # Map user-friendly types to IFC types
-        type_map = {
-            "walls": ["IFCWALL", "IFCWALLSTANDARDCASE"],
-            "slabs": ["IFCSLAB", "IFCROOF"],
-            "columns": ["IFCCOLUMN"],
-            "beams": ["IFCBEAM"],
-            "doors": ["IFCDOOR"],
-            "windows": ["IFCWINDOW"],
-            "stairs": ["IFCSTAIR", "IFCSTAIRFLIGHT"],
-            "furniture": ["IFCFURNISHINGELEMENT"],
-            "spaces": ["IFCSPACE"],
-            "openings": ["IFCOPENINGELEMENT"],
-        }
-        
-        if element_type in type_map:
-            element_types_to_extract = type_map[element_type]
-        else:
-            # If unknown type, default to all
-            element_types_to_extract = ["IfcWall", "IfcSlab", "IfcBeam", "IfcColumn", 
-                                       "IfcDoor", "IfcWindow", "IfcRoof", "IfcStair", 
-                                       "IfcStairFlight", "IfcFurnishingElement", "IfcSpace"]
+        # Use the provided element_type directly as IFC class name
+        element_types_to_extract = [element_type]
     
     # Get all elements of specified types
     all_elements = []
@@ -2769,36 +2825,87 @@ try:
   all_elements = []
   element_counts = {}
 
-  # Smart discovery: Find ALL elements that inherit from IfcBuildingElement
-  print("Python: Discovering elements that inherit from IfcBuildingElement...")
+  # FULLY DYNAMIC: Only extract elements with geometric representation (no hardcoded classes!)
+  print("Python: Using FULLY DYNAMIC approach - filtering by geometric representation...")
 
-  # Discover element types that are building elements (inherit from IfcBuildingElement)
+  # Get all IfcProduct elements (physical elements that can have geometry)
+  all_products = f.by_type('IfcProduct')
+  print(f"Python: Found {len(all_products)} total IfcProduct elements")
+  
+  # Always include essential spatial/project elements (they organize the model)
+  essential_spatial_types = {
+    'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 
+    'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'
+  }
+  
+  # Debug counters
+  debug_counts = {
+    'total_products': len(all_products),
+    'with_geometry': 0,
+    'spatial_elements': 0,
+    'no_geometry': 0
+  }
+  
   discovered_types = set()
-
-  # First pass: discover building element types by checking inheritance
+  
+  # Add essential spatial elements first
   for element in f:
     try:
       element_type = element.is_a()
-
-      # Check if this element is an IfcBuildingElement or inherits from it
-      # We also include some key spatial and project elements
+      if element_type.upper() in essential_spatial_types:
+        discovered_types.add(element_type)
+        debug_counts['spatial_elements'] += 1
+        if debug_counts['spatial_elements'] <= 5:
+          print(f"Python: DEBUG - Added spatial element: {element_type}")
+    except:
+      continue
+  
+  # Filter IfcProduct elements based on geometric representation
+  for element in all_products:
+    try:
+      element_type = element.is_a()
+      
+      # Skip if already added as spatial element
+      if element_type.upper() in essential_spatial_types:
+        continue
+      
+      # Check if element has geometric representation
+      has_geometry = False
       try:
-        if element.is_a('IfcBuildingElement'):
-          discovered_types.add(element_type)
-        elif element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']:
-          discovered_types.add(element_type)
-      except Exception:
-        # If is_a() fails, try string-based check as fallback
-        if element_type.startswith('IFC') and ('BUILDINGELEMENT' in element_type or element_type in ['IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCBUILDING', 'IFCSITE', 'IFCPROJECT']):
-          discovered_types.add(element_type)
-
+        if hasattr(element, 'Representation') and element.Representation is not None:
+          has_geometry = True
+          debug_counts['with_geometry'] += 1
+          if debug_counts['with_geometry'] <= 10:
+            print(f"Python: DEBUG - Found element WITH geometry: {element_type}")
+        else:
+          debug_counts['no_geometry'] += 1
+          if debug_counts['no_geometry'] <= 10:
+            print(f"Python: DEBUG - Skipped element WITHOUT geometry: {element_type}")
+      except Exception as geom_error:
+        # If we can't check geometry, assume no geometry
+        debug_counts['no_geometry'] += 1
+        continue
+      
+      # Only add elements that have geometric representation
+      if has_geometry:
+        discovered_types.add(element_type)
+        
     except Exception as e:
       continue
+  
+  print(f"Python: DEBUG - Geometry-based filtering summary:")
+  print(f"  Total IfcProduct elements: {debug_counts['total_products']}")
+  print(f"  Elements WITH geometry: {debug_counts['with_geometry']}")
+  print(f"  Elements WITHOUT geometry (skipped): {debug_counts['no_geometry']}")
+  print(f"  Spatial elements added: {debug_counts['spatial_elements']}")
 
-  print(f"Python: Found {len(discovered_types)} building element types")
+  print(f"Python: Found {len(discovered_types)} element types with geometry or spatial significance")
 
   # Convert set to sorted list for consistent ordering
   element_types_to_extract = sorted(list(discovered_types))
+  
+  # Log discovered types for debugging
+  print(f"Python: Discovered element types: {element_types_to_extract[:10]}...")  # Show first 10
 
   # Second pass: extract all elements by their discovered types
   for element_type in element_types_to_extract:
@@ -2843,36 +2950,8 @@ try:
       # Skip element types that don't exist
       continue
 
-  # If we didn't get many elements, try a broader approach
-  # Use a lower threshold as some valid IFC files may have fewer elements
-  if len(all_elements) < 10:
-    print("Python: Limited elements found, trying broader extraction...")
-    try:
-      # Get all elements and filter
-      for element in f:
-        element_type = element.is_a()
-        if element_type not in element_counts:
-          element_counts[element_type] = 0
-        element_counts[element_type] += 1
-
-        element_dict = {
-          'expressId': element.id(),
-          'type': element_type,
-          'properties': {},
-          'psets': {}
-        }
-
-        # Minimal properties only
-        if hasattr(element, 'GlobalId') and element.GlobalId:
-          element_dict['properties']['GlobalId'] = element.GlobalId
-        if hasattr(element, 'Name') and element.Name:
-          element_dict['properties']['Name'] = element.Name
-
-        all_elements.append(element_dict)
-    except Exception as e:
-      print(f"Python: Error in fallback extraction: {e}")
-
-  print(f"Python: Successfully extracted {len(all_elements)} elements")
+  # No fallback needed - dynamic discovery should find all meaningful elements
+  print(f"Python: Successfully extracted {len(all_elements)} meaningful elements")
   print(f"Python: Element types found: {len(element_counts)}")
 
   # Debug: Show top element types
