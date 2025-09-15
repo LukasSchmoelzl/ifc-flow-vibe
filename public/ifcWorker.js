@@ -1,7 +1,7 @@
 /* global importScripts */
 
 // Import Pyodide
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js");
 // Load sql.js (SQLite WASM)
 importScripts("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js");
 
@@ -195,7 +195,7 @@ async function initPyodide() {
 
     // Load Pyodide
     pyodide = await loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/",
     });
 
 
@@ -217,10 +217,10 @@ async function initPyodide() {
       WheelInfo.check_compatible = lambda self: None
     `);
 
-    // Install IfcOpenShell 0.8.1
+    // Install IfcOpenShell 0.8.4
     self.postMessage({
       type: "progress",
-      message: "Installing IfcOpenShell 0.8.1...",
+      message: "Installing IfcOpenShell 0.8.4...",
       percentage: 50,
     });
 
@@ -228,7 +228,7 @@ async function initPyodide() {
       import micropip
       # Install lark for stream support
       await micropip.install('lark')
-      await micropip.install('https://cdn.jsdelivr.net/gh/IfcOpenShell/wasm-wheels@33b437e5fd5425e606f34aff602c42034ff5e6dc/ifcopenshell-0.8.1+latest-cp312-cp312-emscripten_3_1_58_wasm32.whl')
+      await micropip.install('/wasm/ifcopenshell-0.8.4+b1b95ec-cp313-cp313-emscripten_4_0_9_wasm32.whl')
     `);
 
     // Try to enable Python sqlite3 for ifcopenshell.sql usage (if available)
@@ -475,7 +475,30 @@ async function handleLoadIfc({ arrayBuffer, filename, messageId }) {
     try {
 
       // Create a virtual file in the Pyodide file system
-      const uint8Array = new Uint8Array(arrayBuffer);
+      let uint8Array = new Uint8Array(arrayBuffer);
+
+      // Schema normalization: Convert IFC4X3 variants to IFC4X3_ADD2
+      try {
+        // Convert to string for regex processing
+        const fileContents = new TextDecoder('utf-8').decode(uint8Array);
+        console.log("handleLoadIfc: Applying schema normalization");
+
+        // Regex to match FILE_SCHEMA with IFC4X3 variants and replace with IFC4X3_ADD2
+        const regex = /FILE_SCHEMA\s*\(\s*\(\s*'IFC4X3(?:_[A-Z0-9]+)?'\s*\)\s*\)/;
+        const replacement = "FILE_SCHEMA(('IFC4X3_ADD2'))";
+
+        const normalizedContents = fileContents.replace(regex, replacement);
+        if (normalizedContents !== fileContents) {
+          console.log("handleLoadIfc: Schema normalization applied - converted IFC4X3 variant to IFC4X3_ADD2");
+        }
+
+        // Convert back to Uint8Array
+        uint8Array = new TextEncoder().encode(normalizedContents);
+      } catch (normalizationError) {
+        console.warn("handleLoadIfc: Schema normalization failed, proceeding with original file:", normalizationError);
+        // Continue with original uint8Array if normalization fails
+      }
+
       pyodide.FS.writeFile("model.ifc", uint8Array);
 
 

@@ -65,9 +65,9 @@ export const createPyodideWorker = async () => {
         // Starting Pyodide initialization silently
         self.postMessage({ type: 'progress', progress: 5, step: 'Loading Pyodide...' });
         
-        importScripts('https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js');
+        importScripts('https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js');
         pyodide = await loadPyodide({
-          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.28.0/full/'
         });
         
         // Pyodide loaded successfully
@@ -110,9 +110,9 @@ print("Installing lark dependency...")
 await micropip.install('lark')
 print("Lark installed successfully")
 
-print("Installing IfcOpenShell wheel...")
-await micropip.install('https://cdn.jsdelivr.net/gh/IfcOpenShell/wasm-wheels@33b437e5fd5425e606f34aff602c42034ff5e6dc/ifcopenshell-0.8.1+latest-cp312-cp312-emscripten_3_1_58_wasm32.whl')
-print("IfcOpenShell installed successfully")
+print("Installing IfcOpenShell 0.8.4 wheel...")
+await micropip.install('/wasm/ifcopenshell-0.8.4+b1b95ec-cp313-cp313-emscripten_4_0_9_wasm32.whl')
+print("IfcOpenShell 0.8.4 installed successfully")
 
 print("Installing ifcpatch dependency...")
 try:
