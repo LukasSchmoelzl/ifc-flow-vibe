@@ -453,7 +453,7 @@ function FlowWithProvider() {
           onToggleSidebar={handleSidebarToggle}
           sidebarOpen={sidebarOpen}
         />
-        <div className={`flex-1 h-full relative flex`} ref={reactFlowWrapper}>
+        <div className={`flex-1 h-full flex`} ref={reactFlowWrapper}>
           <FileDropOverlay isVisible={isFileDragging} />
 
           {/* Mobile placement mode overlay */}
@@ -467,7 +467,7 @@ function FlowWithProvider() {
             setFocusedViewerId={setFocusedViewerId}
           >
             {/* React Flow Canvas - Left Side */}
-            <div className="flex-1 h-full w-full">
+            <div className="flex-1 h-full w-full relative">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
