@@ -21,7 +21,18 @@ import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
 import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./types";
 import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./helpers";
-import { processNodeByType } from "./processors";
+import { IfcNodeProcessor } from "@/src/nodes/ifc-node/processor";
+import { FilterNodeProcessor } from "@/src/nodes/filter-node/processor";
+import { ParameterNodeProcessor } from "@/src/nodes/parameter-node/processor";
+import { GeometryNodeProcessor } from "@/src/nodes/geometry-node/processor";
+
+// Node processor registry
+const NODE_PROCESSORS = {
+  ifcNode: new IfcNodeProcessor(),
+  filterNode: new FilterNodeProcessor(),
+  parameterNode: new ParameterNodeProcessor(),
+  geometryNode: new GeometryNodeProcessor(),
+} as const;
 
 // TODO: error handling and progress tracking
 export class WorkflowExecutor {
@@ -111,10 +122,11 @@ export class WorkflowExecutor {
     };
 
     // Try new processor system first
-    let result = await processNodeByType(node.type, node, inputValues, context);
+    const processor = NODE_PROCESSORS[node.type as keyof typeof NODE_PROCESSORS];
+    let result = processor ? await processor.process(node, inputValues, context) : null;
     
     // Fallback to old switch-case for nodes not yet migrated
-    if (result === null && !["ifcNode", "filterNode", "parameterNode", "geometryNode"].includes(node.type)) {
+    if (result === null && !processor) {
       result = await this.processNodeLegacy(node, inputValues, nodeId);
     }
 
