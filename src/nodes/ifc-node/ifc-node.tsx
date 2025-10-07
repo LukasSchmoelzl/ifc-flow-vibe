@@ -23,7 +23,6 @@ interface ExtendedIfcNodeData extends BaseIfcNodeData {
 export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcNodeData>) => {
   const dropRef = useRef<HTMLDivElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [progress, setProgress] = useState({ percentage: 0, message: "" });
   const { setNodes } = useReactFlow();
   const [elementsExpanded, setElementsExpanded] = useState(false);
 
@@ -118,7 +117,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
       }
     };
     input.click();
-  }, [id, setNodes, setProgress]);
+  }, [id, setNodes]);
 
 
   // Render model info section if model is loaded
