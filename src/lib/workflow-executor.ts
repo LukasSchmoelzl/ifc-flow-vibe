@@ -18,22 +18,22 @@ import {
 import { performAnalysis } from "@/src/nodes/analysis-node/utils";
 import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
-import { IfcNodeProcessor } from "@/src/nodes/ifc-node/processor";
-import { FilterNodeProcessor } from "@/src/nodes/filter-node/processor";
-import { ParameterNodeProcessor } from "@/src/nodes/parameter-node/processor";
-import { GeometryNodeProcessor } from "@/src/nodes/geometry-node/processor";
-import { TransformNodeProcessor } from "@/src/nodes/transform-node/processor";
-import { QuantityNodeProcessor } from "@/src/nodes/quantity-node/processor";
-import { PropertyNodeProcessor } from "@/src/nodes/property-node/processor";
-import { WatchNodeProcessor } from "@/src/nodes/watch-node/processor";
-import { ClassificationNodeProcessor } from "@/src/nodes/classification-node/processor";
-import { SpatialNodeProcessor } from "@/src/nodes/spatial-node/processor";
-import { RelationshipNodeProcessor } from "@/src/nodes/relationship-node/processor";
-import { AnalysisNodeProcessor } from "@/src/nodes/analysis-node/processor";
-import { PythonNodeProcessor } from "@/src/nodes/python-node/processor";
-import { ExportNodeProcessor } from "@/src/nodes/export-node/processor";
-import { ClusterNodeProcessor } from "@/src/nodes/cluster-node/processor";
-import { DataTransformNodeProcessor } from "@/src/nodes/data-transform-node/processor";
+import { IfcNodeProcessor } from "@/src/nodes/ifc-node/executor";
+import { FilterNodeProcessor } from "@/src/nodes/filter-node/executor";
+import { ParameterNodeProcessor } from "@/src/nodes/parameter-node/executor";
+import { GeometryNodeProcessor } from "@/src/nodes/geometry-node/executor";
+import { TransformNodeProcessor } from "@/src/nodes/transform-node/executor";
+import { QuantityNodeProcessor } from "@/src/nodes/quantity-node/executor";
+import { PropertyNodeProcessor } from "@/src/nodes/property-node/executor";
+import { WatchNodeProcessor } from "@/src/nodes/watch-node/executor";
+import { ClassificationNodeProcessor } from "@/src/nodes/classification-node/executor";
+import { SpatialNodeProcessor } from "@/src/nodes/spatial-node/executor";
+import { RelationshipNodeProcessor } from "@/src/nodes/relationship-node/executor";
+import { AnalysisNodeProcessor } from "@/src/nodes/analysis-node/executor";
+import { PythonNodeProcessor } from "@/src/nodes/python-node/executor";
+import { ExportNodeProcessor } from "@/src/nodes/export-node/executor";
+import { ClusterNodeProcessor } from "@/src/nodes/cluster-node/executor";
+import { DataTransformNodeProcessor } from "@/src/nodes/data-transform-node/executor";
 
 // Types and interfaces
 export interface PropertyInfo {
