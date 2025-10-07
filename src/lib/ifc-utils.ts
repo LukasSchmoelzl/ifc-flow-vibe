@@ -2192,7 +2192,7 @@ export async function exportData(
             // Export specific elements
             elementsToExport.forEach(expressId => {
               const meshes = viewer.getMeshesForElement(expressId);
-              meshes.forEach(mesh => {
+              meshes.forEach((mesh: any) => {
                 // Clone the mesh for export (to avoid modifying original)
                 const clonedMesh = mesh.clone();
                 clonedMesh.updateMatrixWorld(true);
@@ -2202,7 +2202,7 @@ export async function exportData(
           } else {
             // Export entire model
 
-            modelGroup.traverse(child => {
+            modelGroup.traverse((child: any) => {
               if (child instanceof Mesh) {
                 const clonedMesh = child.clone();
                 clonedMesh.updateMatrixWorld(true);

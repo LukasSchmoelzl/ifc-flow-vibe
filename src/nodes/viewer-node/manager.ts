@@ -1,4 +1,4 @@
-import { IfcViewer } from './viewer-utils';
+import { IfcViewer } from './utils';
 
 /**
  * Singleton manager for IFC viewers across the application

@@ -1,5 +1,5 @@
 import type { IfcElement } from "@/src/lib/ifc-utils"
-import { withActiveViewer, hasActiveModel } from "./viewer-manager";
+import { withActiveViewer, hasActiveModel } from "../viewer-node/manager";
 import * as THREE from "three";
 
 // Spatial query functions with real geometry support
