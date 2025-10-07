@@ -4,23 +4,8 @@
 
 IFC-Flow ist eine **visuelle Node-basierte Web-Anwendung** für die Verarbeitung von IFC-Dateien (Industry Foundation Classes) aus dem BIM-Bereich (Building Information Modeling). Die App ermöglicht es, komplexe Datenverarbeitungs-Workflows durch einfaches Drag-and-Drop von Nodes zu erstellen.
 
----
-
-## 🏗️ Tech-Stack
-
-| Technologie | Version | Verwendung |
-|------------|---------|------------|
-| **Next.js** | 14.2.28 | React Framework (App Router) |
-| **React** | 18.2.0 | UI-Framework |
-| **TypeScript** | 5.x | Typsicherheit |
-| **React Flow** | 11.10.4 | Node-basierte UI |
-| **Tailwind CSS** | 3.4.17 | Styling |
-| **web-ifc** | 0.0.68 | IFC-Parsing (WebAssembly) |
-| **IfcOpenShell** | 0.8.4 | IFC-Verarbeitung (Python via Pyodide) |
-| **Three.js** | 0.174.0 | 3D-Visualisierung |
-| **shadcn/ui** | - | UI-Komponenten (51 Komponenten) |
-| **Radix UI** | - | Accessible Primitives |
-| **SQLite3** | 5.1.7 | Datenbankfunktionalität |
+**Tech-Stack:** Next.js 14, React 18, TypeScript, React Flow, Tailwind CSS, web-ifc, IfcOpenShell, Three.js, shadcn/ui, Radix UI  
+**Details:** Siehe `package.json` für alle Dependencies und Versionen
 
 ---
 
@@ -415,36 +400,18 @@ npm run lint
 
 ---
 
-## 📦 Wichtige Dependencies
+## 📦 Dependencies
 
-### **Core**
-- `next` (14.2.28) - React Framework
-- `react` (18.2.0) - UI Library
-- `reactflow` (11.10.4) - Node-Editor
-- `three` (0.174.0) - 3D Graphics
+**Alle Dependencies und Versionen:** Siehe `package.json`
 
-### **IFC/BIM**
-- `web-ifc` (0.0.68) - IFC Parser (WASM)
-- IfcOpenShell (0.8.4) - IFC Processing (Python)
-
-### **UI**
-- `@radix-ui/*` (40+ Pakete) - UI Primitives
-- `tailwindcss` (3.4.17) - Styling
-- `lucide-react` (0.454.0) - Icons
-- `next-themes` (0.4.4) - Theme Management
-
-### **Data & AI**
-- `sqlite3` (5.1.7) - Database
-- `alasql` (4.6.6) - SQL in JS
-- `ai` (5.0.0) - Vercel AI SDK
-- `@ai-sdk/openai` (2.0.19) - OpenAI Integration
-- `@openrouter/ai-sdk-provider` (1.1.2) - OpenRouter Integration
-
-### **Utilities**
-- `react-hotkeys-hook` (4.4.1) - Keyboard Shortcuts
-- `react-hook-form` (7.54.1) - Form Management
-- `zod` (3.25.76) - Schema Validation
-- `date-fns` (3.6.0) - Date Utilities
+**Hauptkomponenten:**
+- Next.js 14 (React Framework mit App Router)
+- React Flow (Node-basierte UI)
+- web-ifc + IfcOpenShell (IFC-Verarbeitung via WASM/Pyodide)
+- Three.js (3D-Visualisierung)
+- Radix UI + shadcn/ui (51 accessible UI-Komponenten)
+- Vercel AI SDK (AI-Integration)
+- SQLite3 + alasql (Datenbank)
 
 ---
 
