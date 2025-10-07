@@ -46,30 +46,30 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
         w.scene.setup();
         comp.init();
 
-      // Setup stats
-      stats = new Stats();
-      stats.showPanel(2);
-      stats.dom.style.position = "absolute";
-      stats.dom.style.left = "8px";
-      stats.dom.style.top = "8px";
-      stats.dom.style.zIndex = "10";
-      container.appendChild(stats.dom);
+        // Setup stats
+        stats = new Stats();
+        stats.showPanel(2);
+        stats.dom.style.position = "absolute";
+        stats.dom.style.left = "8px";
+        stats.dom.style.top = "8px";
+        stats.dom.style.zIndex = "10";
+        container.appendChild(stats.dom);
 
-      w.renderer.onBeforeUpdate.add(() => stats?.begin());
-      w.renderer.onAfterUpdate.add(() => stats?.end());
+        w.renderer.onBeforeUpdate.add(() => stats?.begin());
+        w.renderer.onAfterUpdate.add(() => stats?.end());
 
-      // Setup fragments
-      const fetchedUrl = await fetch(GITHUB_WORKER_URL);
-      const workerBlob = await fetchedUrl.blob();
-      const workerFile = new File([workerBlob], "worker.mjs", {
-        type: "text/javascript",
-      });
-      const workerUrl = URL.createObjectURL(workerFile);
-      const frags = new FRAGS.FragmentsModels(workerUrl);
-      
-      w.camera.controls.addEventListener("control", () => frags.update());
+        // Setup fragments
+        const fetchedUrl = await fetch(GITHUB_WORKER_URL);
+        const workerBlob = await fetchedUrl.blob();
+        const workerFile = new File([workerBlob], "worker.mjs", {
+          type: "text/javascript",
+        });
+        const workerUrl = URL.createObjectURL(workerFile);
+        const frags = new FRAGS.FragmentsModels(workerUrl);
+        
+        w.camera.controls.addEventListener("control", () => frags.update());
 
-      setIsReady(true);
+        setIsReady(true);
 
         (window as any).__fragmentsViewer = {
           components: comp,
