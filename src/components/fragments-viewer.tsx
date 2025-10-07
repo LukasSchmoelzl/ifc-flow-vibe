@@ -25,28 +25,30 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
     isInitialized.current = true;
 
     let stats: Stats | null = null;
-    let comp: OBC.Components | null = null;
+    let components: OBC.Components | null = null;
     const container = containerRef.current;
 
     const init = async () => {
       try {
-        comp = new OBC.Components();
-        const worlds = comp.get(OBC.Worlds);
+        components = new OBC.Components();
+        const worlds = components.get(OBC.Worlds);
         
-        const w = worlds.create<
+        const world = worlds.create<
           OBC.SimpleScene,
           OBC.SimpleCamera,
           OBC.SimpleRenderer
         >();
 
-        w.scene = new OBC.SimpleScene(comp);
-        w.renderer = new OBC.SimpleRenderer(comp, container);
-        w.camera = new OBC.SimpleCamera(comp);
+        world.scene = new OBC.SimpleScene(components);
+        world.renderer = new OBC.SimpleRenderer(components, container);
+        world.camera = new OBC.SimpleCamera(components);
         
-        w.scene.setup();
-        comp.init();
+        components.init();
+        world.scene.setup();
 
-        // Setup stats
+        const grids = components.get(OBC.Grids);
+        const grid = grids.create(world);
+
         stats = new Stats();
         stats.showPanel(2);
         stats.dom.style.position = "absolute";
@@ -55,26 +57,25 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
         stats.dom.style.zIndex = "10";
         container.appendChild(stats.dom);
 
-        w.renderer.onBeforeUpdate.add(() => stats?.begin());
-        w.renderer.onAfterUpdate.add(() => stats?.end());
+        world.renderer.onBeforeUpdate.add(() => stats?.begin());
+        world.renderer.onAfterUpdate.add(() => stats?.end());
 
-        // Setup fragments
         const fetchedUrl = await fetch(GITHUB_WORKER_URL);
         const workerBlob = await fetchedUrl.blob();
         const workerFile = new File([workerBlob], "worker.mjs", {
           type: "text/javascript",
         });
         const workerUrl = URL.createObjectURL(workerFile);
-        const frags = new FRAGS.FragmentsModels(workerUrl);
+        const fragments = new FRAGS.FragmentsModels(workerUrl);
         
-        w.camera.controls.addEventListener("control", () => frags.update());
+        world.camera.controls.addEventListener("control", () => fragments.update());
 
         setIsReady(true);
 
         (window as any).__fragmentsViewer = {
-          components: comp,
-          fragments: frags,
-          world: w,
+          components,
+          fragments,
+          world,
         };
       } catch (error) {
         console.error("Failed to initialize Fragments viewer:", error);
@@ -88,7 +89,7 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
       if (stats?.dom && container.contains(stats.dom)) {
         container.removeChild(stats.dom);
       }
-      comp?.dispose();
+      components?.dispose();
       (window as any).__fragmentsViewer = null;
       isInitialized.current = false;
     };
