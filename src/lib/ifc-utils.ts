@@ -2166,7 +2166,7 @@ export async function exportData(
     }
     case "glb": {
       // Try to export from active viewer first (real geometry)
-      const { withActiveViewer, hasActiveModel } = await import('./ifc/viewer-manager');
+      const { withActiveViewer, hasActiveModel } = await import('../nodes/viewer-node/manager');
 
       if (hasActiveModel()) {
 
