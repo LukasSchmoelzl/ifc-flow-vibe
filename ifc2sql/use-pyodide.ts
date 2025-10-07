@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
-import { createPyodideWorker, type PyodideMessage, type ProcessingResult } from "@/lib/pyodide-worker"
+import { createPyodideWorker, type PyodideMessage, type ProcessingResult } from "@/src/lib/pyodide-worker"
 
 export interface ProcessingStatus {
   isProcessing: boolean

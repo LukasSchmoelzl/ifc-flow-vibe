@@ -5,7 +5,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
 import { NodeLoadingIndicator } from "./node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "./node-types";
-import { getElementTypeColor, formatElementType } from "../../lib/ifc/element-utils";
+import { getElementTypeColor, formatElementType } from "@/src/lib/ifc/element-utils";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
@@ -81,7 +81,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
           setProgress({ percentage: 5, message: "Initializing..." }); // Start at 5%
 
           // Use dynamic import for file uploader
-          import("@/lib/ifc/file-uploader").then(({ handleFileUpload }) => {
+          import("@/src/lib/ifc/file-uploader").then(({ handleFileUpload }) => {
             handleFileUpload(
               file,
               (model) => {
@@ -184,7 +184,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
         setProgress({ percentage: 5, message: "Initializing..." }); // Start at 5%
 
         // Use dynamic import for file uploader
-        import("@/lib/ifc/file-uploader").then(({ handleFileUpload }) => {
+        import("@/src/lib/ifc/file-uploader").then(({ handleFileUpload }) => {
           handleFileUpload(
             file,
             (model) => {

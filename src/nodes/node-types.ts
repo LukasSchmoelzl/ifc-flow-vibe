@@ -1,4 +1,4 @@
-import type { IfcModel } from "@/lib/ifc-utils"
+import type { IfcModel } from "@/src/lib/ifc-utils"
 
 // Common base interface for all node data
 export interface BaseNodeData {

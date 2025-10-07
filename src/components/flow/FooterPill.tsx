@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import CoffeeSupport from "@/components/coffee-support";
-import type { Workflow } from "@/lib/workflow-storage";
+import CoffeeSupport from "@/src/components/coffee-support";
+import type { Workflow } from "@/src/lib/workflow-storage";
 
 interface FooterPillProps {
   currentWorkflow: Workflow | null;

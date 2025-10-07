@@ -19,33 +19,33 @@ import ReactFlow, {
   type SelectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Sidebar } from "@/components/sidebar";
-import { PropertiesDialog } from "@/components/dialogs/properties-dialog";
-import { AppMenubar } from "@/components/menubar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Toaster } from "@/components/toaster";
-import { useToast } from "@/hooks/use-toast";
-import type { Workflow } from "@/lib/workflow-storage";
+import { Sidebar } from "@/src/components/sidebar";
+import { PropertiesDialog } from "@/src/components/dialogs/properties-dialog";
+import { AppMenubar } from "@/src/components/menubar";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { Toaster } from "@/src/components/toaster";
+import { useToast } from "@/src/hooks/use-toast";
+import type { Workflow } from "@/src/lib/workflow-storage";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   parseKeyCombination,
   useKeyboardShortcuts,
-} from "@/lib/keyboard-shortcuts";
-import { useAppSettings } from "@/lib/settings-manager";
+} from "@/src/lib/keyboard-shortcuts";
+import { useAppSettings } from "@/src/lib/settings-manager";
 import { useTheme } from "next-themes";
-import { ViewerFocusProvider } from "@/components/contexts/viewer-focus-context";
-import { nodeCategories } from "@/components/sidebar";
+import { ViewerFocusProvider } from "@/src/components/contexts/viewer-focus-context";
+import { nodeCategories } from "@/src/components/sidebar";
 
 // Import the centralized nodeTypes to prevent React Flow warning
 import { nodeTypes } from "@/src/nodes";
 
 // Import custom hooks
-import { useWorkflowHistory } from "@/hooks/use-workflow-history";
-import { useClipboard } from "@/hooks/use-clipboard";
-import { useFileDrag } from "@/hooks/use-file-drag";
-import { useNodeDragging } from "@/hooks/use-node-dragging";
-import { useMobilePlacement } from "@/hooks/use-mobile-placement";
-import { useWorkflowOperations } from "@/hooks/use-workflow-operations";
+import { useWorkflowHistory } from "@/src/hooks/use-workflow-history";
+import { useClipboard } from "@/src/hooks/use-clipboard";
+import { useFileDrag } from "@/src/hooks/use-file-drag";
+import { useNodeDragging } from "@/src/hooks/use-node-dragging";
+import { useMobilePlacement } from "@/src/hooks/use-mobile-placement";
+import { useWorkflowOperations } from "@/src/hooks/use-workflow-operations";
 
 // Import components
 import { FooterPill } from "@/src/components/flow/FooterPill";
@@ -53,7 +53,7 @@ import { FileDropOverlay } from "@/src/components/flow/FileDropOverlay";
 import { MobilePlacementOverlay } from "@/src/components/flow/MobilePlacementOverlay";
 
 // Import utilities
-import { createNode, getNodeLabel, loadViewerSetting } from "@/lib/node-factory";
+import { createNode, getNodeLabel, loadViewerSetting } from "@/src/lib/node-factory";
 
 // Define all ReactFlow props outside the component to prevent warnings
 const edgeTypes = {} as const;

@@ -8,10 +8,10 @@ import {
   NodeProps,
 } from "reactflow";
 import { CuboidIcon as Cube, Loader2, AlertCircle, CheckCircle, Focus, Eye, Layers, Scissors } from "lucide-react";
-import { IfcViewer } from "@/lib/ifc/viewer-utils";
+import { IfcViewer } from "@/src/lib/ifc/viewer-utils";
 import { ViewerNodeData as BaseViewerNodeData } from "./node-types";
-import { useViewerFocus } from "@/components/contexts/viewer-focus-context";
-import { viewerManager } from "@/lib/ifc/viewer-manager";
+import { useViewerFocus } from "@/src/components/contexts/viewer-focus-context";
+import { viewerManager } from "@/src/lib/ifc/viewer-manager";
 
 // Extend the base ViewerNodeData with additional properties
 interface ExtendedViewerNodeData extends BaseViewerNodeData {

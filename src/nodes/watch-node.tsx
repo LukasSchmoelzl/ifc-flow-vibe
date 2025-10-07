@@ -12,7 +12,7 @@ import {
   Database,
   List,
 } from "lucide-react";
-import { formatPropertyValue } from "@/lib/ifc/property-utils";
+import { formatPropertyValue } from "@/src/lib/ifc/property-utils";
 import React from "react";
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
 

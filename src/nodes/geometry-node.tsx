@@ -3,16 +3,16 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { Box } from "lucide-react";
-import { NodeStatusBadge } from "../node-status-badge";
+import { NodeStatusBadge } from "@/src/components/node-status-badge";
 import {
   extractGeometry,
   extractGeometryWithGeom,
-} from "@/lib/ifc/geometry-utils";
-import type { IfcModel } from "@/lib/ifc-utils";
-import type { NodeStatus } from "@/components/node-status-badge";
+} from "@/src/lib/ifc/geometry-utils";
+import type { IfcModel } from "@/src/lib/ifc-utils";
+import type { NodeStatus } from "@/src/components/node-status-badge";
 import { NodeLoadingIndicator } from "./node-loading-indicator";
 import { GeometryNodeData as BaseGeometryNodeData } from "./node-types";
-import { hasActiveModel } from "@/lib/ifc/viewer-manager";
+import { hasActiveModel } from "@/src/lib/ifc/viewer-manager";
 
 interface GeometryNodeProgress {
   percentage: number;

@@ -1,13 +1,13 @@
-import { getLastLoadedModel } from "@/lib/ifc-utils";
+import { getLastLoadedModel } from "@/src/lib/ifc-utils";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { convertToModelMessages, streamText, tool } from "ai";
 import { z } from "zod";
-import { aiLogger } from "@/lib/logger";
-import { getServerSQLiteManager } from "@/lib/server-sqlite";
-import { validateAndSanitizeInput, validateModelSelection } from "@/lib/input-validator";
-import { rateLimit, checkSuspiciousActivity } from "@/lib/rate-limiter";
-import { validateTurnstileToken } from "@/lib/turnstile";
-import { resolveModelSlug } from "@/lib/model-utils";
+import { aiLogger } from "@/src/lib/logger";
+import { getServerSQLiteManager } from "@/src/lib/server-sqlite";
+import { validateAndSanitizeInput, validateModelSelection } from "@/src/lib/input-validator";
+import { rateLimit, checkSuspiciousActivity } from "@/src/lib/rate-limiter";
+import { validateTurnstileToken } from "@/src/lib/turnstile";
+import { resolveModelSlug } from "@/src/lib/model-utils";
 import { createHmac } from "crypto";
 
 export async function POST(req: Request) {

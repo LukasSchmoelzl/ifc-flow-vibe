@@ -1,8 +1,8 @@
 "use client";
 
-import { useTurnstile } from "@/components/ui/turnstile";
-import { querySqliteDatabase } from "@/lib/ifc-utils";
-import { getTurnstileSitekey } from "@/lib/turnstile";
+import { useTurnstile } from "@/src/components/ui/turnstile";
+import { querySqliteDatabase } from "@/src/lib/ifc-utils";
+import { getTurnstileSitekey } from "@/src/lib/turnstile";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Bot, Calculator, ChevronDown, Copy, Database, List, Shield } from "lucide-react";
@@ -1251,7 +1251,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
     if (!model) return;
     (async () => {
       try {
-        const { warmupSqliteDatabase } = await import('@/lib/ifc-utils');
+        const { warmupSqliteDatabase } = await import('@/src/lib/ifc-utils');
         await warmupSqliteDatabase(model);
       } catch { }
     })();
@@ -2128,7 +2128,7 @@ export const AiNode = memo(({ data, id, selected, isConnectable }: NodeProps<AiN
                 const currentModel = getConnectedModelData();
                 if (!currentModel) return;
                 try {
-                  const { exportSqliteDatabase } = await import('@/lib/ifc-utils');
+                  const { exportSqliteDatabase } = await import('@/src/lib/ifc-utils');
                   const bytes = await exportSqliteDatabase(currentModel);
                   const blob = new Blob([new Uint8Array(bytes)], { type: 'application/x-sqlite3' });
                   const url = URL.createObjectURL(blob);

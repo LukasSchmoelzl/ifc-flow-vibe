@@ -4,11 +4,11 @@ import { memo, useState } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { Calculator, ChevronDown } from "lucide-react"
 import { QuantityNodeData } from "./node-types";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { Button } from "@/src/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
+import { Label } from "@/src/components/ui/label";
+import { Switch } from "@/src/components/ui/switch";
 
 type QuantityType = NonNullable<QuantityNodeData['properties']>['quantityType'];
 type GroupByType = NonNullable<QuantityNodeData['properties']>['groupBy'];
