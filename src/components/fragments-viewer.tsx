@@ -17,18 +17,19 @@ interface FragmentsViewerProps {
 
 export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [components, setComponents] = useState<OBC.Components | null>(null);
-  const [fragments, setFragments] = useState<FRAGS.FragmentsModels | null>(null);
-  const [world, setWorld] = useState<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitialized.current) return;
+    isInitialized.current = true;
 
     let stats: Stats | null = null;
+    let comp: OBC.Components | null = null;
+    const container = containerRef.current;
 
     const init = async () => {
-      const comp = new OBC.Components();
+      comp = new OBC.Components();
       const worlds = comp.get(OBC.Worlds);
       
       const w = worlds.create<
@@ -38,7 +39,7 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
       >();
 
       w.scene = new OBC.SimpleScene(comp);
-      w.renderer = new OBC.SimpleRenderer(comp, containerRef.current!);
+      w.renderer = new OBC.SimpleRenderer(comp, container);
       w.camera = new OBC.SimpleCamera(comp);
 
       comp.init();
@@ -51,14 +52,13 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
       stats.dom.style.left = "8px";
       stats.dom.style.top = "8px";
       stats.dom.style.zIndex = "10";
-      containerRef.current?.appendChild(stats.dom);
+      container.appendChild(stats.dom);
 
       w.renderer.onBeforeUpdate.add(() => stats?.begin());
       w.renderer.onAfterUpdate.add(() => stats?.end());
 
       // Setup fragments
-      const githubUrl = GITHUB_WORKER_URL;
-      const fetchedUrl = await fetch(githubUrl);
+      const fetchedUrl = await fetch(GITHUB_WORKER_URL);
       const workerBlob = await fetchedUrl.blob();
       const workerFile = new File([workerBlob], "worker.mjs", {
         type: "text/javascript",
@@ -68,12 +68,8 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
       
       w.camera.controls.addEventListener("control", () => frags.update());
 
-      setComponents(comp);
-      setFragments(frags);
-      setWorld(w);
       setIsReady(true);
 
-      // Make available globally for IFC node
       (window as any).__fragmentsViewer = {
         components: comp,
         fragments: frags,
@@ -84,25 +80,24 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
     init();
 
     return () => {
-      if (stats?.dom) {
-        containerRef.current?.removeChild(stats.dom);
+      if (stats?.dom && container.contains(stats.dom)) {
+        container.removeChild(stats.dom);
       }
-      components?.dispose();
+      comp?.dispose();
       (window as any).__fragmentsViewer = null;
+      isInitialized.current = false;
     };
   }, []);
 
-  // Handle window resize
   useEffect(() => {
-    if (!world) return;
-
     const handleResize = () => {
-      world.renderer?.resize();
+      const viewer = (window as any).__fragmentsViewer;
+      viewer?.world?.renderer?.resize();
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [world]);
+  }, []);
 
   return (
     <div className={`relative ${className}`}>
