@@ -31,6 +31,7 @@ import { useAppSettings } from "@/src/lib/settings-manager";
 import { useTheme } from "next-themes";
 import { ViewerFocusProvider } from "@/src/components/contexts/viewer-focus-context";
 import { nodeCategories } from "@/src/components/sidebar";
+import { FragmentsViewer } from "@/src/components/fragments-viewer";
 
 // Import the centralized nodeTypes to prevent React Flow warning
 import { nodeTypes } from "@/src/nodes";
@@ -452,7 +453,7 @@ function FlowWithProvider() {
           onToggleSidebar={handleSidebarToggle}
           sidebarOpen={sidebarOpen}
         />
-        <div className={`flex-1 h-full relative`} ref={reactFlowWrapper}>
+        <div className={`flex-1 h-full relative flex`} ref={reactFlowWrapper}>
           <FileDropOverlay isVisible={isFileDragging} />
 
           {/* Mobile placement mode overlay */}
@@ -465,6 +466,7 @@ function FlowWithProvider() {
             focusedViewerId={focusedViewerId}
             setFocusedViewerId={setFocusedViewerId}
           >
+            {/* React Flow Canvas - Left Side */}
             <div className="flex-1 h-full w-full">
               <ReactFlow
                 nodes={nodes}
@@ -522,6 +524,11 @@ function FlowWithProvider() {
                   <FooterPill currentWorkflow={currentWorkflow} />
                 </Panel>
               </ReactFlow>
+            </div>
+
+            {/* Fragments 3D Viewer - Right Side */}
+            <div className="w-[400px] h-full border-l border-slate-200 dark:border-slate-700">
+              <FragmentsViewer className="w-full h-full" />
             </div>
           </ViewerFocusProvider>
         </div>
