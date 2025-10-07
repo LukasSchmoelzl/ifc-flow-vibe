@@ -1,7 +1,7 @@
-import type { NodeProcessor, ProcessorContext } from '../types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
 import { extractGeometry, extractGeometryWithGeom, getLastLoadedModel } from '@/src/lib/ifc-utils';
 import { withActiveViewer, hasActiveModel } from '@/src/nodes/viewer-node/manager';
-import { hasDownstreamGLBExport, hasDownstreamViewer } from '../helpers';
+import { hasDownstreamGLBExport, hasDownstreamViewer } from '@/src/lib/workflow-executor/helpers';
 import * as THREE from 'three';
 
 export class GeometryNodeProcessor implements NodeProcessor {

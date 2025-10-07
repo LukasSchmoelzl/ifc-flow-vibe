@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '../types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
 import { filterElements } from '@/src/lib/ifc-utils';
 
 export class FilterNodeProcessor implements NodeProcessor {

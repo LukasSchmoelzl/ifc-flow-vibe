@@ -10,3 +10,7 @@ Allgemein:
     /**
     * Schlechter Kommentar
     */
+
+Nodes:
+    Code der nur von einer Node verwendet wird soll in der Node selbst stehen.
+    Code der von mehreren Nodes verwendet wird soll in lib stehen

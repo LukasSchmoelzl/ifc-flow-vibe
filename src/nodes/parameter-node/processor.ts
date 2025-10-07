@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '../types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
 
 export class ParameterNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {

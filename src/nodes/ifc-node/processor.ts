@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '../types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
 import { loadIfcFile, getLastLoadedModel } from '@/src/lib/ifc-utils';
 
 export class IfcNodeProcessor implements NodeProcessor {

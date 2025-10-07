@@ -1,9 +1,9 @@
 // Processor registry for all node types
 import type { NodeProcessor, ProcessorContext } from '../types';
-import { IfcNodeProcessor } from './ifc-node-processor';
-import { FilterNodeProcessor } from './filter-node-processor';
-import { ParameterNodeProcessor } from './parameter-node-processor';
-import { GeometryNodeProcessor } from './geometry-node-processor';
+import { IfcNodeProcessor } from '@/src/nodes/ifc-node/processor';
+import { FilterNodeProcessor } from '@/src/nodes/filter-node/processor';
+import { ParameterNodeProcessor } from '@/src/nodes/parameter-node/processor';
+import { GeometryNodeProcessor } from '@/src/nodes/geometry-node/processor';
 
 export const NODE_PROCESSORS: Record<string, NodeProcessor> = {
   ifcNode: new IfcNodeProcessor(),

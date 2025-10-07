@@ -787,7 +787,7 @@ export class WorkflowExecutor {
 
               // Extract geometry from the input model using GeometryNodeProcessor
               try {
-                const { GeometryNodeProcessor } = await import('./processors/geometry-node-processor');
+                const { GeometryNodeProcessor } = await import('@/src/nodes/geometry-node/processor');
                 const geometryProcessor = new GeometryNodeProcessor();
                 exportInput = await geometryProcessor.extractForGLBExport(exportInput);
                 console.log("Geometry extracted for GLB export:", exportInput?.length || 0, "elements");
