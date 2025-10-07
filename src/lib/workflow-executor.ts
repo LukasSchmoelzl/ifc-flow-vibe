@@ -1145,7 +1145,7 @@ export class WorkflowExecutor {
         }
 
         try {
-          const { executeTransformPipeline } = await import('../lib/data-transform-utils');
+          const { executeTransformPipeline } = await import('../nodes/data-transform-node/utils');
 
           const steps = node.data.properties?.steps || [];
           const restrictToIncomingElements = node.data.properties?.restrictToIncomingElements || false;
