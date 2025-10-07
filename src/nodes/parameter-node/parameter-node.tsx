@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { Sliders } from "lucide-react"
-import { ParameterNodeData } from "./node-types";
+import { ParameterNodeData } from "../node-types";
 
 export const ParameterNode = memo(({ data, isConnectable }: NodeProps<ParameterNodeData>) => {
   const paramType = data.properties?.paramType || "number"

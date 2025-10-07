@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { Shuffle, AlertTriangle, CheckCircle, Info } from "lucide-react";
-import { DataTransformNodeData } from "./node-types";
+import { DataTransformNodeData } from "../node-types";
 
 export const DataTransformNode = memo(({ data, isConnectable }: NodeProps<DataTransformNodeData>) => {
     const { properties, preview } = data;

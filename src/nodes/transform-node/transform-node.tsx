@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { Move } from "lucide-react";
-import { TransformNodeData } from "./node-types";
+import { TransformNodeData } from "../node-types";
 
 interface Geometry {
   vertices: number[][];

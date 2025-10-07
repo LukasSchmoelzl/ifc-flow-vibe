@@ -3,8 +3,8 @@
 import { memo, useState, useCallback, useRef } from "react";
 import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
-import { NodeLoadingIndicator } from "./node-loading-indicator";
-import { IfcNodeData as BaseIfcNodeData } from "./node-types";
+import { NodeLoadingIndicator } from "../node-loading-indicator";
+import { IfcNodeData as BaseIfcNodeData } from "../node-types";
 import { getElementTypeColor, formatElementType } from "@/src/lib/ifc/element-utils";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {

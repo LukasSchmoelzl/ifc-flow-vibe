@@ -3,7 +3,7 @@
 import { memo, useState } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { Calculator, ChevronDown } from "lucide-react"
-import { QuantityNodeData } from "./node-types";
+import { QuantityNodeData } from "../node-types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Button } from "@/src/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";

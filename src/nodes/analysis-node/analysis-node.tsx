@@ -3,7 +3,7 @@
 import { memo, useState, useCallback, useEffect } from "react";
 import { Handle, Position, type NodeProps, useReactFlow } from "reactflow";
 import { Home, BarChart3, Settings2, Building2, Users, Activity } from "lucide-react";
-import { AnalysisNodeData } from "./node-types";
+import { AnalysisNodeData } from "../node-types";
 
 // Space analysis metric configurations
 const spaceMetrics = [

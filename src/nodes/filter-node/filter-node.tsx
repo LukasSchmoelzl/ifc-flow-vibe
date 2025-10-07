@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { Filter } from "lucide-react"
-import { FilterNodeData } from "./node-types";
+import { FilterNodeData } from "../node-types";
 
 export const FilterNode = memo(({ data, isConnectable }: NodeProps<FilterNodeData>) => {
   return (

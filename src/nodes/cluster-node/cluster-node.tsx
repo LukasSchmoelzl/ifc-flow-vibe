@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps } from "reactflow";
 import { Layers, Eye, EyeOff, Palette } from "lucide-react";
 import { NodeStatusBadge } from "@/src/components/node-status-badge";
 import type { NodeStatus } from "@/src/components/node-status-badge";
-import { BaseNodeData } from "./node-types";
+import { BaseNodeData } from "../node-types";
 import { toggleClusterVisibility, isolateClusters, showAllClusters } from "@/src/lib/ifc/cluster-utils";
 import { withActiveViewer } from "@/src/lib/ifc/viewer-manager";
 

@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { Layers } from "lucide-react"
-import { SpatialNodeData } from "./node-types";
+import { SpatialNodeData } from "../node-types";
 
 export const SpatialNode = memo(({ data, isConnectable }: NodeProps<SpatialNodeData>) => {
   return (

@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { GitBranch } from "lucide-react"
-import { RelationshipNodeData } from "./node-types";
+import { RelationshipNodeData } from "../node-types";
 
 export const RelationshipNode = memo(({ data, isConnectable }: NodeProps<RelationshipNodeData>) => {
   return (

@@ -10,8 +10,8 @@ import {
 } from "@/src/lib/ifc/geometry-utils";
 import type { IfcModel } from "@/src/lib/ifc-utils";
 import type { NodeStatus } from "@/src/components/node-status-badge";
-import { NodeLoadingIndicator } from "./node-loading-indicator";
-import { GeometryNodeData as BaseGeometryNodeData } from "./node-types";
+import { NodeLoadingIndicator } from "../node-loading-indicator";
+import { GeometryNodeData as BaseGeometryNodeData } from "../node-types";
 import { hasActiveModel } from "@/src/lib/ifc/viewer-manager";
 
 interface GeometryNodeProgress {

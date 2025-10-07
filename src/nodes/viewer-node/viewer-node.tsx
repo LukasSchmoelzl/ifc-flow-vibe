@@ -9,7 +9,7 @@ import {
 } from "reactflow";
 import { CuboidIcon as Cube, Loader2, AlertCircle, CheckCircle, Focus, Eye, Layers, Scissors } from "lucide-react";
 import { IfcViewer } from "@/src/lib/ifc/viewer-utils";
-import { ViewerNodeData as BaseViewerNodeData } from "./node-types";
+import { ViewerNodeData as BaseViewerNodeData } from "../node-types";
 import { useViewerFocus } from "@/src/components/contexts/viewer-focus-context";
 import { viewerManager } from "@/src/lib/ifc/viewer-manager";
 

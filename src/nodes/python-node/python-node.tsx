@@ -3,7 +3,7 @@
 import { memo, useState, useCallback } from "react";
 import { Handle, Position, type NodeProps, useReactFlow } from "reactflow";
 import { Terminal, Play, CheckCircle, AlertCircle, Clock, Code2, Sparkles } from "lucide-react";
-import { PythonNodeData } from "./node-types";
+import { PythonNodeData } from "../node-types";
 import { PythonEditorDialog } from "@/src/components/dialogs/python-editor-dialog";
 
 export const PythonNode = memo(({ data, id, isConnectable }: NodeProps<PythonNodeData>) => {

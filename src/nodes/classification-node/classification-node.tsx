@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 import { FileText } from "lucide-react"
-import { ClassificationNodeData } from "./node-types"
+import { ClassificationNodeData } from "../node-types"
 
 export const ClassificationNode = memo(({ data, isConnectable }: NodeProps<ClassificationNodeData>) => {
   return (

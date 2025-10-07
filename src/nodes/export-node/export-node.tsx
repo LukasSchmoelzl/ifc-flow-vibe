@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { Download, UploadCloud } from "lucide-react";
-import { ExportNodeData } from "./node-types";
+import { ExportNodeData } from "../node-types";
 
 export const ExportNode = memo(({ data, isConnectable }: NodeProps<ExportNodeData>) => {
   return (

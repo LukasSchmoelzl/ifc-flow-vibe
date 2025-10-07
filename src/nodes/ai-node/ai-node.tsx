@@ -9,7 +9,7 @@ import { Bot, Calculator, ChevronDown, Copy, Database, List, Shield } from "luci
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
-import type { AiNodeData } from "./node-types";
+import type { AiNodeData } from "../node-types";
 
 
 
