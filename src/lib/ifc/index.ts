@@ -7,6 +7,4 @@ export * from "@/src/nodes/spatial-node/utils"
 export * from "@/src/nodes/analysis-node/utils"
 export * from "@/src/nodes/cluster-node/utils"
 export * from "@/src/lib/ifc/file-uploader"
-export * from "@/src/nodes/viewer-node/manager"
-export * from "@/src/nodes/viewer-node/utils"
 

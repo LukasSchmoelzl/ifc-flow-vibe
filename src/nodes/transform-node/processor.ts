@@ -1,6 +1,5 @@
 import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { transformElements } from '@/src/lib/ifc-utils';
-import { withActiveViewer, hasActiveModel } from '@/src/nodes/viewer-node/manager';
 
 export class TransformNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
@@ -24,18 +23,6 @@ export class TransformNodeProcessor implements NodeProcessor {
       Number.parseFloat(node.data.properties?.scaleY || 1),
       Number.parseFloat(node.data.properties?.scaleZ || 1),
     ];
-
-    const elements = Array.isArray(inputValues.input) ? inputValues.input : inputValues.input.elements || [];
-    const elementsWithRealGeometry = elements.filter((el: any) => el.hasRealGeometry);
-
-    if (elementsWithRealGeometry.length > 0 && hasActiveModel()) {
-      console.log(`Applying real-time transformation to ${elementsWithRealGeometry.length} elements in viewer`);
-
-      const expressIds = elementsWithRealGeometry.map((el: any) => el.expressId);
-      withActiveViewer(viewer => {
-        viewer.applyTransform(expressIds, { translation, rotation, scale });
-      });
-    }
 
     return transformElements(inputValues.input, translation, rotation, scale);
   }

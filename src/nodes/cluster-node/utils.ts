@@ -524,9 +524,3 @@ export function buildClustersFromElements(
 /**
  * Helper to get viewer from cluster set (assumes single active viewer)
  */
-function getViewerFromClusterSet(clusterSet: ClusterSet): IfcViewer | null {
-  // This is a simplified approach - in a more complex setup, 
-  // you might need to track which viewer the cluster set belongs to
-  const { withActiveViewer } = require('../viewer-node/manager');
-  return withActiveViewer((viewer: IfcViewer) => viewer) || null;
-}

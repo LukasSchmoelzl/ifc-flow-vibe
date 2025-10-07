@@ -38,9 +38,14 @@
     "@radix-ui/react-toggle": "^1.1.1",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
+
     "@thatopen/components": "^3.1.4",
     "@thatopen/fragments": "^3.1.7",
     "@thatopen/ui": "^3.1.4",
+    "@thatopen/ui-obc": "3.1.1",
+    "web-ifc": "^0.0.72",
+    "three": "^0.180.0",
+    
     "alasql": "^4.6.6",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -67,9 +72,9 @@
     "stats.js": "^0.17.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.180.0",
+
     "vaul": "^0.9.6",
-    "web-ifc": "^0.0.72",
+
     "xlsx": "^0.18.5",
     "zod": "^3.25.76"
   },

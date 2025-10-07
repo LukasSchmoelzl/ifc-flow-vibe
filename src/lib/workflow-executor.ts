@@ -16,7 +16,6 @@ import {
   runPythonScript,
 } from "@/src/lib/ifc-utils";
 import { performAnalysis } from "@/src/nodes/analysis-node/utils";
-import { withActiveViewer, hasActiveModel } from "@/src/nodes/viewer-node/manager";
 import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
 import { IfcNodeProcessor } from "@/src/nodes/ifc-node/processor";

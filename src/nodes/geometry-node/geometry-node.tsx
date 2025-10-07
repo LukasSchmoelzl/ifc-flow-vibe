@@ -12,7 +12,6 @@ import type { IfcModel } from "@/src/lib/ifc-utils";
 import type { NodeStatus } from "@/src/components/node-status-badge";
 import { NodeLoadingIndicator } from "../node-loading-indicator";
 import { GeometryNodeData as BaseGeometryNodeData } from "../node-types";
-import { hasActiveModel } from "../viewer-node/manager";
 
 interface GeometryNodeProgress {
   percentage: number;
@@ -95,12 +94,6 @@ export const GeometryNode = memo(
               <div className="flex justify-between mt-1 text-xs text-green-600">
                 <span>Viewer Elements:</span>
                 <span className="font-medium">{viewerElementCount}</span>
-              </div>
-            )}
-            {!hasRealGeometry && hasActiveModel() && (
-              <div className="flex justify-between mt-1 text-xs text-amber-600">
-                <span>Viewer available</span>
-                <span>(enable real geometry)</span>
               </div>
             )}
           </div>
