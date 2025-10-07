@@ -43,6 +43,10 @@ import { useNodeDragging } from "@/src/hooks/use-node-dragging";
 import { useMobilePlacement } from "@/src/hooks/use-mobile-placement";
 import { useWorkflowOperations } from "@/src/hooks/use-workflow-operations";
 import { useAppHotkeys } from "@/src/hooks/use-app-hotkeys";
+import { useViewSettings } from "@/src/hooks/use-view-settings";
+import { useNodeOperations } from "@/src/hooks/use-node-operations";
+import { useSidebarState } from "@/src/hooks/use-sidebar-state";
+import { useFlowHandlers } from "@/src/hooks/use-flow-handlers";
 
 // Import components
 import { FooterPill } from "@/src/components/flow/FooterPill";
@@ -72,41 +76,11 @@ function FlowWithProvider() {
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // View settings - start with defaults to match server rendering
-  const [showGrid, setShowGridState] = useState(true);
-  const [showMinimap, setShowMinimapState] = useState(false);
-  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
-
-  // Wrapper functions to update both state and localStorage
-  const setShowGrid = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    const newValue = typeof value === 'function' ? value(showGrid) : value;
-    setShowGridState(newValue);
-    updateViewerSettings({ showGrid: newValue });
-  }, [showGrid, updateViewerSettings]);
-
-  const setShowMinimap = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    const newValue = typeof value === 'function' ? value(showMinimap) : value;
-    setShowMinimapState(newValue);
-    updateViewerSettings({ showMinimap: newValue });
-  }, [showMinimap, updateViewerSettings]);
-
-  // Load persisted settings after mount to avoid hydration issues
-  useEffect(() => {
-    const gridSetting = loadViewerSetting('showGrid', true);
-    const minimapSetting = loadViewerSetting('showMinimap', false);
-
-    setShowGridState(gridSetting);
-    setShowMinimapState(minimapSetting);
-    setIsSettingsLoaded(true);
-  }, []);
-
-  // Focused viewer state
   const [focusedViewerId, setFocusedViewerId] = useState<string | null>(null);
 
-  // Auto-save timer
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { showGrid, showMinimap, isSettingsLoaded, setShowGrid, setShowMinimap } = useViewSettings();
+  
+  const { sidebarOpen, setSidebarOpen, handleSidebarToggle, handleBackdropClick } = useSidebarState(isMobile);
 
   // Get the ReactFlow utility functions
   const reactFlowInstance = useReactFlow();
@@ -203,108 +177,15 @@ function FlowWithProvider() {
     setHistoryIndex(historyIndex + 1);
   }, [canRedo, historyIndex, history, setNodes, setEdges, setHistoryIndex]);
 
-  // Select All
-  const handleSelectAll = useCallback(() => {
-    const updatedNodes = nodes.map((node) => ({
-      ...node,
-      selected: true,
-    }));
-    setNodes(updatedNodes);
-
-    toast({
-      title: "Select All",
-      description: `Selected ${nodes.length} nodes`,
-    });
-  }, [nodes, setNodes, toast]);
-
-  // Copy/Cut/Paste/Delete handlers
-  const handleCopy = useCallback(() => {
-    const selectedNodes = nodes.filter((node) => node.selected);
-    const selectedNodeIds = selectedNodes.map((node) => node.id);
-    const selectedEdges = edges.filter(
-      (edge) =>
-        selectedNodeIds.includes(edge.source) &&
-        selectedNodeIds.includes(edge.target)
-    );
-
-    setClipboard({ nodes: selectedNodes, edges: selectedEdges });
-    toast({
-      title: "Copied",
-      description: `${selectedNodes.length} node(s) and ${selectedEdges.length} connection(s) copied`,
-    });
-  }, [nodes, edges, setClipboard, toast]);
-
-  const handleDelete = useCallback(() => {
-    const selectedNodes = nodes.filter((node) => node.selected);
-    if (selectedNodes.length === 0) return;
-
-    saveToHistory(nodes, edges);
-
-    const selectedNodeIds = selectedNodes.map((node) => node.id);
-    const remainingNodes = nodes.filter((node) => !node.selected);
-    const remainingEdges = edges.filter(
-      (edge) =>
-        !selectedNodeIds.includes(edge.source) &&
-        !selectedNodeIds.includes(edge.target)
-    );
-
-    setNodes(remainingNodes);
-    setEdges(remainingEdges);
-
-    toast({
-      title: "Deleted",
-      description: `${selectedNodes.length} node(s) deleted`,
-    });
-  }, [nodes, edges, saveToHistory, setNodes, setEdges, toast]);
-
-  const handleCut = useCallback(() => {
-    handleCopy();
-    handleDelete();
-  }, [handleCopy, handleDelete]);
-
-  const handlePaste = useCallback(() => {
-    if (!clipboard || clipboard.nodes.length === 0) return;
-
-    saveToHistory(nodes, edges);
-
-    const idMapping = new Map<string, string>();
-    const offset = { x: 50, y: 50 };
-
-    const newNodes = clipboard.nodes.map((node) => {
-      const newId = `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      idMapping.set(node.id, newId);
-
-      return {
-        ...node,
-        id: newId,
-        position: {
-          x: node.position.x + offset.x,
-          y: node.position.y + offset.y,
-        },
-        selected: true,
-      };
-    });
-
-    const newEdges = clipboard.edges.map((edge) => ({
-      ...edge,
-      id: `${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
-      source: idMapping.get(edge.source) || edge.source,
-      target: idMapping.get(edge.target) || edge.target,
-    }));
-
-    const updatedExistingNodes = nodes.map((node) => ({
-      ...node,
-      selected: false,
-    }));
-
-    setNodes([...updatedExistingNodes, ...newNodes]);
-    setEdges([...edges, ...newEdges]);
-
-    toast({
-      title: "Pasted",
-      description: `${newNodes.length} node(s) and ${newEdges.length} connection(s) pasted`,
-    });
-  }, [clipboard, nodes, edges, saveToHistory, setNodes, setEdges, toast]);
+  const { handleSelectAll, handleCopy, handleCut, handlePaste, handleDelete } = useNodeOperations(
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    clipboard,
+    setClipboard,
+    saveToHistory
+  );
 
   // Setup keyboard shortcuts
   useAppHotkeys({
@@ -328,129 +209,28 @@ function FlowWithProvider() {
     onRunWorkflow: handleRunWorkflow,
   });
 
-  // Updated node changes handler with history
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-
-      const isPositionChange = changes.some(
-        (change) => change.type === "position"
-      );
-
-      const isDragEnd = changes.some(
-        (change) =>
-          change.type === "position" &&
-          change.dragging === false &&
-          isNodeDragging
-      );
-
-      if (isPositionChange && !isNodeDragging) {
-        const isDragStart = changes.some(
-          (change) => change.type === "position" && change.dragging === true
-        );
-        if (isDragStart) {
-          setIsNodeDragging(true);
-        }
-      }
-
-      if (isDragEnd) {
-        setIsNodeDragging(false);
-        setTimeout(() => {
-          saveToHistory(nodes, edges);
-        }, 50);
-      }
-
-      const isSelectionChange = changes.every(
-        (change) => change.type === "select"
-      );
-
-      if (!isSelectionChange && !isPositionChange) {
-        if (autoSaveTimerRef.current) {
-          clearTimeout(autoSaveTimerRef.current);
-        }
-        autoSaveTimerRef.current = setTimeout(() => {
-          saveToHistory(nodes, edges);
-        }, 1000);
-      }
-    },
-    [nodes, edges, onNodesChange, saveToHistory, isNodeDragging, setIsNodeDragging]
+  const {
+    handleNodesChange,
+    onConnect,
+    onDragOver,
+    onDrop,
+    onNodeClick,
+    onNodeDoubleClick,
+    getFlowObject,
+  } = useFlowHandlers(
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    onNodesChange,
+    reactFlowInstance,
+    reactFlowWrapper,
+    isNodeDragging,
+    setIsNodeDragging,
+    saveToHistory,
+    setSelectedNode,
+    setEditingNode
   );
-
-  const onConnect = useCallback(
-    (params: Connection) => {
-      saveToHistory(nodes, edges);
-
-      const newEdge = {
-        ...params,
-        id: `${params.source}-${params.target}`,
-        type: "default",
-        style: { stroke: "#888", strokeWidth: 2 },
-        animated: false,
-      };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [nodes, edges, saveToHistory, setEdges]
-  );
-
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-
-      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      const type = event.dataTransfer.getData("application/reactflow");
-
-      if (typeof type === "undefined" || !type) {
-        return;
-      }
-
-      if (!reactFlowBounds) {
-        return;
-      }
-
-      const cursorPosition = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      const position = {
-        x: cursorPosition.x,
-        y: cursorPosition.y,
-      };
-
-      saveToHistory(nodes, edges);
-
-      const newNode = createNode(type, position);
-
-      setNodes((nds) => nds.concat(newNode));
-    },
-    [reactFlowInstance, nodes, edges, saveToHistory, setNodes]
-  );
-
-  const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      const isMac = navigator.platform.toUpperCase().includes('MAC');
-      const cmdOrCtrl = isMac ? (event as any).metaKey : (event as any).ctrlKey;
-      if (cmdOrCtrl) {
-        return;
-      }
-      setSelectedNode(node);
-    },
-    []
-  );
-
-  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
-    setEditingNode(node);
-  }, []);
-
-  // Helper function to get current flow object
-  const getFlowObject = useCallback(() => {
-    return reactFlowInstance.toObject();
-  }, [reactFlowInstance]);
 
   // File drag and drop handlers
   const handleFileDragEnter = useCallback((e: DragEvent) => {
@@ -578,32 +358,6 @@ function FlowWithProvider() {
     };
   }, [toast]);
 
-  // Handle sidebar toggle
-  const handleSidebarToggle = useCallback(() => {
-    setSidebarOpen(!sidebarOpen);
-
-    if ('vibrate' in navigator && isMobile) {
-      navigator.vibrate(50);
-    }
-  }, [sidebarOpen, isMobile]);
-
-  const handleBackdropClick = useCallback(() => {
-    if (isMobile && sidebarOpen) {
-      setSidebarOpen(false);
-    }
-  }, [isMobile, sidebarOpen]);
-
-  // Handle escape key to close sidebar on mobile
-  useEffect(() => {
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobile && sidebarOpen) {
-        setSidebarOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isMobile, sidebarOpen]);
 
   // Handle canvas click/tap for node placement
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
