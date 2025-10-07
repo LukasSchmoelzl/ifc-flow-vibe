@@ -7,6 +7,8 @@ import { useToast } from "@/src/hooks/use-toast";
 
 const HOTKEYS_ENABLED = false;
 
+export { HOTKEYS_ENABLED };
+
 interface UseAppHotkeysProps {
   nodes: Node[];
   edges: Edge[];
