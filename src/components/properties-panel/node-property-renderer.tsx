@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { DataTransformEditor } from "./property-editors/data-transform-editor";
+import { DataTransformEditor } from "@/src/nodes/data-transform-node/properties";
 
 interface NodePropertyRendererProps {
   node: any;

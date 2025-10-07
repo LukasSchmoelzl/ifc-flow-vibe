@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { Switch } from "../../ui/switch";
-import { Textarea } from "../../ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
-import { Badge } from "../../ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import { Switch } from "@/src/components/ui/switch";
+import { Textarea } from "@/src/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
 import { Trash2, Plus, ChevronUp, ChevronDown, Copy, Settings } from "lucide-react";
-import { TransformStep, FilterCondition } from "../../nodes/node-types";
-import { TRANSFORM_PRESETS } from "../../../lib/data-transform-utils";
+import { TransformStep, FilterCondition } from "@/src/nodes/node-types";
+import { TRANSFORM_PRESETS } from "@/src/lib/data-transform-utils";
 
 interface DataTransformEditorProps {
     properties: any;
