@@ -19,9 +19,9 @@ import { performAnalysis } from "@/src/nodes/analysis-node/utils";
 import { withActiveViewer, hasActiveModel } from "@/src/nodes/viewer-node/manager";
 import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
-import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./workflow-executor/types";
-import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./workflow-executor/helpers";
-import { processNodeByType } from "./workflow-executor/processors";
+import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./types";
+import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./helpers";
+import { processNodeByType } from "./processors";
 
 // TODO: error handling and progress tracking
 export class WorkflowExecutor {
@@ -1110,7 +1110,7 @@ export class WorkflowExecutor {
         }
 
         try {
-          const { executeTransformPipeline } = await import('../nodes/data-transform-node/utils');
+          const { executeTransformPipeline } = await import('../../nodes/data-transform-node/utils');
 
           const steps = node.data.properties?.steps || [];
           const restrictToIncomingElements = node.data.properties?.restrictToIncomingElements || false;
