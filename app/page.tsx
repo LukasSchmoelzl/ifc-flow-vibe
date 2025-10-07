@@ -23,23 +23,23 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { Sidebar } from "@/components/sidebar";
 import { PropertiesDialog } from "@/components/dialogs/properties-dialog";
-import { IfcNode } from "@/components/nodes/ifc-node";
-import { GeometryNode } from "@/components/nodes/geometry-node";
-import { FilterNode } from "@/components/nodes/filter-node";
-import { TransformNode } from "@/components/nodes/transform-node";
-import { ViewerNode } from "@/components/nodes/viewer-node";
+import { IfcNode } from "@/src/nodes/ifc-node";
+import { GeometryNode } from "@/src/nodes/geometry-node";
+import { FilterNode } from "@/src/nodes/filter-node";
+import { TransformNode } from "@/src/nodes/transform-node";
+import { ViewerNode } from "@/src/nodes/viewer-node";
 import { AppMenubar } from "@/components/menubar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { QuantityNode } from "@/components/nodes/quantity-node";
-import { PropertyNode } from "@/components/nodes/property-node";
-import { ClassificationNode } from "@/components/nodes/classification-node";
-import { SpatialNode } from "@/components/nodes/spatial-node";
-import { ExportNode } from "@/components/nodes/export-node";
-import { RelationshipNode } from "@/components/nodes/relationship-node";
-import { AnalysisNode } from "@/components/nodes/analysis-node";
-import { WatchNode } from "@/components/nodes/watch-node";
-import { ParameterNode } from "@/components/nodes/parameter-node";
-import { PythonNode } from "@/components/nodes/python-node";
+import { QuantityNode } from "@/src/nodes/quantity-node";
+import { PropertyNode } from "@/src/nodes/property-node";
+import { ClassificationNode } from "@/src/nodes/classification-node";
+import { SpatialNode } from "@/src/nodes/spatial-node";
+import { ExportNode } from "@/src/nodes/export-node";
+import { RelationshipNode } from "@/src/nodes/relationship-node";
+import { AnalysisNode } from "@/src/nodes/analysis-node";
+import { WatchNode } from "@/src/nodes/watch-node";
+import { ParameterNode } from "@/src/nodes/parameter-node";
+import { PythonNode } from "@/src/nodes/python-node";
 import { Toaster } from "@/components/toaster";
 import { WorkflowExecutor } from "@/lib/workflow-executor";
 import { loadIfcFile, getIfcFile, downloadExportedFile } from "@/lib/ifc-utils";
@@ -58,7 +58,7 @@ import { ViewerFocusProvider } from "@/components/contexts/viewer-focus-context"
 import { nodeCategories } from "@/components/sidebar";
 
 // Import the centralized nodeTypes to prevent React Flow warning
-import { nodeTypes } from "@/components/nodes";
+import { nodeTypes } from "@/src/nodes";
 
 // Footer Pill Component (moved inside FlowWithProvider to access currentWorkflow)
 

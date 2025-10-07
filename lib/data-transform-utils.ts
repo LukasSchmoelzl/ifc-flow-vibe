@@ -1,4 +1,4 @@
-import { TransformStep, FilterCondition } from "../components/nodes/node-types";
+import { TransformStep, FilterCondition } from "../src/nodes/node-types";
 
 export interface TransformResult {
     data: any;

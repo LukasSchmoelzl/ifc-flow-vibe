@@ -17,7 +17,7 @@ import { loadIfcFile } from "@/lib/ifc-utils";
 import { useToast } from "@/hooks/use-toast";
 
 // Import node types
-import { nodeTypes } from "@/components/nodes";
+import { nodeTypes } from "@/src/nodes";
 
 interface FlowCanvasProps {
   nodes: any[];
