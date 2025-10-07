@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimit, RATE_LIMIT_CONFIGS, getRateLimitHeaders, createRateLimitError } from './lib/rate-limiter';
+import { rateLimit, RATE_LIMIT_CONFIGS, getRateLimitHeaders, createRateLimitError } from './src/lib/rate-limiter';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
