@@ -1,5 +1,5 @@
-import type { NodeProcessor, ProcessorContext, PropertyNodeElement } from '@/src/lib/workflow-executor/types';
-import { safeStringify } from '@/src/lib/workflow-executor/helpers';
+import type { NodeProcessor, ProcessorContext, PropertyNodeElement } from '@/src/lib/workflow-executor';
+import { safeStringify } from '@/src/lib/workflow-executor';
 
 export class WatchNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {

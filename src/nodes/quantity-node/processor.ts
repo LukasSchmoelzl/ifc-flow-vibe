@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { extractQuantities, type IfcModel } from '@/src/lib/ifc-utils';
 
 export class QuantityNodeProcessor implements NodeProcessor {

@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { spatialQuery } from '@/src/lib/ifc-utils';
 
 export class SpatialNodeProcessor implements NodeProcessor {

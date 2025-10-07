@@ -1,6 +1,6 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { exportData, downloadExportedFile } from '@/src/lib/ifc-utils';
-import { checkIfInputHasGeometry } from '@/src/lib/workflow-executor/helpers';
+import { checkIfInputHasGeometry } from '@/src/lib/workflow-executor';
 
 export class ExportNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {

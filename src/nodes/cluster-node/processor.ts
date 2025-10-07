@@ -1,6 +1,6 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { buildClustersFromElements, type ClusterConfig } from '@/src/nodes/cluster-node/utils';
-import { findUpstreamIfcNode } from '@/src/lib/workflow-executor/helpers';
+import { findUpstreamIfcNode } from '@/src/lib/workflow-executor';
 
 export class ClusterNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {

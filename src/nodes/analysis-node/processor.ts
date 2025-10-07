@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { performAnalysis } from '@/src/nodes/analysis-node/utils';
 import { getLastLoadedModel } from '@/src/lib/ifc-utils';
 

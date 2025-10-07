@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor/types';
+import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import { transformElements } from '@/src/lib/ifc-utils';
 import { withActiveViewer, hasActiveModel } from '@/src/nodes/viewer-node/manager';
 
