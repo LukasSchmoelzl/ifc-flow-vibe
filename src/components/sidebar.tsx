@@ -44,7 +44,6 @@ import {
   X,
   GripVertical,
   Shuffle,
-  Bot,
 } from "lucide-react";
 import {
   type Workflow as WorkflowType,
@@ -150,12 +149,6 @@ export const nodeCategories = [
         id: "dataTransformNode",
         label: "Data Transform",
         icon: <Shuffle className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-      {
-        id: "aiNode",
-        label: "AI Chat",
-        icon: <Bot className="h-4 w-4 mr-2" />,
         status: "new",
       },
     ],

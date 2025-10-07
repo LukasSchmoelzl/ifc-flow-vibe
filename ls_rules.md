@@ -5,7 +5,6 @@ Allgemein:
     Dokumentation wird über .md Dateien erstellt. Diese sind oft veraltet und nicht mehr aktuell.
     Vermeide SetTimeouts. Diese sind schwer zu debuggen und verursachen unerwartetes Verhalten.
     Füge nur Code Hinzu der auch direkt verwendet wird.
-    Gib möglichst einsilbige Antworten
     Verwende unter keinen umständen MOCKDATA
     Kommentare in dem nachfolgenden Fromat sollen auf eine Zeile gekürzt werden (// Kommentar): 
     /**
