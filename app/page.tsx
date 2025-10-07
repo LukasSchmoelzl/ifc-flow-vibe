@@ -26,11 +26,7 @@ import { useIsMobile } from "@/src/hooks/use-mobile";
 import { Toaster } from "@/src/components/toaster";
 import { useToast } from "@/src/hooks/use-toast";
 import type { Workflow } from "@/src/lib/workflow-storage";
-import { useHotkeys } from "react-hotkeys-hook";
-import {
-  parseKeyCombination,
-  useKeyboardShortcuts,
-} from "@/src/lib/keyboard-shortcuts";
+import { useKeyboardShortcuts } from "@/src/lib/keyboard-shortcuts";
 import { useAppSettings } from "@/src/lib/settings-manager";
 import { useTheme } from "next-themes";
 import { ViewerFocusProvider } from "@/src/components/contexts/viewer-focus-context";
@@ -46,6 +42,7 @@ import { useFileDrag } from "@/src/hooks/use-file-drag";
 import { useNodeDragging } from "@/src/hooks/use-node-dragging";
 import { useMobilePlacement } from "@/src/hooks/use-mobile-placement";
 import { useWorkflowOperations } from "@/src/hooks/use-workflow-operations";
+import { useAppHotkeys } from "@/src/hooks/use-app-hotkeys";
 
 // Import components
 import { FooterPill } from "@/src/components/flow/FooterPill";
@@ -56,7 +53,6 @@ import { MobilePlacementOverlay } from "@/src/components/flow/MobilePlacementOve
 import { createNode, getNodeLabel, loadViewerSetting } from "@/src/lib/node-factory";
 
 // Define all ReactFlow props outside the component to prevent warnings
-const SHORTCUTS_ENABLED = false;
 const edgeTypes = {} as const;
 const snapGrid: [number, number] = [15, 15];
 const proOptions = { hideAttribution: true };
@@ -190,43 +186,7 @@ function FlowWithProvider() {
     setPlacementMode,
   } = useMobilePlacement(isMobile, setNodes, saveToHistory);
 
-  // Helper function to find shortcut by ID
-  const findShortcut = (id: string) => {
-    return shortcuts.find(s => s.id === id)?.keys || "";
-  };
-
-  // Handle keyboard shortcuts
-  useHotkeys(
-    findShortcut("save-workflow") || "ctrl+s,cmd+s",
-    (e) => {
-      e.preventDefault();
-      if (currentWorkflow) {
-        const flowData = reactFlowInstance.toObject();
-        handleSaveWorkflow(currentWorkflow.name, flowData);
-      }
-    },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    findShortcut("open-file") || "ctrl+o,cmd+o",
-    (e) => {
-      e.preventDefault();
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".ifc";
-      input.onchange = (event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (file) {
-          handleOpenFile(file);
-        }
-      };
-      input.click();
-    },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: SHORTCUTS_ENABLED }
-  );
-
-  // Undo/Redo shortcuts
+  // Undo/Redo handlers
   const handleUndo = useCallback(() => {
     if (!canUndo || historyIndex <= 0) return;
     const previousState = history[historyIndex - 1];
@@ -243,26 +203,6 @@ function FlowWithProvider() {
     setHistoryIndex(historyIndex + 1);
   }, [canRedo, historyIndex, history, setNodes, setEdges, setHistoryIndex]);
 
-  useHotkeys(
-    findShortcut("undo") || "ctrl+z,cmd+z",
-    (e) => {
-      if (!e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      }
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    findShortcut("redo") || "ctrl+shift+z,cmd+shift+z,ctrl+y,cmd+y",
-    (e) => {
-      e.preventDefault();
-      handleRedo();
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
   // Select All
   const handleSelectAll = useCallback(() => {
     const updatedNodes = nodes.map((node) => ({
@@ -276,15 +216,6 @@ function FlowWithProvider() {
       description: `Selected ${nodes.length} nodes`,
     });
   }, [nodes, setNodes, toast]);
-
-  useHotkeys(
-    findShortcut("select-all") || "ctrl+a,cmd+a",
-    (e) => {
-      e.preventDefault();
-      handleSelectAll();
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
 
   // Copy/Cut/Paste/Delete handlers
   const handleCopy = useCallback(() => {
@@ -375,85 +306,27 @@ function FlowWithProvider() {
     });
   }, [clipboard, nodes, edges, saveToHistory, setNodes, setEdges, toast]);
 
-  // Copy/Cut/Paste/Delete shortcuts
-  useHotkeys(
-    findShortcut("copy") || "ctrl+c,cmd+c",
-    (e) => {
-      const activeElement = document.activeElement;
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-
-      const selectedNodes = nodes.filter((node) => node.selected);
-
-      if (!isInFormField && selectedNodes.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleCopy();
-      }
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    findShortcut("cut") || "ctrl+x,cmd+x",
-    (e) => {
-      const activeElement = document.activeElement;
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-
-      const selectedNodes = nodes.filter((node) => node.selected);
-
-      if (!isInFormField && selectedNodes.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleCut();
-      }
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    findShortcut("paste") || "ctrl+v,cmd+v",
-    (e) => {
-      const activeElement = document.activeElement;
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-
-      if (!isInFormField && clipboard && clipboard.nodes.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        handlePaste();
-      }
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    "delete,backspace",
-    (e) => {
-      e.preventDefault();
-      handleDelete();
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
-
-  useHotkeys(
-    findShortcut("run-workflow") || "F5",
-    (e) => {
-      e.preventDefault();
-      handleRunWorkflow();
-    },
-    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
-  );
+  // Setup keyboard shortcuts
+  useAppHotkeys({
+    nodes,
+    edges,
+    clipboard,
+    currentWorkflow,
+    canUndo,
+    canRedo,
+    reactFlowInstance,
+    shortcuts,
+    onSaveWorkflow: handleSaveWorkflow,
+    onOpenFile: handleOpenFile,
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    onSelectAll: handleSelectAll,
+    onCopy: handleCopy,
+    onCut: handleCut,
+    onPaste: handlePaste,
+    onDelete: handleDelete,
+    onRunWorkflow: handleRunWorkflow,
+  });
 
   // Updated node changes handler with history
   const handleNodesChange = useCallback(
