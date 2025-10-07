@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Badge } from "@/src/components/ui/badge";
 import { Trash2, Plus, ChevronUp, ChevronDown, Copy, Settings } from "lucide-react";
 import { TransformStep, FilterCondition } from "@/src/nodes/node-types";
-import { TRANSFORM_PRESETS } from "@/src/lib/data-transform-utils";
+import { TRANSFORM_PRESETS } from "./utils";
 
 interface DataTransformEditorProps {
     properties: any;

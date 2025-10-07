@@ -7,12 +7,12 @@ import { NodeStatusBadge } from "@/src/components/node-status-badge";
 import {
   extractGeometry,
   extractGeometryWithGeom,
-} from "@/src/lib/ifc/geometry-utils";
+} from "./utils";
 import type { IfcModel } from "@/src/lib/ifc-utils";
 import type { NodeStatus } from "@/src/components/node-status-badge";
 import { NodeLoadingIndicator } from "../node-loading-indicator";
 import { GeometryNodeData as BaseGeometryNodeData } from "../node-types";
-import { hasActiveModel } from "@/src/lib/ifc/viewer-manager";
+import { hasActiveModel } from "../viewer-node/manager";
 
 interface GeometryNodeProgress {
   percentage: number;

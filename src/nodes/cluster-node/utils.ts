@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { IfcElement } from "@/src/lib/ifc-utils";
-import { IfcViewer } from "./viewer-utils";
+import { IfcViewer } from "../viewer-node/utils";
 
 export interface ClusterConfig {
   groupBy: 'type' | 'level' | 'material' | 'property';
@@ -527,6 +527,6 @@ export function buildClustersFromElements(
 function getViewerFromClusterSet(clusterSet: ClusterSet): IfcViewer | null {
   // This is a simplified approach - in a more complex setup, 
   // you might need to track which viewer the cluster set belongs to
-  const { withActiveViewer } = require('./viewer-manager');
+  const { withActiveViewer } = require('../viewer-node/manager');
   return withActiveViewer((viewer: IfcViewer) => viewer) || null;
 }

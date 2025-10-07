@@ -15,10 +15,10 @@ import {
   extractGeometryWithGeom,
   runPythonScript,
 } from "@/src/lib/ifc-utils";
-import { performAnalysis } from "@/src/lib/ifc/analysis-utils";
-import { withActiveViewer, hasActiveModel } from "@/src/lib/ifc/viewer-manager";
+import { performAnalysis } from "@/src/nodes/analysis-node/utils";
+import { withActiveViewer, hasActiveModel } from "@/src/nodes/viewer-node/manager";
 import * as THREE from "three";
-import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/lib/ifc/cluster-utils";
+import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
 
 // Add TypeScript interfaces at the top of the file
 interface PropertyInfo {
