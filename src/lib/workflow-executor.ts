@@ -19,60 +19,9 @@ import { performAnalysis } from "@/src/nodes/analysis-node/utils";
 import { withActiveViewer, hasActiveModel } from "@/src/nodes/viewer-node/manager";
 import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
-
-// Add TypeScript interfaces at the top of the file
-interface PropertyInfo {
-  name: string;
-  exists: boolean;
-  value: any;
-  psetName: string;
-}
-
-interface PropertyNodeElement {
-  id: string;
-  expressId?: number;
-  type: string;
-  properties?: {
-    GlobalId?: string;
-    Name?: string;
-    [key: string]: any;
-  };
-  propertyInfo?: PropertyInfo;
-  [key: string]: any;
-}
-
-// Helper function to safely convert values to JSON strings, avoiding cyclic references
-function safeStringify(value: any): string {
-  // Handle primitive values directly
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value !== "object") return String(value);
-
-  // For objects, use a WeakSet to track objects that have been processed
-  const seen = new WeakSet();
-
-  // Custom replacer function for JSON.stringify that handles circular references
-  const replacer = (key: string, value: any) => {
-    // For non-objects, return the value directly
-    if (typeof value !== "object" || value === null) return value;
-
-    // For objects, check if we've seen it before to avoid cycles
-    if (seen.has(value)) {
-      return "[Circular Reference]";
-    }
-
-    // Mark this object as seen
-    seen.add(value);
-    return value;
-  };
-
-  try {
-    return JSON.stringify(value, replacer);
-  } catch (error) {
-    console.warn("Error stringifying object:", error);
-    return "[Complex Object]";
-  }
-}
+import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./workflow-executor/types";
+import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./workflow-executor/helpers";
+import { processNodeByType } from "./workflow-executor/processors";
 
 // TODO: error handling and progress tracking
 export class WorkflowExecutor {
@@ -106,10 +55,8 @@ export class WorkflowExecutor {
     try {
       console.log("Starting workflow execution...");
 
-      // Find all nodes that need to be processed (topological sort)
-      const sortedNodes = this.topologicalSort();
+      const sortedNodes = topologicalSort(this.nodes, this.edges);
 
-      // Process each node in order
       for (const nodeId of sortedNodes) {
         console.log(`Processing node ${nodeId}`);
         await this.processNode(nodeId);
@@ -144,21 +91,39 @@ export class WorkflowExecutor {
   }
 
   private async processNode(nodeId: string): Promise<any> {
-    // If we already processed this node, return the cached result
     if (this.nodeResults.has(nodeId)) {
       return this.nodeResults.get(nodeId);
     }
 
-    // Find the node
     const node = this.nodes.find((n) => n.id === nodeId);
     if (!node) {
       throw new Error(`Node with id ${nodeId} not found`);
     }
 
-    // Get input values by processing upstream nodes
     const inputValues = await this.getInputValues(nodeId);
 
-    // Process the node based on its type
+    // Create processor context
+    const context: ProcessorContext = {
+      nodeResults: this.nodeResults,
+      edges: this.edges,
+      nodes: this.nodes,
+      updateNodeData: (nodeId: string, data: any) => this.updateNodeDataInList(nodeId, data),
+    };
+
+    // Try new processor system first
+    let result = await processNodeByType(node.type, node, inputValues, context);
+    
+    // Fallback to old switch-case for nodes not yet migrated
+    if (result === null && !["ifcNode", "filterNode", "parameterNode"].includes(node.type)) {
+      result = await this.processNodeLegacy(node, inputValues, nodeId);
+    }
+
+    this.nodeResults.set(nodeId, result);
+    return result;
+  }
+
+  // Legacy processor for nodes not yet migrated
+  private async processNodeLegacy(node: any, inputValues: any, nodeId: string): Promise<any> {
     let result;
     switch (node.type) {
       case "ifcNode":
@@ -285,9 +250,9 @@ export class WorkflowExecutor {
 
       case "geometryNode":
         // Check if we should use actual geometry OR if there's a downstream GLB export OR viewer
-        const hasDownstreamGLB = this.hasDownstreamGLBExport(nodeId);
-        const hasDownstreamViewer = this.hasDownstreamViewer(nodeId);
-        const needsActualGeometry = node.data.properties?.useActualGeometry || hasDownstreamGLB || hasDownstreamViewer;
+        const hasDownstreamGLB = hasDownstreamGLBExport(nodeId, this.edges, this.nodes);
+        const hasDownstreamViewerNode = hasDownstreamViewer(nodeId, this.edges, this.nodes);
+        const needsActualGeometry = node.data.properties?.useActualGeometry || hasDownstreamGLB || hasDownstreamViewerNode;
         const hasViewerModel = hasActiveModel();
 
         // Update node with real-time viewer status
@@ -307,7 +272,7 @@ export class WorkflowExecutor {
           if (hasDownstreamGLB && !node.data.properties?.useActualGeometry) {
             console.log(`Automatically enabling geometry extraction for GLB export downstream from node ${nodeId}`);
           }
-          if (hasDownstreamViewer && !node.data.properties?.useActualGeometry && !hasDownstreamGLB) {
+          if (hasDownstreamViewerNode && !node.data.properties?.useActualGeometry && !hasDownstreamGLB) {
             console.log(`Automatically enabling geometry extraction for viewer downstream from node ${nodeId}`);
           }
 
@@ -1008,7 +973,7 @@ export class WorkflowExecutor {
             console.log("GLB export detected - checking if geometry extraction is needed");
 
             // Check if input has geometry data
-            const hasGeometry = this.checkIfInputHasGeometry(exportInput);
+            const hasGeometry = checkIfInputHasGeometry(exportInput);
 
             if (!hasGeometry) {
               console.log("No geometry found in input - extracting geometry for GLB export");
@@ -1094,7 +1059,7 @@ export class WorkflowExecutor {
               // Check if we need to trace back through the workflow to find the original model
               else {
                 // Find the IFC node that started this chain
-                const ifcNodeId = this.findUpstreamIfcNode(nodeId);
+                const ifcNodeId = findUpstreamIfcNode(nodeId, this.edges, this.nodes);
                 if (ifcNodeId) {
                   const ifcResult = this.nodeResults.get(ifcNodeId);
                   if (ifcResult?.file) {
@@ -1220,57 +1185,6 @@ export class WorkflowExecutor {
     }
 
     return inputValues;
-  }
-
-  // Add a new method to perform topological sort of nodes
-  private topologicalSort(): string[] {
-    // Create a graph representation
-    const graph: Record<string, string[]> = {};
-    this.nodes.forEach((node) => {
-      graph[node.id] = [];
-    });
-
-    // Add edges to the graph
-    this.edges.forEach((edge) => {
-      if (graph[edge.source]) {
-        graph[edge.source].push(edge.target);
-      }
-    });
-
-    // Perform topological sort
-    const visited = new Set<string>();
-    const tempVisited = new Set<string>();
-    const result: string[] = [];
-
-    const visit = (nodeId: string) => {
-      if (tempVisited.has(nodeId)) {
-        throw new Error("Workflow contains a cycle, cannot execute");
-      }
-
-      if (!visited.has(nodeId)) {
-        tempVisited.add(nodeId);
-
-        // Visit all neighbors
-        if (graph[nodeId]) {
-          for (const neighbor of graph[nodeId]) {
-            visit(neighbor);
-          }
-        }
-
-        tempVisited.delete(nodeId);
-        visited.add(nodeId);
-        result.unshift(nodeId); // Add to the beginning
-      }
-    };
-
-    // Visit all nodes
-    this.nodes.forEach((node) => {
-      if (!visited.has(node.id)) {
-        visit(node.id);
-      }
-    });
-
-    return result;
   }
 
   // Helper to update node data in the internal list
@@ -1434,121 +1348,6 @@ export class WorkflowExecutor {
       // Rethrow the error
       throw error;
     }
-  }
-
-  // Helper method to check if there's a downstream GLB export from this node
-  private hasDownstreamGLBExport(nodeId: string): boolean {
-    const visited = new Set<string>();
-
-    const checkDownstream = (currentNodeId: string): boolean => {
-      if (visited.has(currentNodeId)) return false;
-      visited.add(currentNodeId);
-
-      // Find all edges that start from this node
-      const outgoingEdges = this.edges.filter(edge => edge.source === currentNodeId);
-
-      for (const edge of outgoingEdges) {
-        const targetNode = this.nodes.find(n => n.id === edge.target);
-        if (!targetNode) continue;
-
-        // Check if this target node is an export node with GLB format
-        if (targetNode.type === "exportNode" &&
-          targetNode.data.properties?.format === "glb") {
-          console.log(`Found downstream GLB export from geometry node ${nodeId}`);
-          return true;
-        }
-
-        // Recursively check downstream nodes
-        if (checkDownstream(edge.target)) {
-          return true;
-        }
-      }
-
-      return false;
-    };
-
-    return checkDownstream(nodeId);
-  }
-
-  private hasDownstreamViewer(nodeId: string): boolean {
-    const visited = new Set<string>();
-
-    const checkDownstream = (currentNodeId: string): boolean => {
-      if (visited.has(currentNodeId)) return false;
-      visited.add(currentNodeId);
-
-      // Find all edges that start from this node
-      const outgoingEdges = this.edges.filter(edge => edge.source === currentNodeId);
-
-      for (const edge of outgoingEdges) {
-        const targetNode = this.nodes.find(n => n.id === edge.target);
-        if (!targetNode) continue;
-
-        // Check if this target node is a viewer node
-        if (targetNode.type === "viewerNode") {
-          console.log(`Found downstream viewer from geometry node ${nodeId}`);
-          return true;
-        }
-
-        // Recursively check downstream nodes
-        if (checkDownstream(edge.target)) {
-          return true;
-        }
-      }
-
-      return false;
-    };
-
-    return checkDownstream(nodeId);
-  }
-
-  private findUpstreamIfcNode(nodeId: string): string | null {
-    const visited = new Set<string>();
-
-    const checkUpstream = (currentNodeId: string): string | null => {
-      if (visited.has(currentNodeId)) return null;
-      visited.add(currentNodeId);
-
-      // Find all edges that end at this node
-      const incomingEdges = this.edges.filter(edge => edge.target === currentNodeId);
-
-      for (const edge of incomingEdges) {
-        const sourceNode = this.nodes.find(n => n.id === edge.source);
-        if (!sourceNode) continue;
-
-        // Check if this source node is an IFC node
-        if (sourceNode.type === "ifcNode") {
-          return sourceNode.id;
-        }
-
-        // Recursively check upstream nodes
-        const upstreamIfc = checkUpstream(edge.source);
-        if (upstreamIfc) {
-          return upstreamIfc;
-        }
-      }
-
-      return null;
-    };
-
-    return checkUpstream(nodeId);
-  }
-
-  // Helper method to check if input data has geometry
-  private checkIfInputHasGeometry(input: any): boolean {
-    if (!input) return false;
-
-    // Check if it's an array of elements with geometry
-    if (Array.isArray(input)) {
-      return input.some((element: any) => element.geometry && element.geometry.vertices);
-    }
-
-    // Check if it's a model with elements that have geometry
-    if (input.elements && Array.isArray(input.elements)) {
-      return input.elements.some((element: any) => element.geometry && element.geometry.vertices);
-    }
-
-    return false;
   }
 
   // Helper method to extract geometry for GLB export
