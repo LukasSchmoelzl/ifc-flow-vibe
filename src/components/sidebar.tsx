@@ -157,12 +157,6 @@ export const nodeCategories = [
     name: "Output",
     nodes: [
       {
-        id: "viewerNode",
-        label: "3D Viewer",
-        icon: <Eye className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
         id: "exportNode",
         label: "Export Data",
         icon: <Download className="h-4 w-4 mr-2" />,

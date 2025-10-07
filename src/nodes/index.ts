@@ -3,7 +3,6 @@ import { IfcNode } from "./ifc-node/ifc-node"
 import { GeometryNode } from "./geometry-node/geometry-node"
 import { FilterNode } from "./filter-node/filter-node"
 import { TransformNode } from "./transform-node/transform-node"
-import { ViewerNode } from "./viewer-node/viewer-node"
 import { QuantityNode } from "./quantity-node/quantity-node"
 import { PropertyNode } from "./property-node/property-node"
 import { ClassificationNode } from "./classification-node/classification-node"
@@ -23,7 +22,6 @@ export const nodeTypes: NodeTypes = {
   geometryNode: GeometryNode,
   filterNode: FilterNode,
   transformNode: TransformNode,
-  viewerNode: ViewerNode,
   quantityNode: QuantityNode,
   propertyNode: PropertyNode,
   classificationNode: ClassificationNode,
@@ -43,7 +41,6 @@ export {
   GeometryNode,
   FilterNode,
   TransformNode,
-  ViewerNode,
   DataTransformNode,
   QuantityNode,
   PropertyNode,

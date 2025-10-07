@@ -1189,32 +1189,6 @@ export class WorkflowExecutor {
         }
         break;
 
-      case "viewerNode":
-        // Process data for viewer node
-        console.log("Processing viewerNode", { node, inputValues });
-
-        if (!inputValues || !inputValues.input) {
-          console.log("No input provided to viewer node");
-          result = null;
-          break;
-        }
-
-        // Debug: Log what the viewer node is receiving
-        console.log("ViewerNode received input:", {
-          hasFile: !!inputValues.input.file,
-          fileType: inputValues.input.file ? typeof inputValues.input.file : 'undefined',
-          isFileInstance: inputValues.input.file instanceof File,
-          fileName: inputValues.input.file?.name,
-          inputKeys: Object.keys(inputValues.input || {})
-        });
-
-        // Store input data in the node for rendering
-        node.data.inputData = inputValues.input;
-
-        // Viewer nodes pass through their input
-        result = inputValues.input;
-        break;
-
       default:
         result = null;
     }

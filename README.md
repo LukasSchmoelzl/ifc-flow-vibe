@@ -30,6 +30,8 @@
 
 IFC Flow Map provides a graphical interface for viewing, filtering, transforming, and analyzing Building Information Modeling (BIM) data through an intuitive workflow system. Create complex data manipulation pipelines with a simple drag-and-drop interface.
 
+Forked from https://github.com/louistrue/ifc-flow
+
 ## ✨ Features
 
 - 🔄 **Visual Node-Based Interface** - Create workflows by connecting nodes in a flow diagram
@@ -58,17 +60,7 @@ IFC Flow Map provides a graphical interface for viewing, filtering, transforming
 
 ## 🚀 Getting Started
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
