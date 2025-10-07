@@ -12,42 +12,21 @@ import ReactFlow, {
   MiniMap,
   useReactFlow,
   type Connection,
-  type NodeTypes,
   type Edge,
   type Node,
   type NodeChange,
-  applyNodeChanges,
   type OnInit,
   type SelectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Sidebar } from "@/components/sidebar";
 import { PropertiesDialog } from "@/components/dialogs/properties-dialog";
-import { IfcNode } from "@/src/nodes/ifc-node";
-import { GeometryNode } from "@/src/nodes/geometry-node";
-import { FilterNode } from "@/src/nodes/filter-node";
-import { TransformNode } from "@/src/nodes/transform-node";
-import { ViewerNode } from "@/src/nodes/viewer-node";
 import { AppMenubar } from "@/components/menubar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { QuantityNode } from "@/src/nodes/quantity-node";
-import { PropertyNode } from "@/src/nodes/property-node";
-import { ClassificationNode } from "@/src/nodes/classification-node";
-import { SpatialNode } from "@/src/nodes/spatial-node";
-import { ExportNode } from "@/src/nodes/export-node";
-import { RelationshipNode } from "@/src/nodes/relationship-node";
-import { AnalysisNode } from "@/src/nodes/analysis-node";
-import { WatchNode } from "@/src/nodes/watch-node";
-import { ParameterNode } from "@/src/nodes/parameter-node";
-import { PythonNode } from "@/src/nodes/python-node";
 import { Toaster } from "@/components/toaster";
-import { WorkflowExecutor } from "@/lib/workflow-executor";
-import { loadIfcFile, getIfcFile, downloadExportedFile } from "@/lib/ifc-utils";
 import { useToast } from "@/hooks/use-toast";
-import { FileUp } from "lucide-react";
 import type { Workflow } from "@/lib/workflow-storage";
 import { useHotkeys } from "react-hotkeys-hook";
-import CoffeeSupport from "@/components/coffee-support";
 import {
   parseKeyCombination,
   useKeyboardShortcuts,
@@ -60,49 +39,28 @@ import { nodeCategories } from "@/components/sidebar";
 // Import the centralized nodeTypes to prevent React Flow warning
 import { nodeTypes } from "@/src/nodes";
 
-// Footer Pill Component (moved inside FlowWithProvider to access currentWorkflow)
+// Import custom hooks
+import { useWorkflowHistory } from "@/hooks/use-workflow-history";
+import { useClipboard } from "@/hooks/use-clipboard";
+import { useFileDrag } from "@/hooks/use-file-drag";
+import { useNodeDragging } from "@/hooks/use-node-dragging";
+import { useMobilePlacement } from "@/hooks/use-mobile-placement";
+import { useWorkflowOperations } from "@/hooks/use-workflow-operations";
+
+// Import components
+import { FooterPill } from "@/src/components/flow/FooterPill";
+import { FileDropOverlay } from "@/src/components/flow/FileDropOverlay";
+import { MobilePlacementOverlay } from "@/src/components/flow/MobilePlacementOverlay";
+
+// Import utilities
+import { createNode, getNodeLabel, loadViewerSetting } from "@/lib/node-factory";
 
 // Define all ReactFlow props outside the component to prevent warnings
-// Empty object for edgeTypes defined as const to prevent re-creation
 const edgeTypes = {} as const;
 const snapGrid: [number, number] = [15, 15];
 const proOptions = { hideAttribution: true };
 const defaultStyle = { cursor: 'default' };
 const placementStyle = { cursor: 'crosshair' };
-
-// Define interfaces
-interface FlowState {
-  nodes: Node[];
-  edges: Edge[];
-}
-
-interface NodePosition {
-  x: number;
-  y: number;
-}
-
-const generateId = () => {
-  return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
-// Helper to load viewer settings from localStorage synchronously
-const loadViewerSetting = (key: 'showGrid' | 'showMinimap', defaultValue: boolean): boolean => {
-  if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem('app-settings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.viewer?.[key] ?? defaultValue;
-      }
-    } catch (e) {
-      console.error(`Error loading ${key} setting:`, e);
-    }
-  }
-  return defaultValue;
-};
-
-// Removed getViewportClass to prevent hydration mismatch
-// Using isMobile hook instead which properly handles SSR
 
 // Create a wrapper component that uses the ReactFlow hooks
 function FlowWithProvider() {
@@ -117,8 +75,6 @@ function FlowWithProvider() {
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
 
-  // nodeTypes and edgeTypes are already defined as const outside the component
-  // No need for useMemo as they are stable references
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // View settings - start with defaults to match server rendering
@@ -141,265 +97,55 @@ function FlowWithProvider() {
 
   // Load persisted settings after mount to avoid hydration issues
   useEffect(() => {
-    // Load settings from localStorage after component mounts
     const gridSetting = loadViewerSetting('showGrid', true);
     const minimapSetting = loadViewerSetting('showMinimap', false);
 
     setShowGridState(gridSetting);
     setShowMinimapState(minimapSetting);
     setIsSettingsLoaded(true);
-  }, []); // Only run once on mount
-
-
-
-  // Current workflow state
-  const [currentWorkflow, setCurrentWorkflow] = useState<Workflow | null>(null);
-
-  // Workflow execution state
-  const [isRunning, setIsRunning] = useState(false);
-  const [executionResults, setExecutionResults] = useState(new Map());
-
-  // Undo/redo state
-  const [history, setHistory] = useState<{ nodes: Node[]; edges: Edge[] }[]>(
-    []
-  );
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-
-  // Node movement tracking
-  const [isNodeDragging, setIsNodeDragging] = useState(false);
-
-  // File drop state
-  const [isFileDragging, setIsFileDragging] = useState(false);
-
-  // Clipboard state for copy/paste
-  const [clipboard, setClipboard] = useState<{
-    nodes: Node[];
-    edges: Edge[];
-  } | null>(null);
-
-  // Auto-save timer
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-
+  }, []);
 
   // Focused viewer state
   const [focusedViewerId, setFocusedViewerId] = useState<string | null>(null);
 
-  // Mobile placement mode state
-  const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
-  const [placementMode, setPlacementMode] = useState(false);
-
-  // Footer Pill Component (inside FlowWithProvider to access currentWorkflow)
-  function FooterPill() {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-      <div
-        className="bg-card/90 backdrop-blur rounded-full px-3 py-1.5 shadow-sm border cursor-pointer transition-all duration-300"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex items-center gap-2 transition-all duration-300 justify-start">
-          {!isHovered && (
-            <>
-              <div className="text-[11px] text-muted-foreground">
-                <span className="font-medium text-foreground/80">
-                  {currentWorkflow ? currentWorkflow.name : "IFCflow"}
-                </span>
-                <span className="text-foreground/50 ml-2">v0.2.0</span>
-              </div>
-              <div className="border-l border-border/50 h-5"></div>
-            </>
-          )}
-          <CoffeeSupport isHovered={isHovered} />
-        </div>
-      </div>
-    );
-  }
+  // Auto-save timer
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get the ReactFlow utility functions
   const reactFlowInstance = useReactFlow();
 
-  // Helper function to find shortcut by ID
-  const findShortcut = (id: string) => {
-    return shortcuts.find(s => s.id === id)?.keys || "";
-  };
+  // Use custom hooks
+  const {
+    history,
+    historyIndex,
+    canUndo,
+    canRedo,
+    addToHistory,
+    undo,
+    redo,
+    setHistory,
+    setHistoryIndex,
+  } = useWorkflowHistory();
 
-  // Handle keyboard shortcuts
-  // Save (Ctrl+S)
-  useHotkeys(
-    findShortcut("save-workflow") || "ctrl+s,cmd+s",
-    (e) => {
-      e.preventDefault();
-      // Save current workflow if exists
-      if (currentWorkflow) {
-        const flowData = reactFlowInstance.toObject();
-        handleSaveWorkflow(currentWorkflow.name, flowData);
-      }
-    },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
-  );
+  const {
+    clipboard,
+    setClipboard,
+    copyNodes,
+    cutNodes,
+    pasteNodes,
+  } = useClipboard();
 
-  // Open (Ctrl+O)
-  useHotkeys(
-    findShortcut("open-file") || "ctrl+o,cmd+o",
-    (e) => {
-      e.preventDefault();
-      // Trigger file open dialog
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".ifc";
-      input.onchange = (event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (file) {
-          handleOpenFile(file);
-        }
-      };
-      input.click();
-    },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
-  );
+  const { isFileDragging, setIsFileDragging } = useFileDrag();
 
-  // Undo (Ctrl+Z)
-  useHotkeys(
-    findShortcut("undo") || "ctrl+z,cmd+z",
-    (e) => {
-      if (!e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      }
-    },
-    { enableOnFormTags: false }
-  );
+  const {
+    nodeMovementStart,
+    isNodeDragging,
+    setIsNodeDragging,
+    trackNodeDragStart,
+    resetNodeDragTracking,
+  } = useNodeDragging();
 
-  // Redo (Ctrl+Shift+Z or Ctrl+Y)
-  useHotkeys(
-    findShortcut("redo") || "ctrl+shift+z,cmd+shift+z,ctrl+y,cmd+y",
-    (e) => {
-      e.preventDefault();
-      handleRedo();
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Select All (Ctrl+A)
-  useHotkeys(
-    findShortcut("select-all") || "ctrl+a,cmd+a",
-    (e) => {
-      e.preventDefault();
-      handleSelectAll();
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Copy (Ctrl+C)
-  useHotkeys(
-    findShortcut("copy") || "ctrl+c,cmd+c",
-    (e) => {
-      console.log('[DEBUG] Copy hotkey triggered');
-
-      const activeElement = document.activeElement;
-      console.log('[DEBUG] Active element:', activeElement?.tagName, activeElement?.className);
-
-      // Check if we're in a form field
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-      console.log('[DEBUG] Is in form field:', isInFormField);
-
-      const selectedNodes = nodes.filter((node) => node.selected);
-      console.log('[DEBUG] Selected nodes count:', selectedNodes.length);
-
-      // Handle copy if we're not in a form field and have selected nodes
-      if (!isInFormField && selectedNodes.length > 0) {
-        console.log('[DEBUG] Executing handleCopy');
-        e.preventDefault();
-        e.stopPropagation();
-        handleCopy();
-      } else {
-        console.log('[DEBUG] Copy not executed - form field:', isInFormField, 'selected:', selectedNodes.length);
-      }
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Cut (Ctrl+X)
-  useHotkeys(
-    findShortcut("cut") || "ctrl+x,cmd+x",
-    (e) => {
-      console.log('[DEBUG] Cut hotkey triggered');
-
-      const activeElement = document.activeElement;
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-
-      const selectedNodes = nodes.filter((node) => node.selected);
-      console.log('[DEBUG] Cut - selected nodes:', selectedNodes.length);
-
-      if (!isInFormField && selectedNodes.length > 0) {
-        console.log('[DEBUG] Executing handleCut');
-        e.preventDefault();
-        e.stopPropagation();
-        handleCut();
-      }
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Paste (Ctrl+V)
-  useHotkeys(
-    findShortcut("paste") || "ctrl+v,cmd+v",
-    (e) => {
-      console.log('[DEBUG] Paste hotkey triggered');
-      console.log('[DEBUG] Clipboard:', clipboard);
-
-      const activeElement = document.activeElement;
-      const isInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        (activeElement as HTMLElement).isContentEditable
-      );
-
-      if (!isInFormField && clipboard && clipboard.nodes.length > 0) {
-        console.log('[DEBUG] Executing handlePaste');
-        e.preventDefault();
-        e.stopPropagation();
-        handlePaste();
-      } else {
-        console.log('[DEBUG] Paste not executed - form field:', isInFormField, 'clipboard:', clipboard?.nodes?.length || 0);
-      }
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Delete (Delete key)
-  useHotkeys(
-    "delete,backspace",
-    (e) => {
-      e.preventDefault();
-      handleDelete();
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Run Workflow (F5)
-  useHotkeys(
-    findShortcut("run-workflow") || "F5",
-    (e) => {
-      e.preventDefault();
-      handleRunWorkflow();
-    },
-    { enableOnFormTags: false }
-  );
-
-  // Function to handle saving to history
+  // Simplified save to history function
   const saveToHistory = useCallback(
     (nodes: Node[], edges: Edge[]) => {
       const newHistoryItem = { nodes, edges };
@@ -416,42 +162,111 @@ function FlowWithProvider() {
       }
 
       setHistory(newHistory);
-      setCanUndo(true);
-      setCanRedo(false);
     },
-    [history, historyIndex]
+    [history, historyIndex, setHistory, setHistoryIndex]
   );
 
-  // Handle undo
+  // Workflow operations hook
+  const {
+    currentWorkflow,
+    setCurrentWorkflow,
+    isRunning,
+    setIsRunning,
+    executionResults,
+    handleOpenFile,
+    handleSaveWorkflow,
+    handleLoadWorkflow,
+    handleRunWorkflow,
+  } = useWorkflowOperations(nodes, edges, setNodes, setEdges, saveToHistory);
+
+  // Mobile placement hook
+  const {
+    selectedNodeType,
+    placementMode,
+    handleMobileNodeSelect,
+    placeNode,
+    setSelectedNodeType,
+    setPlacementMode,
+  } = useMobilePlacement(isMobile, setNodes, saveToHistory);
+
+  // Helper function to find shortcut by ID
+  const findShortcut = (id: string) => {
+    return shortcuts.find(s => s.id === id)?.keys || "";
+  };
+
+  // Handle keyboard shortcuts
+  useHotkeys(
+    findShortcut("save-workflow") || "ctrl+s,cmd+s",
+    (e) => {
+      e.preventDefault();
+      if (currentWorkflow) {
+        const flowData = reactFlowInstance.toObject();
+        handleSaveWorkflow(currentWorkflow.name, flowData);
+      }
+    },
+    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
+  );
+
+  useHotkeys(
+    findShortcut("open-file") || "ctrl+o,cmd+o",
+    (e) => {
+      e.preventDefault();
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".ifc";
+      input.onchange = (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (file) {
+          handleOpenFile(file);
+        }
+      };
+      input.click();
+    },
+    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
+  );
+
+  // Undo/Redo shortcuts
   const handleUndo = useCallback(() => {
     if (!canUndo || historyIndex <= 0) return;
-
     const previousState = history[historyIndex - 1];
     setNodes(previousState.nodes);
     setEdges(previousState.edges);
     setHistoryIndex(historyIndex - 1);
-    setCanUndo(historyIndex - 1 > 0);
-    setCanRedo(true);
-  }, [canUndo, historyIndex, history, setNodes, setEdges]);
+  }, [canUndo, historyIndex, history, setNodes, setEdges, setHistoryIndex]);
 
-  // Handle redo
   const handleRedo = useCallback(() => {
     if (!canRedo || historyIndex >= history.length - 1) return;
-
     const nextState = history[historyIndex + 1];
     setNodes(nextState.nodes);
     setEdges(nextState.edges);
     setHistoryIndex(historyIndex + 1);
-    setCanRedo(historyIndex + 1 < history.length - 1);
-    setCanUndo(true);
-  }, [canRedo, historyIndex, history, setNodes, setEdges]);
+  }, [canRedo, historyIndex, history, setNodes, setEdges, setHistoryIndex]);
 
-  // Handle select all
+  useHotkeys(
+    findShortcut("undo") || "ctrl+z,cmd+z",
+    (e) => {
+      if (!e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+    },
+    { enableOnFormTags: false }
+  );
+
+  useHotkeys(
+    findShortcut("redo") || "ctrl+shift+z,cmd+shift+z,ctrl+y,cmd+y",
+    (e) => {
+      e.preventDefault();
+      handleRedo();
+    },
+    { enableOnFormTags: false }
+  );
+
+  // Select All
   const handleSelectAll = useCallback(() => {
     const updatedNodes = nodes.map((node) => ({
       ...node,
       selected: true,
-      // Remove style modification - CSS handles this now
     }));
     setNodes(updatedNodes);
 
@@ -461,7 +276,16 @@ function FlowWithProvider() {
     });
   }, [nodes, setNodes, toast]);
 
-  // Handle copy
+  useHotkeys(
+    findShortcut("select-all") || "ctrl+a,cmd+a",
+    (e) => {
+      e.preventDefault();
+      handleSelectAll();
+    },
+    { enableOnFormTags: false }
+  );
+
+  // Copy/Cut/Paste/Delete handlers
   const handleCopy = useCallback(() => {
     const selectedNodes = nodes.filter((node) => node.selected);
     const selectedNodeIds = selectedNodes.map((node) => node.id);
@@ -476,21 +300,16 @@ function FlowWithProvider() {
       title: "Copied",
       description: `${selectedNodes.length} node(s) and ${selectedEdges.length} connection(s) copied`,
     });
-  }, [nodes, edges, toast]);
+  }, [nodes, edges, setClipboard, toast]);
 
-  // Handle delete
   const handleDelete = useCallback(() => {
     const selectedNodes = nodes.filter((node) => node.selected);
     if (selectedNodes.length === 0) return;
 
-    // Save current state to history before deletion
     saveToHistory(nodes, edges);
 
     const selectedNodeIds = selectedNodes.map((node) => node.id);
-
-    // Remove selected nodes
     const remainingNodes = nodes.filter((node) => !node.selected);
-    // Remove edges connected to deleted nodes
     const remainingEdges = edges.filter(
       (edge) =>
         !selectedNodeIds.includes(edge.source) &&
@@ -506,25 +325,21 @@ function FlowWithProvider() {
     });
   }, [nodes, edges, saveToHistory, setNodes, setEdges, toast]);
 
-  // Handle cut
   const handleCut = useCallback(() => {
     handleCopy();
     handleDelete();
   }, [handleCopy, handleDelete]);
 
-  // Handle paste
   const handlePaste = useCallback(() => {
     if (!clipboard || clipboard.nodes.length === 0) return;
 
-    // Save current state to history before pasting
     saveToHistory(nodes, edges);
 
     const idMapping = new Map<string, string>();
-    const offset = { x: 50, y: 50 }; // Offset for pasted nodes
+    const offset = { x: 50, y: 50 };
 
-    // Create new nodes with new IDs and positions
     const newNodes = clipboard.nodes.map((node) => {
-      const newId = generateId();
+      const newId = `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       idMapping.set(node.id, newId);
 
       return {
@@ -534,12 +349,10 @@ function FlowWithProvider() {
           x: node.position.x + offset.x,
           y: node.position.y + offset.y,
         },
-        selected: true, // Select the pasted nodes
-        // Remove style modification - CSS handles this now
+        selected: true,
       };
     });
 
-    // Create new edges with updated node IDs
     const newEdges = clipboard.edges.map((edge) => ({
       ...edge,
       id: `${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
@@ -547,11 +360,9 @@ function FlowWithProvider() {
       target: idMapping.get(edge.target) || edge.target,
     }));
 
-    // Deselect existing nodes
     const updatedExistingNodes = nodes.map((node) => ({
       ...node,
       selected: false,
-      // Remove style modification - CSS handles this now
     }));
 
     setNodes([...updatedExistingNodes, ...newNodes]);
@@ -563,18 +374,95 @@ function FlowWithProvider() {
     });
   }, [clipboard, nodes, edges, saveToHistory, setNodes, setEdges, toast]);
 
+  // Copy/Cut/Paste/Delete shortcuts
+  useHotkeys(
+    findShortcut("copy") || "ctrl+c,cmd+c",
+    (e) => {
+      const activeElement = document.activeElement;
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+
+      const selectedNodes = nodes.filter((node) => node.selected);
+
+      if (!isInFormField && selectedNodes.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCopy();
+      }
+    },
+    { enableOnFormTags: false }
+  );
+
+  useHotkeys(
+    findShortcut("cut") || "ctrl+x,cmd+x",
+    (e) => {
+      const activeElement = document.activeElement;
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+
+      const selectedNodes = nodes.filter((node) => node.selected);
+
+      if (!isInFormField && selectedNodes.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCut();
+      }
+    },
+    { enableOnFormTags: false }
+  );
+
+  useHotkeys(
+    findShortcut("paste") || "ctrl+v,cmd+v",
+    (e) => {
+      const activeElement = document.activeElement;
+      const isInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        (activeElement as HTMLElement).isContentEditable
+      );
+
+      if (!isInFormField && clipboard && clipboard.nodes.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        handlePaste();
+      }
+    },
+    { enableOnFormTags: false }
+  );
+
+  useHotkeys(
+    "delete,backspace",
+    (e) => {
+      e.preventDefault();
+      handleDelete();
+    },
+    { enableOnFormTags: false }
+  );
+
+  useHotkeys(
+    findShortcut("run-workflow") || "F5",
+    (e) => {
+      e.preventDefault();
+      handleRunWorkflow();
+    },
+    { enableOnFormTags: false }
+  );
+
   // Updated node changes handler with history
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      // Apply changes immediately for smooth interaction
       onNodesChange(changes);
 
-      // Check if this is a position change (dragging)
       const isPositionChange = changes.some(
         (change) => change.type === "position"
       );
 
-      // Check if dragging has ended
       const isDragEnd = changes.some(
         (change) =>
           change.type === "position" &&
@@ -582,7 +470,6 @@ function FlowWithProvider() {
           isNodeDragging
       );
 
-      // Track drag start
       if (isPositionChange && !isNodeDragging) {
         const isDragStart = changes.some(
           (change) => change.type === "position" && change.dragging === true
@@ -592,22 +479,18 @@ function FlowWithProvider() {
         }
       }
 
-      // Save to history only when drag ends
       if (isDragEnd) {
         setIsNodeDragging(false);
-        // Use a small delay to ensure final position is captured
         setTimeout(() => {
           saveToHistory(nodes, edges);
         }, 50);
       }
 
-      // For non-drag changes, save to history after a delay
       const isSelectionChange = changes.every(
         (change) => change.type === "select"
       );
 
       if (!isSelectionChange && !isPositionChange) {
-        // Auto-save timer for other changes
         if (autoSaveTimerRef.current) {
           clearTimeout(autoSaveTimerRef.current);
         }
@@ -616,12 +499,11 @@ function FlowWithProvider() {
         }, 1000);
       }
     },
-    [nodes, edges, onNodesChange, saveToHistory, isNodeDragging]
+    [nodes, edges, onNodesChange, saveToHistory, isNodeDragging, setIsNodeDragging]
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      // Save current state to history before connecting
       saveToHistory(nodes, edges);
 
       const newEdge = {
@@ -641,19 +523,6 @@ function FlowWithProvider() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Helper function to get user-friendly node label
-  const getNodeLabel = useCallback((nodeId: string) => {
-    for (const category of nodeCategories) {
-      const node = category.nodes.find(n => n.id === nodeId);
-      if (node) {
-        return node.label;
-      }
-    }
-    return nodeId; // fallback to ID if not found
-  }, []);
-
-
-
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -661,7 +530,6 @@ function FlowWithProvider() {
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       const type = event.dataTransfer.getData("application/reactflow");
 
-      // Check if the dropped element is valid
       if (typeof type === "undefined" || !type) {
         return;
       }
@@ -670,48 +538,27 @@ function FlowWithProvider() {
         return;
       }
 
-      // Get the cursor position in flow coordinates
-      // Use screenToFlowPosition for consistent coordinate transformation
       const cursorPosition = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      // Position the node with its top-left corner at the cursor position
-      // No offset needed - we want exact cursor positioning
       const position = {
         x: cursorPosition.x,
         y: cursorPosition.y,
       };
 
-      // Save current state to history before adding new node
       saveToHistory(nodes, edges);
 
-      const newNode: Node = {
-        id: generateId(),
-        type,
-        position,
-        data: {
-          label: getNodeLabel(type),
-          ...(type === 'dataTransformNode' && {
-            properties: {
-              mode: 'steps',
-              steps: [],
-              restrictToIncomingElements: false,
-            }
-          }),
-        },
-        // CSS handles node styling now
-      };
+      const newNode = createNode(type, position);
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, nodes, edges, saveToHistory, setNodes, getNodeLabel]
+    [reactFlowInstance, nodes, edges, saveToHistory, setNodes]
   );
 
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      // Do not open modal on single click. Reserve for selection/drag only.
       const isMac = navigator.platform.toUpperCase().includes('MAC');
       const cmdOrCtrl = isMac ? (event as any).metaKey : (event as any).ctrlKey;
       if (cmdOrCtrl) {
@@ -726,148 +573,6 @@ function FlowWithProvider() {
     setEditingNode(node);
   }, []);
 
-  // Handle file operations
-  const handleOpenFile = useCallback(
-    async (file: File) => {
-      try {
-        // Save current state to history before opening new file
-        saveToHistory(nodes, edges);
-
-        const result = await loadIfcFile(file);
-
-        const position = { x: 100, y: 100 };
-        const newNode: Node = {
-          id: generateId(),
-          type: "ifcNode",
-          position,
-          data: {
-            fileName: file.name,
-            fileSize: file.size,
-            fileHandle: result,
-            modelState: null,
-          },
-          // CSS handles node styling now
-        };
-
-        setNodes((nds) => [...nds, newNode]);
-
-        toast({
-          title: "IFC File Loaded",
-          description: `Successfully loaded ${file.name}`,
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: `Failed to load IFC file: ${error}`,
-          variant: "destructive",
-        });
-      }
-    },
-    [nodes, edges, saveToHistory, setNodes, toast]
-  );
-
-  const handleSaveWorkflow = useCallback(
-    (name: string, flowData: any) => {
-      // Implementation for saving workflow
-      setCurrentWorkflow({
-        id: Date.now().toString(),
-        name,
-        flowData,
-        description: "",
-        tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-
-      toast({
-        title: "Workflow Saved",
-        description: `${name} has been saved`,
-      });
-    },
-    [toast]
-  );
-
-  const handleLoadWorkflow = useCallback(
-    (workflow: Workflow) => {
-      // Save current state to history before loading new workflow
-      saveToHistory(nodes, edges);
-
-      setNodes(workflow.flowData.nodes || []);
-      setEdges(workflow.flowData.edges || []);
-      setCurrentWorkflow(workflow);
-
-      toast({
-        title: "Workflow Loaded",
-        description: `${workflow.name} has been loaded`,
-      });
-    },
-    [nodes, edges, saveToHistory, setNodes, setEdges, toast]
-  );
-
-  const handleRunWorkflow = useCallback(async () => {
-    if (isRunning) return;
-
-    setIsRunning(true);
-    try {
-      // Create a real-time node update callback
-      const onNodeUpdate = (nodeId: string, newData: any) => {
-        setNodes((currentNodes) =>
-          currentNodes.map((node) => {
-            if (node.id === nodeId) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  ...newData,
-                },
-              };
-            }
-            return node;
-          })
-        );
-      };
-
-      const executor = new WorkflowExecutor(nodes, edges, onNodeUpdate);
-      const results = await executor.execute();
-      setExecutionResults(results);
-
-      // Get the updated nodes from the executor (includes inputData for watch nodes)
-      const updatedNodes = executor.getUpdatedNodes();
-
-      // Update the React Flow nodes with the execution results
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          // Find the corresponding updated node from the executor
-          const updatedNode = updatedNodes.find((n: any) => n.id === node.id);
-          if (updatedNode && updatedNode.data) {
-            // Merge the updated data while preserving React Flow properties
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                ...updatedNode.data,
-              },
-            };
-          }
-          return node;
-        })
-      );
-
-      toast({
-        title: "Workflow Complete",
-        description: "Workflow executed successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Execution Error",
-        description: `Failed to execute workflow: ${error}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunning(false);
-    }
-  }, [isRunning, nodes, edges, setNodes, toast]);
-
   // Helper function to get current flow object
   const getFlowObject = useCallback(() => {
     return reactFlowInstance.toObject();
@@ -879,15 +584,14 @@ function FlowWithProvider() {
     if (e.dataTransfer?.types.includes("Files")) {
       setIsFileDragging(true);
     }
-  }, []);
+  }, [setIsFileDragging]);
 
   const handleFileDragLeave = useCallback((e: DragEvent) => {
     e.preventDefault();
-    // Only hide if leaving the main container
     if (e.target === reactFlowWrapper.current) {
       setIsFileDragging(false);
     }
-  }, []);
+  }, [setIsFileDragging]);
 
   const handleFileDrop = useCallback(
     async (e: DragEvent) => {
@@ -905,7 +609,7 @@ function FlowWithProvider() {
         }
       }
     },
-    [handleOpenFile]
+    [handleOpenFile, setIsFileDragging]
   );
 
   // Set up drag and drop listeners
@@ -930,8 +634,7 @@ function FlowWithProvider() {
       const { model, exportFileName, originalFileName } = event.detail;
 
       try {
-        // Get the original IFC file buffer
-        const originalFile = getIfcFile(originalFileName);
+        const originalFile = await (await fetch(originalFileName)).blob();
         if (!originalFile) {
           toast({
             title: "Export Error",
@@ -941,17 +644,11 @@ function FlowWithProvider() {
           return;
         }
 
-        // Convert file to ArrayBuffer if needed
         const arrayBuffer = await originalFile.arrayBuffer();
-
-        // Create a new worker for the export
         const worker = new Worker('/ifcWorker.js');
 
-        // Set up message handler for export result
         worker.onmessage = (e) => {
           if (e.data.type === 'ifcExported') {
-            // Download the exported IFC file
-            // The worker sends an ArrayBuffer, convert to Blob
             const blob = new Blob([e.data.data], { type: 'application/x-step' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -978,7 +675,6 @@ function FlowWithProvider() {
           }
         };
 
-        // Send export request to worker
         worker.postMessage({
           action: 'exportIfc',
           model: model,
@@ -1008,17 +704,15 @@ function FlowWithProvider() {
     };
   }, [toast]);
 
-  // Handle sidebar toggle with better mobile UX
+  // Handle sidebar toggle
   const handleSidebarToggle = useCallback(() => {
     setSidebarOpen(!sidebarOpen);
 
-    // Add haptic feedback on mobile devices that support it
     if ('vibrate' in navigator && isMobile) {
       navigator.vibrate(50);
     }
   }, [sidebarOpen, isMobile]);
 
-  // Close sidebar when clicking outside on mobile
   const handleBackdropClick = useCallback(() => {
     if (isMobile && sidebarOpen) {
       setSidebarOpen(false);
@@ -1037,19 +731,6 @@ function FlowWithProvider() {
     return () => document.removeEventListener('keydown', handleEscapeKey);
   }, [isMobile, sidebarOpen]);
 
-  // Handle mobile node selection for placement mode
-  const handleMobileNodeSelect = useCallback((nodeType: string) => {
-    if (selectedNodeType === nodeType) {
-      // Clicking the same node cancels placement mode
-      setSelectedNodeType(null);
-      setPlacementMode(false);
-    } else {
-      // Select new node type and enter placement mode
-      setSelectedNodeType(nodeType);
-      setPlacementMode(true);
-    }
-  }, [selectedNodeType]);
-
   // Handle canvas click/tap for node placement
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
     if (!isMobile || !placementMode || !selectedNodeType) return;
@@ -1062,88 +743,12 @@ function FlowWithProvider() {
       y: event.clientY - reactFlowBounds.top,
     });
 
-    // Save current state to history before adding new node
-    saveToHistory(nodes, edges);
-
-    const newNode: Node = {
-      id: generateId(),
-      type: selectedNodeType,
-      position,
-      data: {
-        label: getNodeLabel(selectedNodeType),
-        ...(selectedNodeType === 'dataTransformNode' && {
-          properties: {
-            mode: 'steps',
-            steps: [],
-            restrictToIncomingElements: false,
-          }
-        }),
-      },
-      // CSS handles node styling now
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-
-    // Exit placement mode after placing node
-    setSelectedNodeType(null);
-    setPlacementMode(false);
-
-    // Close sidebar on mobile after placement
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-
-    toast({
-      title: "Node added",
-      description: `${getNodeLabel(selectedNodeType)} placed successfully`,
+    placeNode(position, nodes, edges, () => {
+      if (isMobile) {
+        setSidebarOpen(false);
+      }
     });
-  }, [isMobile, placementMode, selectedNodeType, reactFlowInstance, nodes, edges, saveToHistory, setNodes, toast]);
-
-  // Keyboard shortcuts for copy/paste/delete
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore if typing in form fields
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
-        return;
-      }
-
-      const isMac = navigator.platform.toUpperCase().includes('MAC');
-      const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
-
-      if (cmdOrCtrl) {
-        switch (event.key.toLowerCase()) {
-          case 'c':
-          case 'x':
-            event.preventDefault();
-            handleCopy();
-            break;
-          case 'v':
-            event.preventDefault();
-            handlePaste();
-            break;
-          case 'a':
-            event.preventDefault();
-            handleSelectAll();
-            break;
-        }
-      }
-
-      // Handle Delete/Backspace
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        const selectedNodes = nodes.filter((node) => node.selected);
-        if (selectedNodes.length > 0) {
-          event.preventDefault();
-          handleDelete();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [nodes, handleCopy, handlePaste, handleSelectAll, handleDelete]);
+  }, [isMobile, placementMode, selectedNodeType, reactFlowInstance, nodes, edges, placeNode]);
 
   return (
     <div className="flex h-screen w-full bg-background">
@@ -1220,45 +825,18 @@ function FlowWithProvider() {
           sidebarOpen={sidebarOpen}
         />
         <div className={`flex-1 h-full relative`} ref={reactFlowWrapper}>
-          {isFileDragging && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <div className="bg-white bg-opacity-80 p-6 rounded-lg shadow-lg border-2 border-dashed border-blue-500">
-                <FileUp className="h-12 w-12 text-blue-500 mx-auto mb-2" />
-                <p className="text-lg font-medium text-blue-700">
-                  Drop IFC file here
-                </p>
-              </div>
-            </div>
-          )}
+          <FileDropOverlay isVisible={isFileDragging} />
 
           {/* Mobile placement mode overlay */}
-          {isMobile && placementMode && selectedNodeType && (
-            <div className="absolute inset-0 z-20 pointer-events-none">
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" />
-                <span className="text-sm font-medium">
-                  Tap to place {getNodeLabel(selectedNodeType)}
-                </span>
-              </div>
-
-              {/* Crosshair indicator */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative">
-                  <div className="w-8 h-0.5 bg-primary/60 absolute left-4 top-1/2 transform -translate-y-1/2" />
-                  <div className="w-8 h-0.5 bg-primary/60 absolute -left-4 top-1/2 transform -translate-y-1/2" />
-                  <div className="w-0.5 h-8 bg-primary/60 absolute left-1/2 top-4 transform -translate-x-1/2" />
-                  <div className="w-0.5 h-8 bg-primary/60 absolute left-1/2 -top-4 transform -translate-x-1/2" />
-                  <div className="w-3 h-3 border-2 border-primary bg-primary/20 rounded-full absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                </div>
-              </div>
-            </div>
-          )}
+          <MobilePlacementOverlay
+            isVisible={isMobile && placementMode && selectedNodeType !== null}
+            nodeLabel={selectedNodeType ? getNodeLabel(selectedNodeType) : ""}
+          />
 
           <ViewerFocusProvider
             focusedViewerId={focusedViewerId}
             setFocusedViewerId={setFocusedViewerId}
           >
-            {/* Container for ReactFlow */}
             <div className="flex-1 h-full w-full">
               <ReactFlow
                 nodes={nodes}
@@ -1273,19 +851,16 @@ function FlowWithProvider() {
                 autoPanOnConnect={false}
                 autoPanOnNodeDrag={false}
                 onPaneClick={(event) => {
-                  // Handle mobile node placement first
                   if (isMobile && placementMode && selectedNodeType) {
                     handleCanvasClick(event);
                     return;
                   }
 
                   setEditingNode(null);
-                  // Exit 3D focus mode when clicking on canvas
                   if (focusedViewerId) {
                     setFocusedViewerId(null);
                   }
 
-                  // Close sidebar on mobile when clicking canvas (only if not in placement mode)
                   if (isMobile && sidebarOpen && !placementMode) {
                     setSidebarOpen(false);
                   }
@@ -1298,14 +873,12 @@ function FlowWithProvider() {
                 maxZoom={2}
                 proOptions={proOptions}
                 style={isMobile && placementMode ? placementStyle : defaultStyle}
-                // Multi-selection configuration
                 multiSelectionKeyCode="Meta"
                 selectionOnDrag={true}
                 selectNodesOnDrag={false}
                 selectionMode={"partial" as SelectionMode}
                 nodesFocusable={true}
                 edgesFocusable={true}
-                // Disable interactions when viewer is in focus mode or in placement mode
                 panOnDrag={!focusedViewerId && !(isMobile && placementMode)}
                 zoomOnScroll={!focusedViewerId && !(isMobile && placementMode)}
                 zoomOnPinch={!focusedViewerId && !(isMobile && placementMode)}
@@ -1318,7 +891,7 @@ function FlowWithProvider() {
                 {isSettingsLoaded && showGrid && <Background color="#aaa" gap={16} />}
                 {isSettingsLoaded && showMinimap && <MiniMap />}
                 <Panel position="bottom-right">
-                  <FooterPill />
+                  <FooterPill currentWorkflow={currentWorkflow} />
                 </Panel>
               </ReactFlow>
             </div>
