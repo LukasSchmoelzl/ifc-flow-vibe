@@ -56,6 +56,7 @@ import { MobilePlacementOverlay } from "@/src/components/flow/MobilePlacementOve
 import { createNode, getNodeLabel, loadViewerSetting } from "@/src/lib/node-factory";
 
 // Define all ReactFlow props outside the component to prevent warnings
+const SHORTCUTS_ENABLED = false;
 const edgeTypes = {} as const;
 const snapGrid: [number, number] = [15, 15];
 const proOptions = { hideAttribution: true };
@@ -204,7 +205,7 @@ function FlowWithProvider() {
         handleSaveWorkflow(currentWorkflow.name, flowData);
       }
     },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
+    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -222,7 +223,7 @@ function FlowWithProvider() {
       };
       input.click();
     },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
+    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: SHORTCUTS_ENABLED }
   );
 
   // Undo/Redo shortcuts
@@ -250,7 +251,7 @@ function FlowWithProvider() {
         handleUndo();
       }
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -259,7 +260,7 @@ function FlowWithProvider() {
       e.preventDefault();
       handleRedo();
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   // Select All
@@ -282,7 +283,7 @@ function FlowWithProvider() {
       e.preventDefault();
       handleSelectAll();
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   // Copy/Cut/Paste/Delete handlers
@@ -393,7 +394,7 @@ function FlowWithProvider() {
         handleCopy();
       }
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -414,7 +415,7 @@ function FlowWithProvider() {
         handleCut();
       }
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -433,7 +434,7 @@ function FlowWithProvider() {
         handlePaste();
       }
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -442,7 +443,7 @@ function FlowWithProvider() {
       e.preventDefault();
       handleDelete();
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   useHotkeys(
@@ -451,7 +452,7 @@ function FlowWithProvider() {
       e.preventDefault();
       handleRunWorkflow();
     },
-    { enableOnFormTags: false }
+    { enableOnFormTags: false, enabled: SHORTCUTS_ENABLED }
   );
 
   // Updated node changes handler with history
