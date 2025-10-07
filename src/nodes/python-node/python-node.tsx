@@ -4,7 +4,7 @@ import { memo, useState, useCallback } from "react";
 import { Handle, Position, type NodeProps, useReactFlow } from "reactflow";
 import { Terminal, Play, CheckCircle, AlertCircle, Clock, Code2, Sparkles } from "lucide-react";
 import { PythonNodeData } from "../node-types";
-import { PythonEditorDialog } from "@/src/components/dialogs/python-editor-dialog";
+import { PythonEditorDialog } from "./editor-dialog";
 
 export const PythonNode = memo(({ data, id, isConnectable }: NodeProps<PythonNodeData>) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
