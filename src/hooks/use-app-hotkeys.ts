@@ -50,6 +50,8 @@ export function useAppHotkeys({
   onDelete,
   onRunWorkflow,
 }: UseAppHotkeysProps) {
+  if (!HOTKEYS_ENABLED) return;
+
   const { toast } = useToast();
 
   const findShortcut = (id: string) => {
@@ -65,7 +67,7 @@ export function useAppHotkeys({
         onSaveWorkflow(currentWorkflow.name, flowData);
       }
     },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
   );
 
   useHotkeys(
@@ -83,7 +85,7 @@ export function useAppHotkeys({
       };
       input.click();
     },
-    { enableOnFormTags: ["INPUT", "TEXTAREA"], enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: ["INPUT", "TEXTAREA"] }
   );
 
   useHotkeys(
@@ -94,7 +96,7 @@ export function useAppHotkeys({
         onUndo();
       }
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -103,7 +105,7 @@ export function useAppHotkeys({
       e.preventDefault();
       onRedo();
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -112,7 +114,7 @@ export function useAppHotkeys({
       e.preventDefault();
       onSelectAll();
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -133,7 +135,7 @@ export function useAppHotkeys({
         onCopy();
       }
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -154,7 +156,7 @@ export function useAppHotkeys({
         onCut();
       }
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -173,7 +175,7 @@ export function useAppHotkeys({
         onPaste();
       }
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -182,7 +184,7 @@ export function useAppHotkeys({
       e.preventDefault();
       onDelete();
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 
   useHotkeys(
@@ -191,7 +193,7 @@ export function useAppHotkeys({
       e.preventDefault();
       onRunWorkflow();
     },
-    { enableOnFormTags: false, enabled: HOTKEYS_ENABLED }
+    { enableOnFormTags: false }
   );
 }
 
