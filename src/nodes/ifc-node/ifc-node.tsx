@@ -238,9 +238,7 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
       </div>
       <NodeLoadingIndicator
         isLoading={data.isLoading || false}
-        message="Loading IFC file..."
-        progressMessage={progress.message}
-        percentage={progress.percentage}
+        message="Processing IFC file..."
       />
       {!data.isLoading && data.error && (
         <div className="p-3 text-xs text-red-500 break-words">
