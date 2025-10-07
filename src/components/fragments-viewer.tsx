@@ -29,21 +29,22 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
     const container = containerRef.current;
 
     const init = async () => {
-      comp = new OBC.Components();
-      const worlds = comp.get(OBC.Worlds);
-      
-      const w = worlds.create<
-        OBC.SimpleScene,
-        OBC.SimpleCamera,
-        OBC.SimpleRenderer
-      >();
+      try {
+        comp = new OBC.Components();
+        const worlds = comp.get(OBC.Worlds);
+        
+        const w = worlds.create<
+          OBC.SimpleScene,
+          OBC.SimpleCamera,
+          OBC.SimpleRenderer
+        >();
 
-      w.scene = new OBC.SimpleScene(comp);
-      w.renderer = new OBC.SimpleRenderer(comp, container);
-      w.camera = new OBC.SimpleCamera(comp);
-
-      comp.init();
-      w.scene.setup();
+        w.scene = new OBC.SimpleScene(comp);
+        w.renderer = new OBC.SimpleRenderer(comp, container);
+        w.camera = new OBC.SimpleCamera(comp);
+        
+        w.scene.setup();
+        comp.init();
 
       // Setup stats
       stats = new Stats();
@@ -70,11 +71,15 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
 
       setIsReady(true);
 
-      (window as any).__fragmentsViewer = {
-        components: comp,
-        fragments: frags,
-        world: w,
-      };
+        (window as any).__fragmentsViewer = {
+          components: comp,
+          fragments: frags,
+          world: w,
+        };
+      } catch (error) {
+        console.error("Failed to initialize Fragments viewer:", error);
+        setIsReady(true);
+      }
     };
 
     init();
