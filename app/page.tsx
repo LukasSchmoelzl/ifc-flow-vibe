@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -63,7 +63,8 @@ import { nodeTypes } from "@/components/nodes";
 // Footer Pill Component (moved inside FlowWithProvider to access currentWorkflow)
 
 // Define all ReactFlow props outside the component to prevent warnings
-const edgeTypes = {};
+// Empty object for edgeTypes defined as const to prevent re-creation
+const edgeTypes = {} as const;
 const snapGrid: [number, number] = [15, 15];
 const proOptions = { hideAttribution: true };
 const defaultStyle = { cursor: 'default' };
@@ -116,7 +117,8 @@ function FlowWithProvider() {
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
 
-  // nodeTypes and edgeTypes are now defined outside the component
+  // nodeTypes and edgeTypes are already defined as const outside the component
+  // No need for useMemo as they are stable references
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // View settings - start with defaults to match server rendering
