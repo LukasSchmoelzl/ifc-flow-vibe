@@ -521,6 +521,3 @@ export function buildClustersFromElements(
   }
 }
 
-/**
- * Helper to get viewer from cluster set (assumes single active viewer)
- */

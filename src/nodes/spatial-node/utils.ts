@@ -19,6 +19,96 @@ export function spatialQuery(
     return [];
   }
 
+  // Use real geometry if available, otherwise fallback to mock logic
+  if (hasActiveModel()) {
+    return spatialQueryWithViewer(elements, referenceElements, queryType, distance);
+  } else {
+    console.warn("No active viewer model, using fallback spatial query logic");
+    return spatialQueryFallback(elements, referenceElements, queryType, distance);
+  }
+}
+
+/**
+ * Spatial query using Three.js geometry from viewer
+ */
+function spatialQueryWithViewer(
+  elements: IfcElement[],
+  referenceElements: IfcElement[],
+  queryType: string,
+  distance: number
+): IfcElement[] {
+  return withActiveViewer(viewer => {
+    console.log(`Performing spatial query with real geometry: ${queryType}`);
+
+    // Get bounding boxes for reference elements
+    const referenceBounds: THREE.Box3[] = [];
+    referenceElements.forEach(refElement => {
+      const bbox = viewer.getBoundingBoxForElement(refElement.expressId);
+      if (bbox) {
+        referenceBounds.push(bbox);
+      }
+    });
+
+    if (referenceBounds.length === 0) {
+      console.warn("No bounding boxes found for reference elements");
+      return [];
+    }
+
+    // Filter elements based on spatial relationship
+    return elements.filter(element => {
+      const elementBbox = viewer.getBoundingBoxForElement(element.expressId);
+      if (!elementBbox) {
+        return false; // Skip elements without geometry
+      }
+
+      return referenceBounds.some(refBbox => {
+        switch (queryType) {
+          case "contained":
+            // Element is contained within reference if its bbox is inside reference bbox
+            return refBbox.containsBox(elementBbox);
+
+          case "containing":
+            // Element contains reference if reference bbox is inside element bbox
+            return elementBbox.containsBox(refBbox);
+
+          case "intersecting":
+            // Element intersects reference if bboxes overlap
+            return elementBbox.intersectsBox(refBbox);
+
+          case "touching":
+            // Element touches reference if bboxes are adjacent (intersect but don't overlap)
+            const expanded = refBbox.clone().expandByScalar(0.01); // Small tolerance
+            return expanded.intersectsBox(elementBbox) && !refBbox.intersectsBox(elementBbox);
+
+          case "within-distance":
+            // Element is within distance if closest points are within threshold
+            const elementCenter = new THREE.Vector3();
+            const refCenter = new THREE.Vector3();
+            elementBbox.getCenter(elementCenter);
+            refBbox.getCenter(refCenter);
+
+            const actualDistance = elementCenter.distanceTo(refCenter);
+            return actualDistance <= distance;
+
+          default:
+            console.warn(`Unknown spatial query type: ${queryType}`);
+            return false;
+        }
+      });
+    });
+  }) || [];
+}
+
+/**
+ * Fallback spatial query using mock logic (when no viewer available)
+ */
+function spatialQueryFallback(
+  elements: IfcElement[],
+  referenceElements: IfcElement[],
+  queryType: string,
+  distance: number
+): IfcElement[] {
+  // Original mock implementation for backwards compatibility
   switch (queryType) {
     case "contained":
       return elements.slice(0, Math.floor(elements.length * 0.7));

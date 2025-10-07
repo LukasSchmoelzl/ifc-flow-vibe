@@ -96,6 +96,12 @@ export const GeometryNode = memo(
                 <span className="font-medium">{viewerElementCount}</span>
               </div>
             )}
+            {!hasRealGeometry && hasActiveModel() && (
+              <div className="flex justify-between mt-1 text-xs text-amber-600">
+                <span>Viewer available</span>
+                <span>(enable real geometry)</span>
+              </div>
+            )}
           </div>
         )}
 

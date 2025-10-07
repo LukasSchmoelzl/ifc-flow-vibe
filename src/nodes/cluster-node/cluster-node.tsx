@@ -62,6 +62,13 @@ export const ClusterNode = memo(
       }
     };
 
+    const handleResetSpatialClustering = () => {
+      withActiveViewer(viewer => {
+        if (viewer && typeof viewer.resetSpatialClustering === 'function') {
+          viewer.resetSpatialClustering();
+        }
+      });
+    };
 
     return (
       <div className="bg-white dark:bg-gray-800 border-2 border-purple-500 dark:border-purple-400 rounded-md w-64 shadow-md">
@@ -119,6 +126,13 @@ export const ClusterNode = memo(
                           title="Show All"
                         >
                           Show All
+                        </button>
+                        <button
+                          onClick={handleResetSpatialClustering}
+                          className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
+                          title="Reset Positions"
+                        >
+                          Reset
                         </button>
                       </div>
                     </div>

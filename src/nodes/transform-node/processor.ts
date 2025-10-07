@@ -24,6 +24,18 @@ export class TransformNodeProcessor implements NodeProcessor {
       Number.parseFloat(node.data.properties?.scaleZ || 1),
     ];
 
+    const elements = Array.isArray(inputValues.input) ? inputValues.input : inputValues.input.elements || [];
+    const elementsWithRealGeometry = elements.filter((el: any) => el.hasRealGeometry);
+
+    if (elementsWithRealGeometry.length > 0 && hasActiveModel()) {
+      console.log(`Applying real-time transformation to ${elementsWithRealGeometry.length} elements in viewer`);
+
+      const expressIds = elementsWithRealGeometry.map((el: any) => el.expressId);
+      withActiveViewer(viewer => {
+        viewer.applyTransform(expressIds, { translation, rotation, scale });
+      });
+    }
+
     return transformElements(inputValues.input, translation, rotation, scale);
   }
 }

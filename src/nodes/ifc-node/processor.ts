@@ -33,53 +33,77 @@ export class IfcNodeProcessor implements NodeProcessor {
         path: WASM_PATH,
       };
 
+      console.log(`[IFC Processor] Loading file: ${node.data.file.name}, size: ${node.data.file.size} bytes`);
+      
       const ifcBuffer = await node.data.file.arrayBuffer();
       const typedArray = new Uint8Array(ifcBuffer);
+      console.log(`[IFC Processor] Converting IFC to Fragments...`);
+      
       const bytes = await serializer.process({ bytes: typedArray, raw: true });
+      console.log(`[IFC Processor] Fragments bytes generated: ${bytes.byteLength} bytes`);
 
-      // Load model
+      console.log(`[IFC Processor] Loading model into Fragments viewer...`);
       const model = await fragments.load(bytes, {
         modelId: node.id,
         camera: world.camera.three,
         raw: true,
       });
 
+      console.log(`[IFC Processor] Model loaded:`, model);
+      console.log(`[IFC Processor] Model properties:`, Object.keys(model));
+      console.log(`[IFC Processor] Model metadata:`, model.getMetadata ? model.getMetadata() : 'No metadata method');
+
       world.scene.three.add(model.object);
       await fragments.update(true);
+      console.log(`[IFC Processor] Model added to scene and updated`);
 
-      // Extract metadata
-      const spatialStructure = await model.getSpatialStructure();
-      const categories = await model.getCategories();
-      const itemsWithGeometry = await model.getItemsWithGeometry();
+      // Extract metadata using available Fragments API
+      const metadata = model.getMetadata();
+      console.log(`[IFC Processor] Metadata:`, metadata);
 
-      // Count elements by type
-      const elementCounts: Record<string, number> = {};
-      for (const item of itemsWithGeometry) {
-        const category = item.category || "Unknown";
-        elementCounts[category] = (elementCounts[category] || 0) + 1;
+      // Get all fragments IDs
+      const fragmentIDs = Object.keys(model.items);
+      console.log(`[IFC Processor] Fragment IDs count:`, fragmentIDs.length);
+
+      // Count total items
+      let totalItems = 0;
+      const itemsByCategory: Record<string, number> = {};
+      
+      for (const fragmentID of fragmentIDs) {
+        const fragment = model.items[fragmentID];
+        console.log(`[IFC Processor] Fragment ${fragmentID}:`, fragment);
+        
+        if (fragment && fragment.ids) {
+          const itemCount = fragment.ids.length;
+          totalItems += itemCount;
+          console.log(`[IFC Processor] Fragment ${fragmentID} has ${itemCount} items`);
+        }
       }
+
+      console.log(`[IFC Processor] Total items: ${totalItems}`);
+      console.log(`[IFC Processor] Items by category:`, itemsByCategory);
 
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
         model: {
           fragmentsModel: model,
-          schema: "IFC4",
-          project: { Name: node.data.file.name },
-          elementCounts,
-          totalElements: itemsWithGeometry.length,
-          spatialStructure,
-          categories,
+          schema: metadata?.schema || "Unknown",
+          project: { Name: metadata?.name || node.data.file.name },
+          elementCounts: itemsByCategory,
+          totalElements: totalItems,
         },
       });
+
+      console.log(`[IFC Processor] Processing complete for node ${node.id}`);
 
       return {
         file: node.data.file,
         name: node.data.file.name,
         model,
-        elements: itemsWithGeometry,
-        elementCounts,
-        totalElements: itemsWithGeometry.length,
+        elements: [], // TODO: Extract actual elements from fragments
+        elementCounts: itemsByCategory,
+        totalElements: totalItems,
       };
     } catch (error) {
       console.error(`Error processing IFC in node ${node.id}:`, error);
