@@ -19,9 +19,9 @@ import { performAnalysis } from "@/src/nodes/analysis-node/utils";
 import { withActiveViewer, hasActiveModel } from "@/src/nodes/viewer-node/manager";
 import * as THREE from "three";
 import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
-import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./types";
-import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./helpers";
-import { processNodeByType } from "./processors";
+import type { PropertyInfo, PropertyNodeElement, ProcessorContext } from "./workflow-executor/types";
+import { safeStringify, topologicalSort, findUpstreamIfcNode, hasDownstreamGLBExport, hasDownstreamViewer, checkIfInputHasGeometry } from "./workflow-executor/helpers";
+import { processNodeByType } from "./workflow-executor/processors";
 
 // TODO: error handling and progress tracking
 export class WorkflowExecutor {
@@ -114,7 +114,7 @@ export class WorkflowExecutor {
     let result = await processNodeByType(node.type, node, inputValues, context);
     
     // Fallback to old switch-case for nodes not yet migrated
-    if (result === null && !["ifcNode", "filterNode", "parameterNode", "geometryNode"].includes(node.type)) {
+    if (result === null && !["ifcNode", "filterNode", "parameterNode"].includes(node.type)) {
       result = await this.processNodeLegacy(node, inputValues, nodeId);
     }
 
@@ -126,6 +126,199 @@ export class WorkflowExecutor {
   private async processNodeLegacy(node: any, inputValues: any, nodeId: string): Promise<any> {
     let result;
     switch (node.type) {
+      case "ifcNode":
+        // Log the request
+        console.log("Processing ifcNode", { node });
+
+        // Priority 1: Check if node has a model (from file upload in IFC node)
+        if (node.data.model) {
+          // Use the model directly from the node data
+          console.log("Using model from node data", node.data.model);
+          result = node.data.model;
+
+          // Ensure the model has a file reference for downstream nodes
+          if (!result.file && node.data.file) {
+            result.file = node.data.file;
+          }
+        }
+        // Priority 2: Check for cached model info
+        else if (node.data.modelInfo) {
+          console.log("Using cached modelInfo from node data", node.data.modelInfo);
+          result = node.data.modelInfo;
+        }
+        // Priority 3: Check if there's a file to load
+        else if (node.data.file) {
+          try {
+            // If there's a file in the node data, load it
+            const file = node.data.file;
+            console.log("Loading IFC file from node data", file.name);
+            result = await loadIfcFile(file);
+
+            // Store the result in the node data for future reference
+            node.data.modelInfo = result;
+          } catch (err) {
+            console.error("Error loading IFC file:", err);
+            throw new Error(
+              `Failed to load IFC file: ${err instanceof Error ? err.message : String(err)
+              }`
+            );
+          }
+        }
+        // Priority 4: Check if this is an empty node from saved workflow
+        else if (node.data.isEmptyNode) {
+          // This is an empty IFC node from a saved workflow
+          const fileName = node.data.fileName || node.data.properties?.filename || "Unknown File";
+          console.warn(
+            `IFC node requires file to be reloaded: ${fileName}`
+          );
+          result = {
+            id: `empty-model-${Date.now()}`,
+            name: `Reload Required: ${fileName}`,
+            elements: [],
+            errorMessage:
+              `Please reload the IFC file: ${fileName}. Saved workflows do not include IFC file data.`,
+          };
+        }
+        // Priority 5: Last resort - try to get the last loaded model
+        else {
+          const lastLoaded = getLastLoadedModel();
+          if (lastLoaded) {
+            // Use the last loaded model if available
+            console.log(
+              "Using last loaded model:",
+              lastLoaded.id,
+              "with",
+              lastLoaded.elements.length,
+              "elements"
+            );
+            result = lastLoaded;
+
+            // Store it in the node data for future reference
+            node.data.modelInfo = lastLoaded;
+          } else {
+            // No model info or file available - return empty structure
+            console.warn(
+              "No IFC model data available. Please load an IFC file first."
+            );
+            result = {
+              id: `empty-model-${Date.now()}`,
+              name: "No IFC Data",
+              elements: [],
+              errorMessage:
+                "No IFC file loaded. Please load an IFC file first.",
+            };
+          }
+        }
+
+        // Make sure result is properly formatted with an elements array
+        // Preserve original metadata if we have to wrap an array
+        const originalModelData = result && typeof result === 'object' && !Array.isArray(result)
+          ? { id: result.id, name: result.name, schema: result.schema, project: result.project }
+          : { id: `model-${Date.now()}`, name: "Unknown IFC Model", schema: undefined, project: undefined };
+
+        if (result && !result.elements && Array.isArray(result)) {
+          // If result is just an array of elements, wrap it in a model object, preserving name etc.
+          console.warn("IFC node result was an array, wrapping it in a model object.");
+          result = {
+            ...originalModelData, // Spread original metadata
+            elements: result, // The array is the elements
+            elementCounts: { unknown: result.length }, // Provide basic count
+            totalElements: result.length,
+          };
+        } else if (result && typeof result === 'object' && !Array.isArray(result.elements)) {
+          // If elements is not an array, initialize it as empty array
+          result.elements = result.elements || [];
+          // Ensure other metadata is present from originalModelData if missing in result
+          result.name = result.name || originalModelData.name;
+          result.id = result.id || originalModelData.id;
+          result.schema = result.schema || originalModelData.schema;
+          result.project = result.project || originalModelData.project;
+        } else if (!result) {
+          // Handle cases where result might be null/undefined
+          result = {
+            ...originalModelData,
+            name: "No IFC Data",
+            elements: [],
+            errorMessage: "No IFC data processed."
+          };
+        }
+
+        console.log(
+          `IFC node processed with ${result.elements?.length || 0} elements named '${result.name}'` // Log name too
+        );
+        break;
+
+      case "geometryNode":
+        // Check if we should use actual geometry OR if there's a downstream GLB export OR viewer
+        const hasDownstreamGLB = hasDownstreamGLBExport(nodeId, this.edges, this.nodes);
+        const hasDownstreamViewerNode = hasDownstreamViewer(nodeId, this.edges, this.nodes);
+        const needsActualGeometry = node.data.properties?.useActualGeometry || hasDownstreamGLB || hasDownstreamViewerNode;
+        const hasViewerModel = hasActiveModel();
+
+        // Update node with real-time viewer status
+        let viewerElementCount = 0;
+        if (hasViewerModel) {
+          viewerElementCount = withActiveViewer(viewer => viewer.getElementCount()) || 0;
+        }
+
+        this.updateNodeDataInList(nodeId, {
+          ...node.data,
+          hasRealGeometry: needsActualGeometry && hasViewerModel,
+          viewerElementCount
+        });
+
+        if (needsActualGeometry && hasViewerModel) {
+          // Log why we're using actual geometry
+          if (hasDownstreamGLB && !node.data.properties?.useActualGeometry) {
+            console.log(`Automatically enabling geometry extraction for GLB export downstream from node ${nodeId}`);
+          }
+          if (hasDownstreamViewerNode && !node.data.properties?.useActualGeometry && !hasDownstreamGLB) {
+            console.log(`Automatically enabling geometry extraction for viewer downstream from node ${nodeId}`);
+          }
+
+          // Use viewer-backed geometry processing
+          result = await this.executeGeometryNodeWithViewer(node, inputValues);
+        } else if (needsActualGeometry && !hasViewerModel) {
+          // Fallback to worker-based geometry extraction
+          console.log(`No active viewer model, falling back to worker-based geometry extraction for node ${nodeId}`);
+          result = await this.executeGeometryNode(node);
+        } else {
+          // Use the simple extraction method (IFC data only)
+          result = extractGeometry(
+            inputValues.input,
+            node.data.properties?.elementType || "all",
+            node.data.properties?.includeOpenings !== "false"
+          );
+
+          // Mark elements as having no real geometry
+          if (Array.isArray(result)) {
+            result = result.map(element => ({
+              ...element,
+              hasRealGeometry: false
+            }));
+          }
+        }
+        break;
+
+      case "filterNode":
+        // Filter elements
+        if (!inputValues.input) {
+          console.warn(`No input provided to filter node ${nodeId}`);
+          result = [];
+        } else {
+          const elementsToFilter = Array.isArray(inputValues.input)
+            ? inputValues.input
+            : inputValues.input.elements;
+
+          result = filterElements(
+            elementsToFilter || [],
+            node.data.properties?.property || "",
+            node.data.properties?.operator || "equals",
+            node.data.properties?.value || ""
+          );
+        }
+        break;
+
       case "transformNode":
         // Transform elements
         if (!inputValues.input) {
@@ -785,14 +978,13 @@ export class WorkflowExecutor {
             if (!hasGeometry) {
               console.log("No geometry found in input - extracting geometry for GLB export");
 
-              // Extract geometry from the input model using GeometryNodeProcessor
+              // Extract geometry from the input model
               try {
-                const { GeometryNodeProcessor } = await import('./processors/geometry-node-processor');
-                const geometryProcessor = new GeometryNodeProcessor();
-                exportInput = await geometryProcessor.extractForGLBExport(exportInput);
+                exportInput = await this.extractGeometryForGLB(exportInput);
                 console.log("Geometry extracted for GLB export:", exportInput?.length || 0, "elements");
               } catch (error) {
                 console.error("Failed to extract geometry for GLB export:", error);
+                // Continue with original input - let the export handle the error
               }
             }
           }
@@ -821,6 +1013,11 @@ export class WorkflowExecutor {
             );
           }
         }
+        break;
+
+      case "parameterNode":
+        // Parameter
+        result = node.data.properties?.value || "";
         break;
 
       case "clusterNode":
@@ -913,7 +1110,7 @@ export class WorkflowExecutor {
         }
 
         try {
-          const { executeTransformPipeline } = await import('../../nodes/data-transform-node/utils');
+          const { executeTransformPipeline } = await import('../nodes/data-transform-node/utils');
 
           const steps = node.data.properties?.steps || [];
           const restrictToIncomingElements = node.data.properties?.restrictToIncomingElements || false;
@@ -1002,4 +1199,189 @@ export class WorkflowExecutor {
     }
   }
 
+  // Execute geometry node with viewer-backed real geometry
+  private async executeGeometryNodeWithViewer(node: any, inputValues: any): Promise<any> {
+    const nodeId = node.id;
+    console.log(`Executing geometry node with viewer-backed geometry for ${nodeId}`);
+
+    if (!inputValues.input) {
+      throw new Error(`No input provided to geometry node ${nodeId}`);
+    }
+
+    const model = inputValues.input;
+    if (!model || !model.elements) {
+      throw new Error(`Input to geometry node ${nodeId} is not a valid IFC model`);
+    }
+
+    const elementType = node.data.properties?.elementType || "all";
+    const includeOpenings = node.data.properties?.includeOpenings !== "false";
+
+    // Filter elements by type first (same as standard extraction)
+    const filteredElements = extractGeometry(model, elementType, includeOpenings);
+
+    // Get viewer element count and validate against viewer
+    const viewerElementCount = withActiveViewer(viewer => viewer.getElementCount()) || 0;
+    const indexedElementIds = withActiveViewer(viewer => viewer.getIndexedElementIds()) || [];
+
+    console.log(`Geometry node: ${filteredElements.length} filtered elements, ${viewerElementCount} viewer elements`);
+
+    // Mark elements with real geometry availability
+    const result = filteredElements.map(element => {
+      const hasViewerMesh = indexedElementIds.includes(element.expressId);
+      return {
+        ...element,
+        hasRealGeometry: hasViewerMesh,
+        // Add bounding box info if available in viewer
+        boundingBox: hasViewerMesh ?
+          withActiveViewer(viewer => {
+            const bbox = viewer.getBoundingBoxForElement(element.expressId);
+            return bbox ? {
+              min: bbox.min.toArray(),
+              max: bbox.max.toArray(),
+              size: bbox.getSize(new THREE.Vector3()).toArray()
+            } : null;
+          }) : null
+      };
+    });
+
+    // Update node with final results
+    this.updateNodeDataInList(nodeId, {
+      ...node.data,
+      elements: result,
+      hasRealGeometry: true,
+      viewerElementCount
+    });
+
+    console.log(`Geometry node completed: ${result.length} elements with real geometry flags`);
+    return result;
+  }
+
+  // Execute geometry node with actual geometry extraction
+  private async executeGeometryNode(node: any): Promise<any> {
+    const nodeId = node.id;
+    console.log(`Executing geometry node with actual geometry for ${nodeId}`);
+
+    // Get input values - find the input node (usually an IFC node)
+    const inputValues = await this.getInputValues(nodeId);
+    if (!inputValues.input) {
+      throw new Error(`No input provided to geometry node ${nodeId}`);
+    }
+
+    const model = inputValues.input;
+    if (!model || !model.file) {
+      throw new Error(
+        `Input to geometry node ${nodeId} is not a valid IFC model with file reference`
+      );
+    }
+
+    const elementType = node.data.properties?.elementType || "all";
+    const includeOpenings = node.data.properties?.includeOpenings !== "false";
+
+    // Update node state to loading
+    let updatedNodeData = {
+      ...node.data,
+      isLoading: true,
+      progress: { percentage: 5, message: "Starting geometry extraction..." },
+      error: null,
+    };
+    this.updateNodeDataInList(nodeId, updatedNodeData);
+
+    try {
+      // Define progress callback
+      const progressCallback = (percentage: number, message?: string) => {
+        this.updateNodeDataInList(nodeId, {
+          ...updatedNodeData,
+          isLoading: true,
+          progress: { percentage, message: message || "Processing..." },
+        });
+      };
+
+      // Extract geometry with the actual geometry approach
+      const elements = await extractGeometryWithGeom(
+        model,
+        elementType,
+        includeOpenings,
+        progressCallback
+      );
+
+      // Update node with results
+      updatedNodeData = {
+        ...updatedNodeData,
+        elements,
+        model,
+        isLoading: false,
+        progress: null,
+      };
+      this.updateNodeDataInList(nodeId, updatedNodeData);
+
+      // Return just the elements for workflow processing
+      return elements.map((el) => {
+        // If the element has a geometry property with a 'simplified' type,
+        // include that in the direct properties for easier access in watch nodes
+        if (el.geometry && el.geometry.type === "simplified") {
+          return {
+            ...el,
+            properties: {
+              ...el.properties,
+              hasSimplifiedGeometry: true,
+              dimensions: el.geometry.dimensions,
+            },
+          };
+        }
+        return el;
+      });
+    } catch (error) {
+      console.error(
+        `Error during geometry extraction for node ${nodeId}:`,
+        error
+      );
+
+      // Update node with error state
+      updatedNodeData = {
+        ...updatedNodeData,
+        isLoading: false,
+        progress: null,
+        error: error instanceof Error ? error.message : String(error),
+      };
+      this.updateNodeDataInList(nodeId, updatedNodeData);
+
+      // Rethrow the error
+      throw error;
+    }
+  }
+
+  // Helper method to extract geometry for GLB export
+  private async extractGeometryForGLB(input: any): Promise<any> {
+    // Determine if we have a model or elements array
+    let model;
+    if (Array.isArray(input)) {
+      // If it's already an array, we need to find the source model
+      // This is a limitation - we'll use the last loaded model
+      const lastLoaded = getLastLoadedModel();
+      if (!lastLoaded) {
+        throw new Error("No IFC model available for geometry extraction");
+      }
+      model = lastLoaded;
+    } else if (input.elements && Array.isArray(input.elements)) {
+      // It's a model object
+      model = input;
+    } else {
+      throw new Error("Invalid input format for geometry extraction");
+    }
+
+    // Extract geometry using the worker-based method
+    console.log("Extracting geometry for GLB export from model:", model.name);
+
+    // Use the same method as the geometry node
+    const elements = await extractGeometryWithGeom(
+      model,
+      "all", // Extract all element types
+      true,  // Include openings
+      (progress, message) => {
+        console.log(`GLB Geometry extraction: ${progress}% - ${message}`);
+      }
+    );
+
+    return elements;
+  }
 }

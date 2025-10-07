@@ -3,11 +3,13 @@ import type { NodeProcessor, ProcessorContext } from '../types';
 import { IfcNodeProcessor } from './ifc-node-processor';
 import { FilterNodeProcessor } from './filter-node-processor';
 import { ParameterNodeProcessor } from './parameter-node-processor';
+import { GeometryNodeProcessor } from './geometry-node-processor';
 
 export const NODE_PROCESSORS: Record<string, NodeProcessor> = {
   ifcNode: new IfcNodeProcessor(),
   filterNode: new FilterNodeProcessor(),
   parameterNode: new ParameterNodeProcessor(),
+  geometryNode: new GeometryNodeProcessor(),
 };
 
 export async function processNodeByType(
