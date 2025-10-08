@@ -63,113 +63,113 @@ export const nodeCategories = [
         icon: <FileUp className="h-4 w-4 mr-2" />,
         status: "working",
       },
-      {
-        id: "parameterNode",
-        label: "Parameter",
-        icon: <Sliders className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
+      // {
+      //   id: "parameterNode",
+      //   label: "Parameter",
+      //   icon: <Sliders className="h-4 w-4 mr-2" />,
+      //   status: "working",
+      // },
     ],
   },
-  {
-    name: "Geometry",
-    nodes: [
-      {
-        id: "geometryNode",
-        label: "Extract Geometry",
-        icon: <Box className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
-        id: "transformNode",
-        label: "Transform",
-        icon: <Move className="h-4 w-4 mr-2" />,
-        status: "wip",
-      },
-      {
-        id: "clusterNode",
-        label: "Cluster Elements",
-        icon: <Layers className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-      {
-        id: "spatialNode",
-        label: "Spatial Query",
-        icon: <Layers className="h-4 w-4 mr-2" />,
-        status: "wip",
-      },
-    ],
-  },
-  {
-    name: "Data",
-    nodes: [
-      {
-        id: "filterNode",
-        label: "Filter Elements",
-        icon: <Filter className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
-        id: "propertyNode",
-        label: "Property Editor",
-        icon: <Edit className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
-        id: "quantityNode",
-        label: "Quantity Takeoff",
-        icon: <Calculator className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
-        id: "classificationNode",
-        label: "Classification",
-        icon: <FileText className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-      {
-        id: "pythonNode",
-        label: "Python",
-        icon: <Terminal className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-      {
-        id: "relationshipNode",
-        label: "Relationships",
-        icon: <GitBranch className="h-4 w-4 mr-2" />,
-        status: "wip",
-      },
-      {
-        id: "analysisNode",
-        label: "Analysis",
-        icon: <BarChart className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-      {
-        id: "dataTransformNode",
-        label: "Data Transform",
-        icon: <Shuffle className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-    ],
-  },
-  {
-    name: "Output",
-    nodes: [
-      {
-        id: "exportNode",
-        label: "Export Data",
-        icon: <Download className="h-4 w-4 mr-2" />,
-        status: "new",
-      },
-      {
-        id: "watchNode",
-        label: "Watch Values",
-        icon: <Clock className="h-4 w-4 mr-2" />,
-        status: "working",
-      },
-    ],
-  },
+  // {
+  //   name: "Geometry",
+  //   nodes: [
+  //     {
+  //       id: "geometryNode",
+  //       label: "Extract Geometry",
+  //       icon: <Box className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //     {
+  //       id: "transformNode",
+  //       label: "Transform",
+  //       icon: <Move className="h-4 w-4 mr-2" />,
+  //       status: "wip",
+  //     },
+  //     {
+  //       id: "clusterNode",
+  //       label: "Cluster Elements",
+  //       icon: <Layers className="h-4 w-4 mr-2" />,
+  //       status: "new",
+  //     },
+  //     {
+  //       id: "spatialNode",
+  //       label: "Spatial Query",
+  //       icon: <Layers className="h-4 w-4 mr-2" />,
+  //       status: "wip",
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "Data",
+  //   nodes: [
+  //     {
+  //       id: "filterNode",
+  //       label: "Filter Elements",
+  //       icon: <Filter className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //     {
+  //       id: "propertyNode",
+  //       label: "Property Editor",
+  //       icon: <Edit className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //     {
+  //       id: "quantityNode",
+  //       label: "Quantity Takeoff",
+  //       icon: <Calculator className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //     {
+  //       id: "classificationNode",
+  //       label: "Classification",
+  //       icon: <FileText className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //     {
+  //       id: "pythonNode",
+  //       label: "Python",
+  //       icon: <Terminal className="h-4 w-4 mr-2" />,
+  //       status: "new",
+  //     },
+  //     {
+  //       id: "relationshipNode",
+  //       label: "Relationships",
+  //       icon: <GitBranch className="h-4 w-4 mr-2" />,
+  //       status: "wip",
+  //     },
+  //     {
+  //       id: "analysisNode",
+  //       label: "Analysis",
+  //       icon: <BarChart className="h-4 w-4 mr-2" />,
+  //       status: "new",
+  //     },
+  //     {
+  //       id: "dataTransformNode",
+  //       label: "Data Transform",
+  //       icon: <Shuffle className="h-4 w-4 mr-2" />,
+  //       status: "new",
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "Output",
+  //   nodes: [
+  //     {
+  //       id: "exportNode",
+  //       label: "Export Data",
+  //       icon: <Download className="h-4 w-4 mr-2" />,
+  //       status: "new",
+  //     },
+  //     {
+  //       id: "watchNode",
+  //       label: "Watch Values",
+  //       icon: <Clock className="h-4 w-4 mr-2" />,
+  //       status: "working",
+  //     },
+  //   ],
+  // },
 ];
 
 interface SidebarProps {
