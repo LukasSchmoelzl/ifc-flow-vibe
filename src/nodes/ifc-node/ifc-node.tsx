@@ -186,32 +186,22 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
               <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Element Breakdown ({sortedElements.length} types)
               </div>
-              {sortedElements.slice(0, 15).map(([type, count]) => {
-                const percentage = totalElements ? ((count as number) / totalElements) * 100 : 0;
-                return (
-                  <div key={type} className="flex items-center justify-between py-0.5 px-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <div className="flex items-center gap-1 flex-1 min-w-0">
-                      <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${getElementTypeColor(type)}`}
-                        title={`${type} elements`}
-                      />
-                      <span className="text-gray-700 dark:text-gray-300 truncate" title={type}>
-                        {formatElementType(type)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {(count as number).toLocaleString()}
-                      </span>
-                      {percentage >= 1 && (
-                        <span className="text-gray-500 dark:text-gray-400 text-[10px]">
-                          ({percentage.toFixed(1)}%)
-                        </span>
-                      )}
-                    </div>
+              {sortedElements.slice(0, 15).map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between py-0.5 px-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <div
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${getElementTypeColor(type)}`}
+                      title={`${type} elements`}
+                    />
+                    <span className="text-gray-700 dark:text-gray-300 truncate" title={type}>
+                      {formatElementType(type)}
+                    </span>
                   </div>
-                );
-              })}
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {(count as number).toLocaleString()}
+                  </span>
+                </div>
+              ))}
               {sortedElements.length > 15 && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1">
                   ... and {sortedElements.length - 15} more types
