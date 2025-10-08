@@ -77,6 +77,7 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
           fragments,
           world,
         };
+        (window as any).__fragmentsModels = {};
       } catch (error) {
         console.error("Failed to initialize Fragments viewer:", error);
         setIsReady(true);
@@ -91,6 +92,7 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
       }
       components?.dispose();
       (window as any).__fragmentsViewer = null;
+      (window as any).__fragmentsModels = {};
       isInitialized.current = false;
     };
   }, []);

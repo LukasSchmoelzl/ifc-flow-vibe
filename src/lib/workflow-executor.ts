@@ -286,9 +286,7 @@ export class WorkflowExecutor {
     this.abortController = new AbortController();
 
     try {
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log("🚀 WORKFLOW EXECUTION STARTED");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       const sortedNodes = topologicalSort(this.nodes, this.edges);
       console.log(`📋 Processing ${sortedNodes.length} nodes in order:`, sortedNodes);
@@ -299,9 +297,7 @@ export class WorkflowExecutor {
         await this.processNode(nodeId);
       }
 
-      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      console.log("✅ WORKFLOW EXECUTION COMPLETED");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("\n✅ WORKFLOW EXECUTION COMPLETED");
       return this.nodeResults;
     } catch (error) {
       console.error("Error executing workflow:", error);

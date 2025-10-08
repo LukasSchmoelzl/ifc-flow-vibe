@@ -59,11 +59,15 @@ export class IfcNodeProcessor implements NodeProcessor {
       const metadata = await model.getMetadata();
       console.log(`[IFC Processor] Metadata:`, metadata);
 
+      if (!(window as any).__fragmentsModels) {
+        (window as any).__fragmentsModels = {};
+      }
+      (window as any).__fragmentsModels[node.id] = model;
+
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
         model: {
-          fragmentsModel: model,
           schema: metadata?.schema || "IFC",
           project: { Name: metadata?.name || node.data.file.name },
         },
