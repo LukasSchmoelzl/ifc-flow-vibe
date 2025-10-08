@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { DataTransformEditor } from "@/src/nodes/data-transform-node/properties";
+// import { DataTransformEditor } from "@/src/nodes-louis/data-transform-node/properties";
 
 interface NodePropertyRendererProps {
   node: any;
@@ -1026,13 +1026,13 @@ export function NodePropertyRenderer({
         </div>
       );
 
-    case "dataTransformNode":
-      return (
-        <DataTransformEditor
-          properties={properties}
-          setProperties={setProperties}
-        />
-      );
+    // case "dataTransformNode":
+    //   return (
+    //     <DataTransformEditor
+    //       properties={properties}
+    //       setProperties={setProperties}
+    //     />
+    //   );
 
     case "clusterNode":
       return (
