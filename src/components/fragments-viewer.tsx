@@ -8,7 +8,7 @@ import Stats from "stats.js";
 
 // Constants
 const GITHUB_WORKER_URL = "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const WASM_PATH = "https://unpkg.com/web-ifc@0.0.69/";
+const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
 interface FragmentsViewerProps {
   onModelLoad?: (model: FRAGS.FragmentsModel) => void;

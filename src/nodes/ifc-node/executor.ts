@@ -1,7 +1,7 @@
 import type { NodeProcessor, ProcessorContext } from '@/src/lib/workflow-executor';
 import * as FRAGS from "@thatopen/fragments";
 
-const WASM_PATH = "https://unpkg.com/web-ifc@0.0.69/";
+const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
 export class IfcNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
