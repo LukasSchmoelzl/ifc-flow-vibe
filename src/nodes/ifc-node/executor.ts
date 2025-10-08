@@ -59,6 +59,23 @@ export class IfcNodeProcessor implements NodeProcessor {
       const metadata = await model.getMetadata();
       console.log(`[IFC Processor] Metadata:`, metadata);
 
+      const categories = await model.getCategories();
+      console.log(`[IFC Processor] Categories:`, categories);
+
+      const itemsWithGeometry = await model.getItemsIdsWithGeometry();
+      const totalElements = itemsWithGeometry.length;
+      console.log(`[IFC Processor] Total elements with geometry:`, totalElements);
+
+      const elementCounts: Record<string, number> = {};
+      for (const category of categories) {
+        const itemsOfCategory = await model.getItemsOfCategories([new RegExp(`^${category}$`)]);
+        const count = Object.values(itemsOfCategory).flat().length;
+        if (count > 0) {
+          elementCounts[category] = count;
+        }
+      }
+      console.log(`[IFC Processor] Element counts by category:`, elementCounts);
+
       if (!(window as any).__fragmentsModels) {
         (window as any).__fragmentsModels = {};
       }
@@ -70,6 +87,8 @@ export class IfcNodeProcessor implements NodeProcessor {
         model: {
           schema: metadata?.schema || "IFC",
           project: { Name: metadata?.name || node.data.file.name },
+          totalElements,
+          elementCounts,
         },
       });
 
