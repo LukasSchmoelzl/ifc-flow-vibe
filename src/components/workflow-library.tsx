@@ -52,9 +52,7 @@ export function WorkflowLibrary({
   onOpenChange,
   onLoadWorkflow,
 }: WorkflowLibraryProps) {
-  const [workflows, setWorkflows] = useState(() =>
-    workflowStorage.getWorkflows()
-  );
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("library");
   const [isImporting, setIsImporting] = useState(false);
@@ -65,10 +63,21 @@ export function WorkflowLibrary({
 
   // Function to refresh workflows
   const refreshWorkflows = () => {
-    setWorkflows(workflowStorage.getWorkflows());
+    if (typeof window !== 'undefined') {
+      try {
+        setWorkflows(workflowStorage.getWorkflows());
+      } catch (error) {
+        console.error("Failed to load workflows:", error);
+        setWorkflows([]);
+      }
+    }
   };
 
-  // Effect to refresh workflows when the dialog opens
+  // Load workflows on mount and when dialog opens
+  useEffect(() => {
+    refreshWorkflows();
+  }, []);
+
   useEffect(() => {
     if (open) {
       refreshWorkflows();
