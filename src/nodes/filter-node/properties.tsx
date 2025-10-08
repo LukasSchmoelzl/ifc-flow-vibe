@@ -3,6 +3,16 @@
 import { Label } from "@/src/components/ui/label"
 import { Input } from "@/src/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
+import { useEffect, useState } from "react"
+
+const COMMON_PROPERTIES = [
+  "Name",
+  "GlobalId",
+  "Description",
+  "Tag",
+  "ObjectType",
+  "PredefinedType",
+];
 
 interface FilterEditorProps {
   properties: {
@@ -12,19 +22,60 @@ interface FilterEditorProps {
     [key: string]: any;
   };
   setProperties: (properties: any) => void;
+  nodeId?: string;
 }
 
-export function FilterEditor({ properties, setProperties }: FilterEditorProps) {
+export function FilterEditor({ properties, setProperties, nodeId }: FilterEditorProps) {
+  const [availableProperties, setAvailableProperties] = useState<string[]>(COMMON_PROPERTIES);
+  const [isLoadingProps, setIsLoadingProps] = useState(false);
+
+  useEffect(() => {
+    async function loadProperties() {
+      if (!nodeId) return;
+
+      setIsLoadingProps(true);
+      try {
+        const models = window.__fragmentsModels;
+        if (!models) return;
+
+        const modelIds = Object.keys(models);
+        if (modelIds.length === 0) return;
+
+        const model = models[modelIds[0]];
+        const attributeNames = await model.getAttributeNames();
+        
+        const uniqueProps = Array.from(new Set([...COMMON_PROPERTIES, ...attributeNames]));
+        setAvailableProperties(uniqueProps);
+      } catch (error) {
+        console.warn("Could not load properties:", error);
+      } finally {
+        setIsLoadingProps(false);
+      }
+    }
+
+    loadProperties();
+  }, [nodeId]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="property">Property</Label>
-        <Input
-          id="property"
+        <Select
           value={properties.property || ""}
-          onChange={(e) => setProperties({ ...properties, property: e.target.value })}
-          placeholder="e.g. Name or GlobalId"
-        />
+          onValueChange={(value) => setProperties({ ...properties, property: value })}
+          disabled={isLoadingProps}
+        >
+          <SelectTrigger id="property">
+            <SelectValue placeholder={isLoadingProps ? "Loading properties..." : "Select property"} />
+          </SelectTrigger>
+          <SelectContent>
+            {availableProperties.map((prop) => (
+              <SelectItem key={prop} value={prop}>
+                {prop}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="operator">Operator</Label>
