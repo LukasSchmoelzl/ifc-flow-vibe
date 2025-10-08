@@ -100,7 +100,9 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
   useEffect(() => {
     const handleResize = () => {
       const viewer = window.__fragmentsViewer;
-      viewer?.world?.renderer?.resize();
+      if (viewer?.world?.renderer) {
+        viewer.world.renderer.resize(new THREE.Vector2());
+      }
     };
 
     window.addEventListener("resize", handleResize);
