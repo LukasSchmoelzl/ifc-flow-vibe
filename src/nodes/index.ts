@@ -1,5 +1,6 @@
 import type { NodeTypes } from "reactflow"
 import { IfcNode } from "./ifc-node/ifc-node"
+import { TemplateNode } from "./template-node/template-node"
 // import { GeometryNode } from "../nodes-louis/geometry-node/geometry-node"
 // import { FilterNode } from "../nodes-louis/filter-node/filter-node"
 // import { TransformNode } from "../nodes-louis/transform-node/transform-node"
@@ -18,6 +19,7 @@ import { IfcNode } from "./ifc-node/ifc-node"
 
 export const nodeTypes: NodeTypes = {
   ifcNode: IfcNode,
+  templateNode: TemplateNode,
   // geometryNode: GeometryNode,
   // filterNode: FilterNode,
   // transformNode: TransformNode,
@@ -37,6 +39,7 @@ export const nodeTypes: NodeTypes = {
 
 export {
   IfcNode,
+  TemplateNode,
   // GeometryNode,
   // FilterNode,
   // TransformNode,

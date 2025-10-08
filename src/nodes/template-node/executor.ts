@@ -17,7 +17,7 @@ export class TemplateNodeProcessor implements NodeProcessor {
       console.log(`[Template Processor] Processing node ${node.id}`);
       console.log(`[Template Processor] Input:`, inputValues.input);
 
-      const result = inputValues.input;
+      const result = inputValues.input + " world";
 
       context.updateNodeData(node.id, {
         ...node.data,

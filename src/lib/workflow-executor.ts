@@ -1,4 +1,5 @@
 import { IfcNodeProcessor } from "@/src/nodes/ifc-node/executor";
+import { TemplateNodeProcessor } from "@/src/nodes/template-node/executor";
 
 // Types and interfaces
 
@@ -63,6 +64,7 @@ export function topologicalSort(nodes: any[], edges: any[]): string[] {
 // Node processor registry
 const NODE_PROCESSORS = {
   ifcNode: new IfcNodeProcessor(),
+  templateNode: new TemplateNodeProcessor(),
 } as const;
 
 export class WorkflowExecutor {
