@@ -53,6 +53,8 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
 
         // Check if it's an IFC file
         if (file.name.toLowerCase().endsWith(".ifc")) {
+          console.log(`[IFC Node] File selected: ${file.name} (${file.size} bytes)`);
+          console.log(`[IFC Node] File stored in node data. Run the workflow to load it into the viewer.`);
           setNodes((nodes) =>
             nodes.map((node) => {
               if (node.id === id) {
@@ -92,6 +94,8 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
       const target = event.target as HTMLInputElement;
       const file = target.files ? target.files[0] : null;
       if (file && file.name.toLowerCase().endsWith(".ifc")) {
+        console.log(`[IFC Node] File selected via dialog: ${file.name} (${file.size} bytes)`);
+        console.log(`[IFC Node] File stored in node data. Run the workflow to load it into the viewer.`);
         setNodes((nodes) =>
           nodes.map((node) => {
             if (node.id === id) {

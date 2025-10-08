@@ -286,16 +286,22 @@ export class WorkflowExecutor {
     this.abortController = new AbortController();
 
     try {
-      console.log("Starting workflow execution...");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("🚀 WORKFLOW EXECUTION STARTED");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       const sortedNodes = topologicalSort(this.nodes, this.edges);
+      console.log(`📋 Processing ${sortedNodes.length} nodes in order:`, sortedNodes);
 
       for (const nodeId of sortedNodes) {
-        console.log(`Processing node ${nodeId}`);
+        const node = this.nodes.find(n => n.id === nodeId);
+        console.log(`\n▶️  Processing node: ${nodeId} (${node?.type || 'unknown'})`);
         await this.processNode(nodeId);
       }
 
-      console.log("Workflow execution completed");
+      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("✅ WORKFLOW EXECUTION COMPLETED");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       return this.nodeResults;
     } catch (error) {
       console.error("Error executing workflow:", error);
@@ -325,6 +331,7 @@ export class WorkflowExecutor {
 
   private async processNode(nodeId: string): Promise<any> {
     if (this.nodeResults.has(nodeId)) {
+      console.log(`   ⏭️  Node ${nodeId} already processed, using cached result`);
       return this.nodeResults.get(nodeId);
     }
 
@@ -334,6 +341,7 @@ export class WorkflowExecutor {
     }
 
     const inputValues = await this.getInputValues(nodeId);
+    console.log(`   📥 Input values:`, Object.keys(inputValues).length > 0 ? inputValues : 'none');
 
     const context: ProcessorContext = {
       nodeResults: this.nodeResults,
@@ -348,7 +356,9 @@ export class WorkflowExecutor {
       throw new Error(`No processor found for node type: ${node.type}`);
     }
     
+    console.log(`   🔄 Calling processor for ${node.type}...`);
     const result = await processor.process(node, inputValues, context);
+    console.log(`   ✅ Node ${nodeId} processed successfully`);
 
     this.nodeResults.set(nodeId, result);
     return result;
