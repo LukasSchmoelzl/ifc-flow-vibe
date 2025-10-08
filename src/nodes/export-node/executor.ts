@@ -24,7 +24,7 @@ export class ExportNodeProcessor implements NodeProcessor {
         console.log("No geometry found in input - extracting geometry for GLB export");
 
         try {
-          const { GeometryNodeProcessor } = await import('@/src/nodes/geometry-node/processor');
+          const { GeometryNodeProcessor } = await import('@/src/nodes/geometry-node/executor');
           const geometryProcessor = new GeometryNodeProcessor();
           exportInput = await geometryProcessor.extractForGLBExport(exportInput);
           console.log("Geometry extracted for GLB export:", exportInput?.length || 0, "elements");
