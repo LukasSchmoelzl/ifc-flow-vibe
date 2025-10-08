@@ -1,60 +1,6 @@
-import {
-  extractGeometry,
-  filterElements,
-  transformElements,
-  extractQuantities,
-  manageProperties,
-  manageClassifications,
-  spatialQuery,
-  queryRelationships,
-  exportData,
-  downloadExportedFile,
-  loadIfcFile,
-  IfcModel,
-  getLastLoadedModel,
-  extractGeometryWithGeom,
-  runPythonScript,
-} from "@/src/lib/ifc-utils";
-import { performAnalysis } from "@/src/nodes/analysis-node/utils";
-import * as THREE from "three";
-// import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes-louis/cluster-node/utils";
 import { IfcNodeProcessor } from "@/src/nodes/ifc-node/executor";
-// import { FilterNodeProcessor } from "@/src/nodes-louis/filter-node/executor";
-// import { ParameterNodeProcessor } from "@/src/nodes-louis/parameter-node/executor";
-// import { GeometryNodeProcessor } from "@/src/nodes-louis/geometry-node/executor";
-// import { TransformNodeProcessor } from "@/src/nodes-louis/transform-node/executor";
-// import { QuantityNodeProcessor } from "@/src/nodes-louis/quantity-node/executor";
-// import { PropertyNodeProcessor } from "@/src/nodes-louis/property-node/executor";
-// import { WatchNodeProcessor } from "@/src/nodes-louis/watch-node/executor";
-// import { ClassificationNodeProcessor } from "@/src/nodes-louis/classification-node/executor";
-// import { SpatialNodeProcessor } from "@/src/nodes-louis/spatial-node/executor";
-// import { RelationshipNodeProcessor } from "@/src/nodes-louis/relationship-node/executor";
-// import { AnalysisNodeProcessor } from "@/src/nodes-louis/analysis-node/executor";
-// import { PythonNodeProcessor } from "@/src/nodes-louis/python-node/executor";
-// import { ExportNodeProcessor } from "@/src/nodes-louis/export-node/executor";
-// import { ClusterNodeProcessor } from "@/src/nodes-louis/cluster-node/executor";
-// import { DataTransformNodeProcessor } from "@/src/nodes-louis/data-transform-node/executor";
 
 // Types and interfaces
-export interface PropertyInfo {
-  name: string;
-  exists: boolean;
-  value: any;
-  psetName: string;
-}
-
-export interface PropertyNodeElement {
-  id: string;
-  expressId?: number;
-  type: string;
-  properties?: {
-    GlobalId?: string;
-    Name?: string;
-    [key: string]: any;
-  };
-  propertyInfo?: PropertyInfo;
-  [key: string]: any;
-}
 
 export interface NodeProcessor {
   process(node: any, inputValues: any, context: ProcessorContext): Promise<any>;
@@ -69,32 +15,6 @@ export interface ProcessorContext {
 }
 
 // Helper functions
-export function safeStringify(value: any): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value !== "object") return String(value);
-
-  const seen = new WeakSet();
-
-  const replacer = (key: string, value: any) => {
-    if (typeof value !== "object" || value === null) return value;
-
-    if (seen.has(value)) {
-      return "[Circular Reference]";
-    }
-
-    seen.add(value);
-    return value;
-  };
-
-  try {
-    return JSON.stringify(value, replacer);
-  } catch (error) {
-    console.warn("Error stringifying object:", error);
-    return "[Complex Object]";
-  }
-}
-
 export function topologicalSort(nodes: any[], edges: any[]): string[] {
   const graph: Record<string, string[]> = {};
   nodes.forEach((node) => {
@@ -140,124 +60,11 @@ export function topologicalSort(nodes: any[], edges: any[]): string[] {
   return result;
 }
 
-export function findUpstreamIfcNode(nodeId: string, edges: any[], nodes: any[]): string | null {
-  const visited = new Set<string>();
-
-  const checkUpstream = (currentNodeId: string): string | null => {
-    if (visited.has(currentNodeId)) return null;
-    visited.add(currentNodeId);
-
-    const incomingEdges = edges.filter(edge => edge.target === currentNodeId);
-
-    for (const edge of incomingEdges) {
-      const sourceNode = nodes.find(n => n.id === edge.source);
-      if (!sourceNode) continue;
-
-      if (sourceNode.type === "ifcNode") {
-        return sourceNode.id;
-      }
-
-      const upstreamIfc = checkUpstream(edge.source);
-      if (upstreamIfc) {
-        return upstreamIfc;
-      }
-    }
-
-    return null;
-  };
-
-  return checkUpstream(nodeId);
-}
-
-export function hasDownstreamGLBExport(nodeId: string, edges: any[], nodes: any[]): boolean {
-  const visited = new Set<string>();
-
-  const checkDownstream = (currentNodeId: string): boolean => {
-    if (visited.has(currentNodeId)) return false;
-    visited.add(currentNodeId);
-
-    const outgoingEdges = edges.filter(edge => edge.source === currentNodeId);
-
-    for (const edge of outgoingEdges) {
-      const targetNode = nodes.find(n => n.id === edge.target);
-      if (!targetNode) continue;
-
-      if (targetNode.type === "exportNode" &&
-        targetNode.data.properties?.format === "glb") {
-        console.log(`Found downstream GLB export from geometry node ${nodeId}`);
-        return true;
-      }
-
-      if (checkDownstream(edge.target)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  return checkDownstream(nodeId);
-}
-
-export function hasDownstreamViewer(nodeId: string, edges: any[], nodes: any[]): boolean {
-  const visited = new Set<string>();
-
-  const checkDownstream = (currentNodeId: string): boolean => {
-    if (visited.has(currentNodeId)) return false;
-    visited.add(currentNodeId);
-
-    const outgoingEdges = edges.filter(edge => edge.source === currentNodeId);
-
-    for (const edge of outgoingEdges) {
-      const targetNode = nodes.find(n => n.id === edge.target);
-      if (!targetNode) continue;
-
-      if (checkDownstream(edge.target)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  return checkDownstream(nodeId);
-}
-
-export function checkIfInputHasGeometry(input: any): boolean {
-  if (!input) return false;
-
-  if (Array.isArray(input)) {
-    return input.some((element: any) => element.geometry && element.geometry.vertices);
-  }
-
-  if (input.elements && Array.isArray(input.elements)) {
-    return input.elements.some((element: any) => element.geometry && element.geometry.vertices);
-  }
-
-  return false;
-}
-
-// Node processor registry - all nodes migrated!
+// Node processor registry
 const NODE_PROCESSORS = {
   ifcNode: new IfcNodeProcessor(),
-  // filterNode: new FilterNodeProcessor(),
-  // parameterNode: new ParameterNodeProcessor(),
-  // geometryNode: new GeometryNodeProcessor(),
-  // transformNode: new TransformNodeProcessor(),
-  // quantityNode: new QuantityNodeProcessor(),
-  // propertyNode: new PropertyNodeProcessor(),
-  // watchNode: new WatchNodeProcessor(),
-  // classificationNode: new ClassificationNodeProcessor(),
-  // spatialNode: new SpatialNodeProcessor(),
-  // relationshipNode: new RelationshipNodeProcessor(),
-  // analysisNode: new AnalysisNodeProcessor(),
-  // pythonNode: new PythonNodeProcessor(),
-  // exportNode: new ExportNodeProcessor(),
-  // clusterNode: new ClusterNodeProcessor(),
-  // dataTransformNode: new DataTransformNodeProcessor(),
 } as const;
 
-// TODO: error handling and progress tracking
 export class WorkflowExecutor {
   private nodes: any[] = [];
   private edges: any[] = [];
