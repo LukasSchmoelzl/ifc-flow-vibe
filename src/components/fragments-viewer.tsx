@@ -72,12 +72,12 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
 
         setIsReady(true);
 
-        (window as any).__fragmentsViewer = {
+        window.__fragmentsViewer = {
           components,
           fragments,
           world,
         };
-        (window as any).__fragmentsModels = {};
+        window.__fragmentsModels = {};
       } catch (error) {
         console.error("Failed to initialize Fragments viewer:", error);
         setIsReady(true);
@@ -91,15 +91,15 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
         container.removeChild(stats.dom);
       }
       components?.dispose();
-      (window as any).__fragmentsViewer = null;
-      (window as any).__fragmentsModels = {};
+      window.__fragmentsViewer = undefined;
+      window.__fragmentsModels = {};
       isInitialized.current = false;
     };
   }, []);
 
   useEffect(() => {
     const handleResize = () => {
-      const viewer = (window as any).__fragmentsViewer;
+      const viewer = window.__fragmentsViewer;
       viewer?.world?.renderer?.resize();
     };
 

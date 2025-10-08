@@ -18,7 +18,7 @@ export class IfcNodeProcessor implements NodeProcessor {
       });
 
       // Get fragments viewer from global scope
-      const fragmentsViewer = (window as any).__fragmentsViewer;
+      const fragmentsViewer = window.__fragmentsViewer;
       
       if (!fragmentsViewer) {
         throw new Error("Fragments viewer not initialized");
@@ -76,10 +76,10 @@ export class IfcNodeProcessor implements NodeProcessor {
       }
       console.log(`[IFC Processor] Element counts by category:`, elementCounts);
 
-      if (!(window as any).__fragmentsModels) {
-        (window as any).__fragmentsModels = {};
+      if (!window.__fragmentsModels) {
+        window.__fragmentsModels = {};
       }
-      (window as any).__fragmentsModels[node.id] = model;
+      window.__fragmentsModels[node.id] = model;
 
       context.updateNodeData(node.id, {
         ...node.data,
