@@ -17,23 +17,23 @@ import {
 } from "@/src/lib/ifc-utils";
 import { performAnalysis } from "@/src/nodes/analysis-node/utils";
 import * as THREE from "three";
-import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes/cluster-node/utils";
+// import { buildClusters, buildClustersFromElements, applyClusterColors, ClusterConfig, getClusterStats } from "@/src/nodes-louis/cluster-node/utils";
 import { IfcNodeProcessor } from "@/src/nodes/ifc-node/executor";
-import { FilterNodeProcessor } from "@/src/nodes/filter-node/executor";
-import { ParameterNodeProcessor } from "@/src/nodes/parameter-node/executor";
-import { GeometryNodeProcessor } from "@/src/nodes/geometry-node/executor";
-import { TransformNodeProcessor } from "@/src/nodes/transform-node/executor";
-import { QuantityNodeProcessor } from "@/src/nodes/quantity-node/executor";
-import { PropertyNodeProcessor } from "@/src/nodes/property-node/executor";
-import { WatchNodeProcessor } from "@/src/nodes/watch-node/executor";
-import { ClassificationNodeProcessor } from "@/src/nodes/classification-node/executor";
-import { SpatialNodeProcessor } from "@/src/nodes/spatial-node/executor";
-import { RelationshipNodeProcessor } from "@/src/nodes/relationship-node/executor";
-import { AnalysisNodeProcessor } from "@/src/nodes/analysis-node/executor";
-import { PythonNodeProcessor } from "@/src/nodes/python-node/executor";
-import { ExportNodeProcessor } from "@/src/nodes/export-node/executor";
-import { ClusterNodeProcessor } from "@/src/nodes/cluster-node/executor";
-import { DataTransformNodeProcessor } from "@/src/nodes/data-transform-node/executor";
+// import { FilterNodeProcessor } from "@/src/nodes-louis/filter-node/executor";
+// import { ParameterNodeProcessor } from "@/src/nodes-louis/parameter-node/executor";
+// import { GeometryNodeProcessor } from "@/src/nodes-louis/geometry-node/executor";
+// import { TransformNodeProcessor } from "@/src/nodes-louis/transform-node/executor";
+// import { QuantityNodeProcessor } from "@/src/nodes-louis/quantity-node/executor";
+// import { PropertyNodeProcessor } from "@/src/nodes-louis/property-node/executor";
+// import { WatchNodeProcessor } from "@/src/nodes-louis/watch-node/executor";
+// import { ClassificationNodeProcessor } from "@/src/nodes-louis/classification-node/executor";
+// import { SpatialNodeProcessor } from "@/src/nodes-louis/spatial-node/executor";
+// import { RelationshipNodeProcessor } from "@/src/nodes-louis/relationship-node/executor";
+// import { AnalysisNodeProcessor } from "@/src/nodes-louis/analysis-node/executor";
+// import { PythonNodeProcessor } from "@/src/nodes-louis/python-node/executor";
+// import { ExportNodeProcessor } from "@/src/nodes-louis/export-node/executor";
+// import { ClusterNodeProcessor } from "@/src/nodes-louis/cluster-node/executor";
+// import { DataTransformNodeProcessor } from "@/src/nodes-louis/data-transform-node/executor";
 
 // Types and interfaces
 export interface PropertyInfo {
@@ -240,21 +240,21 @@ export function checkIfInputHasGeometry(input: any): boolean {
 // Node processor registry - all nodes migrated!
 const NODE_PROCESSORS = {
   ifcNode: new IfcNodeProcessor(),
-  filterNode: new FilterNodeProcessor(),
-  parameterNode: new ParameterNodeProcessor(),
-  geometryNode: new GeometryNodeProcessor(),
-  transformNode: new TransformNodeProcessor(),
-  quantityNode: new QuantityNodeProcessor(),
-  propertyNode: new PropertyNodeProcessor(),
-  watchNode: new WatchNodeProcessor(),
-  classificationNode: new ClassificationNodeProcessor(),
-  spatialNode: new SpatialNodeProcessor(),
-  relationshipNode: new RelationshipNodeProcessor(),
-  analysisNode: new AnalysisNodeProcessor(),
-  pythonNode: new PythonNodeProcessor(),
-  exportNode: new ExportNodeProcessor(),
-  clusterNode: new ClusterNodeProcessor(),
-  dataTransformNode: new DataTransformNodeProcessor(),
+  // filterNode: new FilterNodeProcessor(),
+  // parameterNode: new ParameterNodeProcessor(),
+  // geometryNode: new GeometryNodeProcessor(),
+  // transformNode: new TransformNodeProcessor(),
+  // quantityNode: new QuantityNodeProcessor(),
+  // propertyNode: new PropertyNodeProcessor(),
+  // watchNode: new WatchNodeProcessor(),
+  // classificationNode: new ClassificationNodeProcessor(),
+  // spatialNode: new SpatialNodeProcessor(),
+  // relationshipNode: new RelationshipNodeProcessor(),
+  // analysisNode: new AnalysisNodeProcessor(),
+  // pythonNode: new PythonNodeProcessor(),
+  // exportNode: new ExportNodeProcessor(),
+  // clusterNode: new ClusterNodeProcessor(),
+  // dataTransformNode: new DataTransformNodeProcessor(),
 } as const;
 
 // TODO: error handling and progress tracking
