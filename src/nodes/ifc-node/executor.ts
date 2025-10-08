@@ -51,47 +51,21 @@ export class IfcNodeProcessor implements NodeProcessor {
 
       console.log(`[IFC Processor] Model loaded:`, model);
       console.log(`[IFC Processor] Model properties:`, Object.keys(model));
-      console.log(`[IFC Processor] Model metadata:`, model.getMetadata ? model.getMetadata() : 'No metadata method');
 
       world.scene.three.add(model.object);
       await fragments.update(true);
       console.log(`[IFC Processor] Model added to scene and updated`);
 
-      // Extract metadata using available Fragments API
-      const metadata = model.getMetadata();
+      const metadata = await model.getMetadata();
       console.log(`[IFC Processor] Metadata:`, metadata);
-
-      // Get all fragments IDs
-      const fragmentIDs = Object.keys(model.items);
-      console.log(`[IFC Processor] Fragment IDs count:`, fragmentIDs.length);
-
-      // Count total items
-      let totalItems = 0;
-      const itemsByCategory: Record<string, number> = {};
-      
-      for (const fragmentID of fragmentIDs) {
-        const fragment = model.items[fragmentID];
-        console.log(`[IFC Processor] Fragment ${fragmentID}:`, fragment);
-        
-        if (fragment && fragment.ids) {
-          const itemCount = fragment.ids.length;
-          totalItems += itemCount;
-          console.log(`[IFC Processor] Fragment ${fragmentID} has ${itemCount} items`);
-        }
-      }
-
-      console.log(`[IFC Processor] Total items: ${totalItems}`);
-      console.log(`[IFC Processor] Items by category:`, itemsByCategory);
 
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
         model: {
           fragmentsModel: model,
-          schema: metadata?.schema || "Unknown",
+          schema: metadata?.schema || "IFC",
           project: { Name: metadata?.name || node.data.file.name },
-          elementCounts: itemsByCategory,
-          totalElements: totalItems,
         },
       });
 
@@ -101,9 +75,6 @@ export class IfcNodeProcessor implements NodeProcessor {
         file: node.data.file,
         name: node.data.file.name,
         model,
-        elements: [], // TODO: Extract actual elements from fragments
-        elementCounts: itemsByCategory,
-        totalElements: totalItems,
       };
     } catch (error) {
       console.error(`Error processing IFC in node ${node.id}:`, error);
