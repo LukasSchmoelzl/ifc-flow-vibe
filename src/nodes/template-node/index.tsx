@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps } from "reactflow";
 import { FileText } from "lucide-react";
 import { NodeLoadingIndicator } from "../node-loading-indicator";
 import { BaseNodeData } from "../node-types";
-import { TemplateNodeUI } from "./ui.tsx";
+import { TemplateNodeUI } from "./ui";
 
 interface TemplateNodeData extends BaseNodeData {
   isLoading?: boolean;

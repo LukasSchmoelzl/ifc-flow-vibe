@@ -5,8 +5,8 @@ import { Handle, Position, type NodeProps } from "reactflow";
 import { FileUp } from "lucide-react";
 import { NodeLoadingIndicator } from "../node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "../node-types";
-import { useIfcFileHandler } from "./file-handler.tsx";
-import { IfcNodeUI } from "./ui.tsx";
+import { useIfcFileHandler } from "./file-handler";
+import { IfcNodeUI } from "./ui";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
