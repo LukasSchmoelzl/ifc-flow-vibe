@@ -4,8 +4,6 @@ import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { useEffect, useState } from "react";
-import { getModelPropertyNames } from "@/src/lib/ifc-utils";
 import {
   Select,
   SelectContent,
@@ -13,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-// import { DataTransformEditor } from "@/src/nodes-louis/data-transform-node/properties";
 
 interface NodePropertyRendererProps {
   node: any;
@@ -26,13 +23,8 @@ export function NodePropertyRenderer({
   properties,
   setProperties,
 }: NodePropertyRendererProps) {
-  const [modelProps, setModelProps] = useState<string[]>([]);
-
-  useEffect(() => {
-    setModelProps(getModelPropertyNames());
-  }, []);
-  // Return null for ifcNode type to prevent properties panel from rendering anything
-  if (node.type === "ifcNode") {
+  // Return null for ifcNode and templateNode types (no properties panels needed)
+  if (node.type === "ifcNode" || node.type === "templateNode") {
     return null;
   }
 
