@@ -1,9 +1,9 @@
 "use client";
 
 import { memo, useState, useCallback, useRef } from "react";
-import { Handle, Position, useReactFlow, type NodeProps } from "reactflow";
+import { Position, useReactFlow, type NodeProps } from "reactflow";
 import { FileUp, Info, Building } from "lucide-react";
-import { NodeLoadingIndicator } from "../node-loading-indicator";
+import { BaseNodeComponent } from "../base-node";
 import { IfcNodeData as BaseIfcNodeData } from "../node-types";
 import { getElementTypeColor, formatElementType } from "@/src/lib/ifc/element-utils";
 
@@ -217,66 +217,55 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
   return (
     <div
       ref={dropRef}
-      className={`bg-white dark:bg-gray-800 border-2 ${isDraggingOver ? "border-blue-700 bg-blue-50 dark:bg-blue-900 dark:border-blue-500" : "border-blue-500 dark:border-blue-400"
-        } rounded-md shadow-md w-60 transition-colors duration-200 ease-in-out relative`}
+      className={`${isDraggingOver ? "ring-2 ring-blue-700 bg-blue-50 dark:bg-blue-900" : ""} transition-colors duration-200 ease-in-out`}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDoubleClick={onDoubleClick}
     >
-      <div className="bg-blue-500 text-white px-3 py-1 flex items-center gap-2">
-        <FileUp className="h-4 w-4 flex-shrink-0" />
-        <div className="text-sm font-medium truncate" title={data.label}>
-          {data.label}
-        </div>
-      </div>
-      <NodeLoadingIndicator
-        isLoading={data.isLoading || false}
-        message="Processing IFC file..."
-      />
-      {!data.isLoading && data.error && (
-        <div className="p-3 text-xs text-red-500 break-words">
-          Error: {data.error}
-        </div>
-      )}
-      {!data.isLoading && !data.error && data.properties?.file && (
-        <div className="p-3 text-xs">
-          {data.model ? (
-            renderModelInfo()
-          ) : (
-            <div className="text-muted-foreground text-xs mt-1">
-              Loaded. Drag & drop to replace.
-            </div>
-          )}
-        </div>
-      )}
-      {!data.isLoading && !data.error && !data.properties?.file && !data.isEmptyNode && (
-        <div className="p-3 text-xs text-muted-foreground">
-          {isDraggingOver ? "Drop IFC file here" : "No file selected"}
-        </div>
-      )}
-      {!data.isLoading && !data.error && data.isEmptyNode && (
-        <div className="p-3">
-          <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-            IFC file needs to be reloaded
-          </div>
-          {data.fileName && (
-            <div className="text-xs text-muted-foreground mt-1">
-              Original file: {data.fileName}
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">
-            Drag & drop or click to load IFC file
-          </div>
-        </div>
-      )}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{ background: "#555", width: 8, height: 8 }}
+      <BaseNodeComponent
+        data={data}
         isConnectable={isConnectable}
-      />
+        config={{
+          icon: FileUp,
+          color: "blue",
+          width: "w-60",
+          loadingMessage: "Processing IFC file...",
+          handles: [{ type: "source", position: Position.Right, id: "output" }],
+        }}
+      >
+        {data.properties?.file && (
+          <div className="p-3 text-xs">
+            {data.model ? (
+              renderModelInfo()
+            ) : (
+              <div className="text-muted-foreground text-xs mt-1">
+                Loaded. Drag & drop to replace.
+              </div>
+            )}
+          </div>
+        )}
+        {!data.properties?.file && !data.isEmptyNode && (
+          <div className="p-3 text-xs text-muted-foreground">
+            {isDraggingOver ? "Drop IFC file here" : "No file selected"}
+          </div>
+        )}
+        {data.isEmptyNode && (
+          <div className="p-3">
+            <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+              IFC file needs to be reloaded
+            </div>
+            {data.fileName && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Original file: {data.fileName}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground mt-1">
+              Drag & drop or click to load IFC file
+            </div>
+          </div>
+        )}
+      </BaseNodeComponent>
     </div>
   );
 });

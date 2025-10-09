@@ -1,9 +1,7 @@
 "use client";
 
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "reactflow";
-import { Box } from "lucide-react";
-import { NodeLoadingIndicator } from "../node-loading-indicator";
+import { FileText } from "lucide-react";
+import { createNode } from "../base-node";
 import { BaseNodeData } from "../node-types";
 
 interface TemplateNodeData extends BaseNodeData {
@@ -12,49 +10,19 @@ interface TemplateNodeData extends BaseNodeData {
   result?: any;
 }
 
-export const TemplateNode = memo(({ id, data, isConnectable }: NodeProps<TemplateNodeData>) => {
-  return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400 rounded-md shadow-md min-w-[200px]">
-      <div className="bg-blue-500 text-white px-3 py-2 flex items-center gap-2">
-        <Box className="w-4 h-4" />
-        <div className="text-sm font-medium">{data.label}</div>
+export const TemplateNode = createNode<TemplateNodeData>(
+  {
+    icon: FileText,
+    color: "blue",
+    loadingMessage: "Processing template...",
+  },
+  (data) => (
+    <div className="p-3 text-xs">
+      <div className="text-muted-foreground">
+        {data.result ? `Result: ${data.result}` : "Template Node - Ready"}
       </div>
-
-      <NodeLoadingIndicator
-        isLoading={data.isLoading || false}
-        message="Processing..."
-      />
-
-      {!data.isLoading && data.error && (
-        <div className="p-3 text-xs text-red-500 break-words">
-          Error: {data.error}
-        </div>
-      )}
-
-      {!data.isLoading && !data.error && (
-        <div className="p-3 text-xs">
-          <div className="text-muted-foreground">
-            Template Node - Ready
-          </div>
-        </div>
-      )}
-
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input"
-        style={{ background: "#555", width: 8, height: 8 }}
-        isConnectable={isConnectable}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{ background: "#555", width: 8, height: 8 }}
-        isConnectable={isConnectable}
-      />
     </div>
-  );
-});
+  )
+);
 
 TemplateNode.displayName = "TemplateNode";
