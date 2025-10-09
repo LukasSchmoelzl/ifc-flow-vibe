@@ -41,22 +41,21 @@ export const createNode = (
 };
 
 /**
- * Creates an IFC file node
+ * Creates an IFC file node (used by File > Open menu)
  */
 export const createIfcNode = (
   position: { x: number; y: number },
   file: File,
-  fileHandle: any
+  _legacyFileHandle?: any // Keep for backwards compatibility but ignore
 ): Node => {
   return {
     id: generateNodeId(),
     type: "ifcNode",
     position,
     data: {
-      fileName: file.name,
-      fileSize: file.size,
-      fileHandle: fileHandle,
-      modelState: null,
+      label: "IFC File",
+      file: file, // Store the File object directly for new Fragments-based system
+      fileName: file.name, // Keep for UI display
     },
   };
 };
