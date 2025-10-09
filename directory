@@ -1,0 +1,90 @@
+[1mdiff --git a/src/lib/node-factory.ts b/src/lib/node-factory.ts[m
+[1mindex 84c17c2..fb76a2f 100644[m
+[1m--- a/src/lib/node-factory.ts[m
+[1m+++ b/src/lib/node-factory.ts[m
+[36m@@ -1,16 +1,6 @@[m
+[31m-import type { Node } from "reactflow";[m
+ import { nodeCategories } from "@/src/components/sidebar";[m
+ [m
+[31m-/**[m
+[31m- * Generates a unique node ID[m
+[31m- */[m
+[31m-export const generateNodeId = (): string => {[m
+[31m-  return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;[m
+[31m-};[m
+[31m-[m
+[31m-/**[m
+[31m- * Gets user-friendly node label from nodeCategories[m
+[31m- */[m
+[32m+[m[32m// Gets user-friendly node label from nodeCategories[m
+ export const getNodeLabel = (nodeId: string): string => {[m
+   for (const category of nodeCategories) {[m
+     const node = category.nodes.find(n => n.id === nodeId);[m
+[36m@@ -18,66 +8,6 @@[m [mexport const getNodeLabel = (nodeId: string): string => {[m
+       return node.label;[m
+     }[m
+   }[m
+[31m-  return nodeId; // fallback to ID if not found[m
+[31m-};[m
+[31m-[m
+[31m-/**[m
+[31m- * Creates a new node with default properties[m
+[31m- */[m
+[31m-export const createNode = ([m
+[31m-  type: string,[m
+[31m-  position: { x: number; y: number },[m
+[31m-  additionalData?: Record<string, any>[m
+[31m-): Node => {[m
+[31m-  return {[m
+[31m-    id: generateNodeId(),[m
+[31m-    type,[m
+[31m-    position,[m
+[31m-    data: {[m
+[31m-      label: getNodeLabel(type),[m
+[31m-      ...additionalData,[m
+[31m-    },[m
+[31m-  };[m
+[31m-};[m
+[31m-[m
+[31m-/**[m
+[31m- * Creates an IFC file node (used by File > Open menu)[m
+[31m- */[m
+[31m-export const createIfcNode = ([m
+[31m-  position: { x: number; y: number },[m
+[31m-  file: File,[m
+[31m-  _legacyFileHandle?: any // Keep for backwards compatibility but ignore[m
+[31m-): Node => {[m
+[31m-  return {[m
+[31m-    id: generateNodeId(),[m
+[31m-    type: "ifcNode",[m
+[31m-    position,[m
+[31m-    data: {[m
+[31m-      label: "IFC File",[m
+[31m-      file: file, // Store the File object directly for new Fragments-based system[m
+[31m-      fileName: file.name, // Keep for UI display[m
+[31m-    },[m
+[31m-  };[m
+[31m-};[m
+[31m-[m
+[31m-/**[m
+[31m- * Helper function to load viewer settings from localStorage[m
+[31m- */[m
+[31m-export const loadViewerSetting = ([m
+[31m-  key: 'showGrid' | 'showMinimap',[m
+[31m-  defaultValue: boolean[m
+[31m-): boolean => {[m
+[31m-  if (typeof window !== 'undefined') {[m
+[31m-    try {[m
+[31m-      const saved = localStorage.getItem('app-settings');[m
+[31m-      if (saved) {[m
+[31m-        const parsed = JSON.parse(saved);[m
+[31m-        return parsed.viewer?.[key] ?? defaultValue;[m
+[31m-      }[m
+[31m-    } catch (e) {[m
+[31m-      console.error(`Error loading ${key} setting:`, e);[m
+[31m-    }[m
+[31m-  }[m
+[31m-  return defaultValue;[m
+[32m+[m[32m  throw new Error(`No label found for node type: ${nodeId}`);[m
+ };[m
+ [m
