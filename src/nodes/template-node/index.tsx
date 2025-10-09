@@ -3,6 +3,7 @@
 import { FileText } from "lucide-react";
 import { createNode } from "../base-node";
 import { BaseNodeData } from "../node-types";
+import { TemplateNodeUI } from "./ui";
 
 interface TemplateNodeData extends BaseNodeData {
   isLoading?: boolean;
@@ -16,13 +17,8 @@ export const TemplateNode = createNode<TemplateNodeData>(
     color: "blue",
     loadingMessage: "Processing template...",
   },
-  (data) => (
-    <div className="p-3 text-xs">
-      <div className="text-muted-foreground">
-        {data.result ? `Result: ${data.result}` : "Template Node - Ready"}
-      </div>
-    </div>
-  )
+  (data, nodeProps) => <TemplateNodeUI data={data} nodeProps={nodeProps} />
 );
 
 TemplateNode.displayName = "TemplateNode";
+

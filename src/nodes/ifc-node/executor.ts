@@ -43,7 +43,7 @@ export class IfcNodeProcessor implements NodeProcessor {
       console.log(`[IFC Processor] Fragments bytes generated: ${bytes.byteLength} bytes`);
 
       console.log(`[IFC Processor] Loading model into Fragments viewer...`);
-      const model = await fragments.load(bytes, {
+      const model = await fragments.load(bytes.buffer as ArrayBuffer, {
         modelId: node.id,
         camera: world.camera.three,
         raw: true,

@@ -1,0 +1,130 @@
+NODE STRUCTURE
+==============
+
+Jede Node besteht aus folgenden Dateien:
+
+1. index.tsx - Node Registration & Boilerplate Import
+   - Importiert createNode() oder BaseNodeComponent
+   - Definiert Node-Config (Icon, Farbe, Handles)
+   - Rendert UI-Komponente
+
+2. ui.tsx - UI Content der Node
+   - Zeigt node.data an
+   - Nur visuelle Logik
+   - Keine Daten-Manipulation
+
+3. file-handler.tsx / logic.tsx - Node-spezifische Logik (optional)
+   - Drag & Drop Handler
+   - User-Interaktionen
+   - State-Management
+   - Aktualisiert node.data
+
+4. executor.ts - Workflow Processing
+   - Implementiert NodeProcessor Interface
+   - Verarbeitet node.data
+   - Gibt Ergebnis zurück an Workflow
+   - Aktualisiert node.data mit Ergebnissen
+
+
+DATENFLUSS IFC NODE
+==================
+
+1. USER INTERACTION (file-handler.tsx):
+   ┌─────────────────────────────────────┐
+   │ User lädt IFC Datei (Drag & Drop)   │
+   │ → setNodes() aktualisiert node.data │
+   │ → node.data.file = File Object      │
+   │ → node.data.fileName = "test.ifc"   │
+   └─────────────────────────────────────┘
+
+2. UI ANZEIGE (ui.tsx):
+   ┌─────────────────────────────────────┐
+   │ Zeigt: "No file selected"           │
+   │ oder: "Loaded. Drag & drop..."      │
+   │ oder: Model Info (wenn vorhanden)   │
+   └─────────────────────────────────────┘
+
+3. WORKFLOW EXECUTION (executor.ts):
+   ┌─────────────────────────────────────┐
+   │ 1. Liest: node.data.file            │
+   │ 2. Konvertiert IFC → Fragments      │
+   │ 3. Lädt in Viewer (SONDERFALL!)     │
+   │    → window.__fragmentsViewer       │
+   │    → window.__fragmentsModels[id]   │
+   │ 4. Extrahiert Metadaten             │
+   │ 5. Speichert in node.data.model:    │
+   │    - schema                         │
+   │    - project.Name                   │
+   │    - elementCounts                  │
+   │    - totalElements                  │
+   │ 6. Return: { model, file, name }    │
+   └─────────────────────────────────────┘
+
+4. UI UPDATE (ui.tsx):
+   ┌─────────────────────────────────────┐
+   │ node.data.model verfügbar           │
+   │ → Zeigt Schema, Projekt-Name        │
+   │ → Zeigt Total Elements              │
+   │ → Zeigt Element Breakdown           │
+   └─────────────────────────────────────┘
+
+
+IFC NODE SONDERFALL - VIEWER INTEGRATION
+========================================
+
+Die IFC Node ist speziell, weil sie Daten in 2 Orte lädt:
+
+A) node.data (Normale Workflow-Daten):
+   - file: File Object
+   - fileName: String
+   - model: { schema, project, elementCounts, totalElements }
+   
+B) Global Viewer (Sonderfall!):
+   - window.__fragmentsViewer (Fragments Viewer Instanz)
+   - window.__fragmentsModels[nodeId] (FragmentsModel für diese Node)
+   
+Warum?
+- FragmentsModel ist nicht serialisierbar (WebGL, TypedArrays)
+- Kann nicht in node.data gespeichert werden
+- Wird global gespeichert für Zugriff durch andere Nodes
+- Nur Metadaten werden in node.data gespeichert
+
+
+TEMPLATE NODE BEISPIEL (Einfach)
+================================
+
+1. index.tsx - 20 Zeilen
+   - createNode() mit Icon & Farbe
+   - Rendert TemplateNodeUI
+
+2. ui.tsx - 15 Zeilen
+   - Zeigt data.result oder "Ready"
+
+3. executor.ts - 44 Zeilen
+   - Nimmt input
+   - Fügt " world" hinzu
+   - Return result
+
+
+NEUE NODE ERSTELLEN
+===================
+
+1. Ordner erstellen: src/nodes/my-node/
+
+2. index.tsx:
+   import { createNode } from "../base-node";
+   export const MyNode = createNode({ icon, color }, (data) => <MyNodeUI data={data} />);
+
+3. ui.tsx:
+   export function MyNodeUI({ data }) { return <div>...</div>; }
+
+4. executor.ts:
+   export class MyNodeProcessor implements NodeProcessor {
+     async process(node, inputValues, context) { return result; }
+   }
+
+5. Registrieren in:
+   - src/nodes/index.ts
+   - src/lib/workflow-executor.ts
+   - src/components/sidebar.tsx
+
