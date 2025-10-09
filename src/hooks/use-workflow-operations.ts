@@ -5,7 +5,7 @@ import type { Node, Edge } from "reactflow";
 import { useToast } from "@/src/hooks/use-toast";
 import { WorkflowExecutor } from "@/src/lib/workflow-executor";
 import { loadIfcFile, getIfcFile } from "@/src/lib/ifc-utils";
-import { createIfcNode } from "@/src/lib/node-factory";
+import { createIfcNodeFromFile } from "@/src/nodes/ifc-node/factory";
 import type { Workflow } from "@/src/lib/workflow-storage";
 
 export function useWorkflowOperations(
@@ -30,7 +30,7 @@ export function useWorkflowOperations(
         const result = await loadIfcFile(file);
 
         const position = { x: 100, y: 100 };
-        const newNode = createIfcNode(position, file, result);
+        const newNode = createIfcNodeFromFile(position, file, result);
 
         setNodes((nds) => [...nds, newNode]);
 

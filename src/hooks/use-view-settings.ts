@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useAppSettings } from "@/src/lib/settings-manager";
-import { loadViewerSetting } from "@/src/lib/node-factory";
+import { useAppSettings, loadViewerSetting } from "@/src/lib/settings-manager";
 
 export function useViewSettings() {
   const { updateViewerSettings } = useAppSettings();

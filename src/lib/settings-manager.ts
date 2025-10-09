@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 
+const SETTINGS_KEY = 'app-settings';
+
 export interface AppSettings {
   general: {
     theme: "light" | "dark" | "system"
@@ -19,6 +21,25 @@ export interface AppSettings {
     renderQuality: "low" | "medium" | "high"
   }
 }
+
+// Load viewer settings from localStorage
+export const loadViewerSetting = (
+  key: 'showGrid' | 'showMinimap',
+  defaultValue: boolean
+): boolean => {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.viewer?.[key] ?? defaultValue;
+      }
+    } catch (e) {
+      console.error(`Error loading ${key} setting:`, e);
+    }
+  }
+  return defaultValue;
+};
 
 // Default settings
 export const defaultSettings: AppSettings = {
@@ -44,7 +65,7 @@ export function loadSettings(): AppSettings {
   if (typeof window === "undefined") return defaultSettings
 
   try {
-    const savedSettings = localStorage.getItem("app-settings")
+    const savedSettings = localStorage.getItem(SETTINGS_KEY)
     if (savedSettings) {
       return { ...defaultSettings, ...JSON.parse(savedSettings) }
     }
@@ -60,7 +81,7 @@ export function saveSettings(settings: AppSettings): void {
   if (typeof window === "undefined") return
 
   try {
-    localStorage.setItem("app-settings", JSON.stringify(settings))
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
   } catch (error) {
     console.error("Error saving settings:", error)
   }

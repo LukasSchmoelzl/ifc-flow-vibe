@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { addEdge, type Connection, type NodeChange } from "reactflow";
 import type { Node, Edge } from "reactflow";
-import { createNode } from "@/src/lib/node-factory";
+import { createNode } from "@/src/nodes/node-factory-registry";
 
 export function useFlowHandlers(
   nodes: Node[],
