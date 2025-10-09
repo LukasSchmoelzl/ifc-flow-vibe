@@ -1,12 +1,12 @@
 "use client";
 
 import { memo } from "react";
-import { Position, type NodeProps } from "reactflow";
+import { Handle, Position, type NodeProps } from "reactflow";
 import { FileUp } from "lucide-react";
-import { BaseNodeComponent } from "../base-node";
+import { NodeLoadingIndicator } from "../node-loading-indicator";
 import { IfcNodeData as BaseIfcNodeData } from "../node-types";
-import { useIfcFileHandler } from "./file-handler";
-import { IfcNodeUI } from "./ui";
+import { useIfcFileHandler } from "./file-handler.tsx";
+import { IfcNodeUI } from "./ui.tsx";
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   isLoading?: boolean;
@@ -27,25 +27,41 @@ export const IfcNode = memo(({ id, data, isConnectable }: NodeProps<ExtendedIfcN
   return (
     <div
       ref={dropRef}
-      className={`${isDraggingOver ? "ring-2 ring-blue-700 bg-blue-50 dark:bg-blue-900" : ""} transition-colors duration-200 ease-in-out`}
+      className={`bg-white dark:bg-gray-800 border-2 ${
+        isDraggingOver ? "border-blue-700 bg-blue-50 dark:bg-blue-900" : "border-blue-500 dark:border-blue-400"
+      } rounded-md shadow-md w-60 transition-colors duration-200 ease-in-out`}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDoubleClick={onDoubleClick}
     >
-      <BaseNodeComponent
-        data={data}
+      <div className="bg-blue-500 text-white px-3 py-1 flex items-center gap-2">
+        <FileUp className="h-4 w-4 flex-shrink-0" />
+        <div className="text-sm font-medium truncate" title={data.label}>
+          {data.label}
+        </div>
+      </div>
+
+      <NodeLoadingIndicator
+        isLoading={data.isLoading || false}
+        message="Processing IFC file..."
+      />
+
+      {!data.isLoading && data.error && (
+        <div className="p-3 text-xs text-red-500 break-words">
+          Error: {data.error}
+        </div>
+      )}
+
+      {!data.isLoading && !data.error && <IfcNodeUI data={data} isDraggingOver={isDraggingOver} />}
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="output"
+        style={{ background: "#555", width: 8, height: 8 }}
         isConnectable={isConnectable}
-        config={{
-          icon: FileUp,
-          color: "blue",
-          width: "w-60",
-          loadingMessage: "Processing IFC file...",
-          handles: [{ type: "source", position: Position.Right, id: "output" }],
-        }}
-      >
-        <IfcNodeUI data={data} isDraggingOver={isDraggingOver} />
-      </BaseNodeComponent>
+      />
     </div>
   );
 });

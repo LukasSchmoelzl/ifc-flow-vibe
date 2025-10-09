@@ -1,4 +1,3 @@
-import type { NodeProps } from "reactflow";
 import { BaseNodeData } from "../node-types";
 
 interface TemplateNodeData extends BaseNodeData {
@@ -7,7 +6,6 @@ interface TemplateNodeData extends BaseNodeData {
 
 interface TemplateNodeUIProps {
   data: TemplateNodeData;
-  nodeProps: NodeProps<TemplateNodeData>;
 }
 
 export function TemplateNodeUI({ data }: TemplateNodeUIProps) {
