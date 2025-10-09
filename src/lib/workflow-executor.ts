@@ -1,5 +1,5 @@
-import { IfcNodeProcessor } from "@/src/nodes/ifc-node/executor";
-import { TemplateNodeProcessor } from "@/src/nodes/template-node/executor";
+import { IfcNodeProcessor } from "@/src/nodes/ifc-node/ifc-loader";
+import { TemplateNodeProcessor } from "@/src/nodes/template-node/text-processor";
 
 // Types and interfaces
 
