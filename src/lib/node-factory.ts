@@ -35,13 +35,6 @@ export const createNode = (
     position,
     data: {
       label: getNodeLabel(type),
-      ...(type === 'dataTransformNode' && {
-        properties: {
-          mode: 'steps',
-          steps: [],
-          restrictToIncomingElements: false,
-        }
-      }),
       ...additionalData,
     },
   };
