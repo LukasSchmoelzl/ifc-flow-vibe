@@ -12,11 +12,11 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 // Components
-import { PropertiesDialog } from "@/src/components/dialogs/properties-dialog";
-import { AppHeader } from "@/src/components/app-header";
-import { NodesToolbar } from "@/src/components/nodes-toolbar";
-import { FlowCanvas } from "@/src/components/flow-canvas";
-import { Toaster } from "@/src/components/toaster";
+import { PropertiesDialog } from "@/src/ui/dialogs/properties-dialog";
+import { AppHeader } from "@/src/ui/header/app-header";
+import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
+import { FlowCanvas } from "@/src/canvas/components/flow-canvas";
+import { Toaster } from "@/src/ui/components/toaster";
 
 // Hooks
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -24,21 +24,21 @@ import { useToast } from "@/src/hooks/use-toast";
 import { useKeyboardShortcuts } from "@/src/lib/keyboard-shortcuts";
 import { useAppSettings } from "@/src/lib/settings-manager";
 import { useTheme } from "next-themes";
-import { useWorkflowHistory } from "@/src/hooks/use-workflow-history";
-import { useClipboard } from "@/src/hooks/use-clipboard";
-import { useFileDrag } from "@/src/hooks/use-file-drag";
-import { useNodeDragging } from "@/src/hooks/use-node-dragging";
-import { useMobilePlacement } from "@/src/hooks/use-mobile-placement";
-import { useWorkflowOperations } from "@/src/hooks/use-workflow-operations";
+import { useWorkflowHistory } from "@/src/canvas/hooks/use-workflow-history";
+import { useClipboard } from "@/src/canvas/hooks/use-clipboard";
+import { useFileDrag } from "@/src/canvas/hooks/use-file-drag";
+import { useNodeDragging } from "@/src/canvas/hooks/use-node-dragging";
+import { useMobilePlacement } from "@/src/canvas/hooks/use-mobile-placement";
+import { useWorkflowOperations } from "@/src/canvas/hooks/use-workflow-operations";
 import { useAppHotkeys } from "@/src/hooks/use-app-hotkeys";
-import { useViewSettings } from "@/src/hooks/use-view-settings";
-import { useNodeOperations } from "@/src/hooks/use-node-operations";
-import { useFlowHandlers } from "@/src/hooks/use-flow-handlers";
-import { useFileDropHandler } from "@/src/hooks/use-file-drop-handler";
-import { useIfcExport } from "@/src/hooks/use-ifc-export";
+import { useViewSettings } from "@/src/canvas/hooks/use-view-settings";
+import { useNodeOperations } from "@/src/canvas/hooks/use-node-operations";
+import { useFlowHandlers } from "@/src/canvas/hooks/use-flow-handlers";
+import { useFileDropHandler } from "@/src/canvas/hooks/use-file-drop-handler";
+import { useIfcExport } from "@/src/viewer/use-ifc-export";
 
 // Types
-import type { Workflow } from "@/src/lib/workflow-storage";
+import type { Workflow } from "@/src/canvas/workflow-storage";
 
 function FlowWithProvider() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);

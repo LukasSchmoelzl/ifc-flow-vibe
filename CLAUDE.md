@@ -46,18 +46,21 @@ The application uses a **factory + processor pattern** for nodes:
 
 ### Two Node Directories
 
-- **`src/nodes/`** - New architecture nodes (IFC, Template)
+- **`src/canvas/nodes/nodes/`** - Active nodes (IFC, Template)
   - Each node has: `index.tsx` (UI), `factory.ts` (creation), `{processor}.ts` (execution)
   - Registry-based creation and processing
+  - Import from `@/src/canvas/nodes/nodes`
 
-- **`src/nodes-louis/`** - Legacy nodes (Analysis, Filter, Property, etc.)
-  - 13+ specialized node types for IFC operations
+- **`src/canvas/nodes-louis/`** - ⚠️ DEPRECATED Legacy nodes
+  - 15+ specialized node types for IFC operations (Analysis, Filter, Property, etc.)
   - Each has: `{name}-node.tsx` (UI), `executor.ts` (logic), optional `properties.tsx`, `utils.ts`
-  - Not yet migrated to factory pattern
+  - NOT migrated to factory pattern
+  - Many functions commented out due to removed dependencies
+  - **Do not use or extend these nodes**
 
 ### 3D Viewer Integration
 
-- **FragmentsViewer** (`src/components/fragments-viewer.tsx`)
+- **FragmentsViewer** (`src/viewer/fragments-viewer.tsx`)
   - Uses @thatopen/components for 3D visualization
   - Separate pane on right side of canvas (desktop only)
   - Loads IFC models using web-ifc via fragments API
@@ -65,7 +68,7 @@ The application uses a **factory + processor pattern** for nodes:
 
 ### State Management Pattern
 
-**Custom Hooks Architecture** - App logic split into focused hooks:
+**Custom Hooks Architecture** - App logic split into focused hooks (in `src/canvas/hooks/`):
 - `use-workflow-operations.ts` - workflow save/load/execute
 - `use-node-operations.ts` - node CRUD operations
 - `use-flow-handlers.ts` - React Flow event handlers
@@ -73,6 +76,7 @@ The application uses a **factory + processor pattern** for nodes:
 - `use-clipboard.ts` - copy/paste nodes
 - `use-mobile-placement.ts` - mobile node placement
 - `use-view-settings.ts` - UI settings (grid, minimap)
+- `use-file-drop-handler.ts` - file drag and drop
 
 **Main App Structure** (`app/page.tsx`):
 - `FlowWithProvider` component orchestrates all hooks
@@ -96,10 +100,19 @@ The application uses a **factory + processor pattern** for nodes:
 
 To add a new node following the factory pattern:
 
-1. Create node directory: `src/nodes/{name}-node/`
+1. Create node directory: `src/canvas/nodes/nodes/{name}-node/`
 2. Create `factory.ts`:
    ```typescript
-   export const create{Name}Node = (position, additionalData?) => ({
+   import type { Node } from "reactflow";
+
+   const generateNodeId = (): string => {
+     return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+   };
+
+   export const create{Name}Node = (
+     position: { x: number; y: number },
+     additionalData?: Record<string, any>
+   ): Node => ({
      id: generateNodeId(),
      type: "{name}Node",
      position,
@@ -108,26 +121,34 @@ To add a new node following the factory pattern:
    ```
 3. Create processor (e.g., `{purpose}.ts`):
    ```typescript
+   import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow-executor';
+
    export class {Name}NodeProcessor implements NodeProcessor {
-     async process(node, inputValues, context) { /* ... */ }
+     async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
+       // Implementation
+     }
    }
    ```
 4. Create UI (`index.tsx`) with React Flow node component
 5. Register in `node-factory-registry.ts`:
    ```typescript
-   const NODE_FACTORIES = {
+   import { create{Name}Node } from "./{name}-node/factory";
+
+   const NODE_FACTORIES: Record<string, NodeFactory> = {
      // ...
      {name}Node: create{Name}Node,
    };
    ```
-6. Register processor in `workflow-executor.ts`:
+6. Register processor in `src/canvas/workflow-executor.ts`:
    ```typescript
+   import { {Name}NodeProcessor } from "@/src/canvas/nodes/nodes/{name}-node/{processor}";
+
    const NODE_PROCESSORS = {
      // ...
      {name}Node: new {Name}NodeProcessor(),
    };
    ```
-7. Export from `src/nodes/index.ts`
+7. Export from `src/canvas/nodes/nodes/index.ts`
 
 ## Key Patterns
 
@@ -137,12 +158,19 @@ To add a new node following the factory pattern:
   - Avoid: `executor.ts` (too generic)
 
 **TypeScript:**
-- Node data interfaces in `src/nodes/node-types.ts`
+- Node data interfaces in `src/canvas/nodes/nodes/node-types.ts`
 - Extend `BaseNodeData` for all node types
 
 **React Flow:**
-- Centralized `nodeTypes` object in `src/nodes/index.ts`
+- Centralized `nodeTypes` object in `src/canvas/nodes/nodes/index.ts`
 - All node components exported and registered there
+
+**Import Paths:**
+- Canvas/Workflow: `@/src/canvas/*`
+- Nodes: `@/src/canvas/nodes/nodes/*`
+- Viewer: `@/src/viewer/*`
+- UI Components: `@/src/ui/components/*` or `@/src/ui/components/ui/*`
+- Shared: `@/src/lib/*` and `@/src/hooks/*`
 
 **Performance:**
 - Client-side IFC processing using WebAssembly
@@ -150,25 +178,42 @@ To add a new node following the factory pattern:
 
 ## Project Structure
 
+The codebase is organized into three main domains:
+
 ```
 src/
-├── components/       # UI components (dialogs, menubar, toolbar, etc.)
-├── hooks/            # Custom React hooks for state/logic
-├── lib/              # Core utilities (workflow-executor, ifc-utils, etc.)
-├── nodes/            # New architecture nodes (factory-based)
-│   ├── ifc-node/
-│   ├── template-node/
-│   ├── node-factory-registry.ts
-│   └── index.ts
-├── nodes-louis/      # Legacy nodes (to be migrated)
-│   ├── analysis-node/
-│   ├── filter-node/
-│   ├── property-node/
-│   └── [13+ other node types]
-└── types/            # TypeScript type definitions
+├── canvas/           # 🎨 Canvas & Workflow Domain
+│   ├── components/   # FlowCanvas, Overlays, NodeStatusBadge
+│   ├── hooks/        # useFlowHandlers, useWorkflowOps, useNodeOps
+│   ├── nodes/        # Node definitions
+│   │   └── nodes/    # Active nodes (IFC, Template)
+│   ├── nodes-louis/  # ⚠️  DEPRECATED legacy nodes (commented out)
+│   ├── workflow-executor.ts
+│   ├── workflow-storage.ts
+│   └── node-factory.ts
+│
+├── viewer/           # 👁️  3D Viewer Domain
+│   ├── fragments-viewer.tsx
+│   ├── viewer-focus-context.tsx
+│   └── use-ifc-export.ts
+│
+├── ui/               # 🎯 UI & Layout Domain
+│   ├── header/       # AppHeader, Menubar
+│   ├── toolbar/      # NodesToolbar, Toolbar
+│   ├── dialogs/      # All dialog components
+│   ├── properties-panel/
+│   └── components/   # Sidebar, WorkflowLibrary, UI primitives
+│       └── ui/       # Shadcn/Radix UI components
+│
+├── lib/              # 🔧 Shared Utilities
+│   ├── ifc-utils.ts
+│   ├── settings-manager.ts
+│   └── keyboard-shortcuts.ts
+│
+└── hooks/            # Shared React hooks (use-mobile, use-toast, etc.)
 
 app/                  # Next.js App Router
-├── page.tsx          # Main application page
+├── page.tsx          # Main application orchestration
 └── layout.tsx        # Root layout
 
 public/
@@ -177,9 +222,18 @@ public/
 └── spaceAnalysisWorker.js
 ```
 
-## Migration Status
+## Recent Architecture Changes (2025-10-09)
 
-The project is in the process of migrating from hardcoded node creation to a factory+processor pattern. When modifying nodes:
-- **New nodes** should use factory pattern (`src/nodes/`)
-- **Legacy nodes** (`src/nodes-louis/`) should eventually be migrated
-- Recent cleanup removed 2180+ lines of obsolete code from ifc-utils.ts
+The codebase was recently restructured into domain-based directories:
+
+**What Changed:**
+- Split monolithic `src/` into three domains: `canvas/`, `viewer/`, `ui/`
+- Moved workflow logic from `src/lib/` → `src/canvas/`
+- Moved all UI components to `src/ui/` with subdirectories
+- Centralized node definitions in `src/canvas/nodes/nodes/`
+- Deprecated `src/canvas/nodes-louis/` - legacy nodes commented out
+
+**Migration Status:**
+- **Active nodes**: Use factory+processor pattern in `src/canvas/nodes/nodes/`
+- **Legacy nodes** (`src/canvas/nodes-louis/`): Deprecated, many functions disabled
+- Do NOT extend or use legacy nodes - they have missing dependencies
