@@ -1,56 +1,22 @@
 "use client";
 
-import type { Node, Edge, Connection, ReactFlowInstance } from "reactflow";
+import type { Node, Edge, Connection, ReactFlowInstance, NodeChange, EdgeChange } from "reactflow";
+import { applyNodeChanges, applyEdgeChanges } from "reactflow";
 import { useCanvasStore } from "./store";
 
 // Flow event handlers
 export const flowHandlers = {
-  // Handle node changes (position, selection, etc.)
-  onNodesChange: (changes: any) => {
+  // Handle node changes (position, selection, etc.) - Use React Flow's applyNodeChanges
+  onNodesChange: (changes: NodeChange[]) => {
     const { nodes, setNodes } = useCanvasStore.getState();
-    
-    // Apply changes using React Flow's applyNodeChanges
-    const updatedNodes = changes.reduce((acc: Node[], change: any) => {
-      switch (change.type) {
-        case "position":
-          return acc.map(n => 
-            n.id === change.id ? { ...n, position: change.position } : n
-          );
-        case "dimensions":
-          return acc.map(n =>
-            n.id === change.id ? { ...n, ...change.dimensions } : n
-          );
-        case "select":
-          return acc.map(n =>
-            n.id === change.id ? { ...n, selected: change.selected } : n
-          );
-        case "remove":
-          return acc.filter(n => n.id !== change.id);
-        default:
-          return acc;
-      }
-    }, nodes);
-
+    const updatedNodes = applyNodeChanges(changes, nodes);
     setNodes(updatedNodes);
   },
 
-  // Handle edge changes
-  onEdgesChange: (changes: any) => {
+  // Handle edge changes - Use React Flow's applyEdgeChanges
+  onEdgesChange: (changes: EdgeChange[]) => {
     const { edges, setEdges } = useCanvasStore.getState();
-    
-    const updatedEdges = changes.reduce((acc: Edge[], change: any) => {
-      switch (change.type) {
-        case "select":
-          return acc.map(e =>
-            e.id === change.id ? { ...e, selected: change.selected } : e
-          );
-        case "remove":
-          return acc.filter(e => e.id !== change.id);
-        default:
-          return acc;
-      }
-    }, edges);
-
+    const updatedEdges = applyEdgeChanges(changes, edges);
     setEdges(updatedEdges);
   },
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import React, { useRef } from "react";
 import ReactFlow, {
   Controls,
   Background,
@@ -42,13 +42,18 @@ export function FlowCanvas() {
   const setReactFlowInstance = useCanvasStore(state => state.setReactFlowInstance);
   const setReactFlowWrapper = useCanvasStore(state => state.setReactFlowWrapper);
   
-  // Set ReactFlow instance and wrapper in store
-  if (reactFlowInstance && !useCanvasStore.getState().reactFlowInstance) {
-    setReactFlowInstance(reactFlowInstance);
-  }
-  if (wrapperRef.current && !useCanvasStore.getState().reactFlowWrapper) {
-    setReactFlowWrapper(wrapperRef);
-  }
+  // Set ReactFlow instance and wrapper in store (useEffect to avoid setState during render)
+  React.useEffect(() => {
+    if (reactFlowInstance && !useCanvasStore.getState().reactFlowInstance) {
+      setReactFlowInstance(reactFlowInstance);
+    }
+  }, [reactFlowInstance, setReactFlowInstance]);
+  
+  React.useEffect(() => {
+    if (wrapperRef.current && !useCanvasStore.getState().reactFlowWrapper) {
+      setReactFlowWrapper(wrapperRef);
+    }
+  }, [setReactFlowWrapper]);
   
   // Flow handlers
   const handleNodesChange = (changes: any) => flowHandlers.onNodesChange(changes);
