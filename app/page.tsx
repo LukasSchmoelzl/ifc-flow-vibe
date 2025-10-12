@@ -17,6 +17,7 @@ import { AppHeader } from "@/src/ui/header/app-header";
 import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/components/flow-canvas";
 import { Toaster } from "@/src/ui/components/toaster";
+import { ChatInput } from "@/src/ui/components/chat";
 
 // Hooks
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -255,7 +256,7 @@ function FlowWithProvider() {
       />
 
       {/* Main Content: Canvas & Viewer */}
-      <div className="flex-1 flex overflow-hidden" ref={reactFlowWrapper}>
+      <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper}>
         <FlowCanvas
           nodes={nodes}
           edges={edges}
@@ -278,6 +279,13 @@ function FlowWithProvider() {
           setFocusedViewerId={setFocusedViewerId}
           currentWorkflow={currentWorkflow}
         />
+
+        {/* AI Chat Input - Bottom Center */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4 z-50 pointer-events-none">
+          <div className="pointer-events-auto h-32">
+            <ChatInput variant="desktop" />
+          </div>
+        </div>
       </div>
 
       {/* Dialogs */}
