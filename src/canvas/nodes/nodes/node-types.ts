@@ -6,8 +6,8 @@ export interface BaseNodeData {
   properties?: Record<string, any>;
 }
 
-// IFC Node Output Type
-export interface IfcNodeOutput {
+// File Manager Node Output Type (replaces IFC Node)
+export interface FileManagerNodeOutput {
   name: string;
   model: FRAGS.FragmentsModel;
 }
@@ -16,20 +16,6 @@ export interface IfcNodeOutput {
 export interface InfoNodeInput {
   name: string;
   model: FRAGS.FragmentsModel;
-}
-
-// IFC node data
-export interface IfcNodeData extends BaseNodeData {
-  file?: File;
-  fileName?: string;
-  isLoading?: boolean;
-  error?: string | null;
-  model?: {
-    schema?: string;
-    project?: { Name?: string };
-    elementCounts?: Record<string, number>;
-    totalElements?: number;
-  };
 }
 
 // Template node data

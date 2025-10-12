@@ -4,20 +4,17 @@ import type { NodeProcessor } from "../workflow/executor";
 import type { NodeMetadata, NodeStatus } from "./node-metadata";
 
 // Import all node components
-import { IfcNode } from "./nodes/ifc-node";
 import { TemplateNode } from "./nodes/template-node";
 import { InfoNode } from "./nodes/info-node";
 import { FileManagerNode } from "./nodes/file-manager-node";
 
 // Import all node metadata
-import { ifcNodeMetadata } from "./nodes/ifc-node/metadata";
 import { templateNodeMetadata } from "./nodes/template-node/metadata";
 import { infoNodeMetadata } from "./nodes/info-node/metadata";
 import { fileManagerNodeMetadata } from "./nodes/file-manager-node/metadata";
 
 // Registry of all nodes with their metadata
 const NODE_METADATA_MAP: Record<string, NodeMetadata> = {
-  ifcNode: ifcNodeMetadata,
   templateNode: templateNodeMetadata,
   infoNode: infoNodeMetadata,
   fileManagerNode: fileManagerNodeMetadata,
@@ -25,7 +22,6 @@ const NODE_METADATA_MAP: Record<string, NodeMetadata> = {
 
 // React Flow node types (for rendering)
 export const nodeTypes: NodeTypes = {
-  ifcNode: IfcNode,
   templateNode: TemplateNode,
   infoNode: InfoNode,
   fileManagerNode: FileManagerNode,
@@ -94,13 +90,13 @@ export const getNodeLabel = (nodeType: string): string => {
   return metadata.label;
 };
 
-// Special factory for IFC nodes from File menu
+// Special factory for File Manager nodes from File menu
 export const createIfcNodeFromFile = (
   position: { x: number; y: number },
   file: File,
   _legacyFileHandle?: any
 ): Node => {
-  return createNode("ifcNode", position, {
+  return createNode("fileManagerNode", position, {
     file: file,
     fileName: file.name,
   });
