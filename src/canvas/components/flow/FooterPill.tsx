@@ -2,14 +2,11 @@
 
 import { useState } from "react";
 import CoffeeSupport from "@/src/ui/components/coffee-support";
-import type { Workflow } from "@/src/canvas/workflow-storage";
+import { useCanvas } from "@/src/canvas/canvas-context";
 
-interface FooterPillProps {
-  currentWorkflow: Workflow | null;
-}
-
-export function FooterPill({ currentWorkflow }: FooterPillProps) {
+export function FooterPill() {
   const [isHovered, setIsHovered] = useState(false);
+  const { currentWorkflow } = useCanvas();
 
   return (
     <div

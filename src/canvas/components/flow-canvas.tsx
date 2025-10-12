@@ -10,7 +10,6 @@ import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
 import { FooterPill } from "@/src/canvas/components/flow/FooterPill";
 import { FileDropOverlay } from "@/src/canvas/components/flow/FileDropOverlay";
 import { MobilePlacementOverlay } from "@/src/canvas/components/flow/MobilePlacementOverlay";
-import { ViewerFocusProvider } from "@/src/viewer/viewer-focus-context";
 import { nodeTypes } from "@/src/canvas/nodes/nodes";
 import { getNodeLabel } from "@/src/canvas/nodes/node-registry";
 import { useCanvas } from "@/src/canvas/canvas-context";
@@ -53,12 +52,8 @@ export function FlowCanvas() {
         nodeLabel={selectedNodeType ? getNodeLabel(selectedNodeType) : ""}
       />
 
-      <ViewerFocusProvider
-        focusedViewerId={focusedViewerId}
-        setFocusedViewerId={setFocusedViewerId}
-      >
-        {/* React Flow Canvas - Left Side (50%) */}
-        <div className="w-full md:w-1/2 h-full relative">
+      {/* React Flow Canvas - Left Side (50%) */}
+      <div className="w-full md:w-1/2 h-full relative">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -97,16 +92,15 @@ export function FlowCanvas() {
             <Controls />
             {isSettingsLoaded && showGrid && <Background color="#aaa" gap={16} />}
             <Panel position="bottom-left">
-              <FooterPill currentWorkflow={currentWorkflow} />
+              <FooterPill />
             </Panel>
           </ReactFlow>
         </div>
 
-        {/* Fragments 3D Viewer - Right Side (50%) */}
-        <div className="hidden md:block md:w-1/2 h-full border-l border-slate-200 dark:border-slate-700">
-          <FragmentsViewer className="w-full h-full" />
-        </div>
-      </ViewerFocusProvider>
+      {/* Fragments 3D Viewer - Right Side (50%) */}
+      <div className="hidden md:block md:w-1/2 h-full border-l border-slate-200 dark:border-slate-700">
+        <FragmentsViewer className="w-full h-full" />
+      </div>
     </>
   );
 }

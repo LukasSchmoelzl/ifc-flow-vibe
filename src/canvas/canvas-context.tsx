@@ -18,9 +18,9 @@ export function useCanvas() {
   return context;
 }
 
-// Provider Component
+// Internal component that provides canvas state (needs ReactFlow context)
 function CanvasStateProvider({ children }: { children: ReactNode }) {
-  const canvasState = useCanvasState();
+  const canvasState = useCanvasState(); // Uses useReactFlow() internally
   
   return (
     <CanvasContext.Provider value={canvasState}>
@@ -29,14 +29,11 @@ function CanvasStateProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Export kombinierter Provider (ReactFlow + Canvas State)
+// Main Provider - combines ReactFlow + Canvas State in one
 export function CanvasProvider({ children }: { children: ReactNode }) {
   return (
     <ReactFlowProvider>
-      <CanvasStateProvider>
-        {children}
-      </CanvasStateProvider>
+      <CanvasStateProvider>{children}</CanvasStateProvider>
     </ReactFlowProvider>
   );
 }
-
