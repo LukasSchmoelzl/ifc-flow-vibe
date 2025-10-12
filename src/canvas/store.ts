@@ -39,6 +39,7 @@ interface CanvasState {
   showGrid: boolean;
   showMinimap: boolean;
   isSettingsLoaded: boolean;
+  isMobile: boolean;
 
   // History state
   history: HistoryItem[];
@@ -72,6 +73,7 @@ interface CanvasActions {
   setShowGrid: (show: boolean) => void;
   setShowMinimap: (show: boolean) => void;
   setIsSettingsLoaded: (loaded: boolean) => void;
+  setIsMobile: (isMobile: boolean) => void;
 
   // History actions
   addToHistory: (nodes: Node[], edges: Edge[]) => void;
@@ -104,6 +106,7 @@ export const useCanvasStore = create<CanvasStore>()(
       showGrid: true,
       showMinimap: false,
       isSettingsLoaded: false,
+      isMobile: false,
       history: [],
       historyIndex: -1,
       canUndo: false,
@@ -143,6 +146,7 @@ export const useCanvasStore = create<CanvasStore>()(
       setShowGrid: (show) => set({ showGrid: show }),
       setShowMinimap: (show) => set({ showMinimap: show }),
       setIsSettingsLoaded: (loaded) => set({ isSettingsLoaded: loaded }),
+      setIsMobile: (isMobile) => set({ isMobile }),
 
       // History actions
       addToHistory: (nodes, edges) => {

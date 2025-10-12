@@ -16,7 +16,6 @@ function CanvasContent() {
   const editingNode = useCanvasStore((state) => state.editingNode);
   const setEditingNode = useCanvasStore((state) => state.setEditingNode);
   const setNodes = useCanvasStore((state) => state.setNodes);
-  const reactFlowWrapper = useCanvasStore((state) => state.reactFlowWrapper);
 
   return (
     <div className="flex flex-col h-screen w-full bg-background">
@@ -28,7 +27,7 @@ function CanvasContent() {
       <NodesToolbar />
 
       {/* ========== MAIN CONTENT ========== */}
-      <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper as any}>
+      <div className="flex-1 flex overflow-hidden relative">
         
         {/* Canvas + Viewer */}
         <FlowCanvas />
