@@ -18,12 +18,7 @@ import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, Git
 import { getAllNodes } from "@/src/canvas/nodes/node-registry";
 import { NodeStatusBadge } from "@/src/canvas/components/node-status-badge";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-
-interface NodesToolbarProps {
-  onNodeSelect?: (nodeType: string) => void;
-  selectedNodeType?: string | null;
-  placementMode?: boolean;
-}
+import { useCanvas } from "@/src/canvas/canvas-context";
 
 function getStatusTooltipContent(status: string): string | null {
   switch (status) {
@@ -38,12 +33,15 @@ function getStatusTooltipContent(status: string): string | null {
   }
 }
 
-export function NodesToolbar({
-  onNodeSelect,
-  selectedNodeType,
-  placementMode = false,
-}: NodesToolbarProps) {
+export function NodesToolbar() {
   const isMobile = useIsMobile();
+  
+  // Canvas state from context - NO MORE PROPS!
+  const {
+    handleMobileNodeSelect: onNodeSelect,
+    selectedNodeType,
+    placementMode,
+  } = useCanvas();
 
   const onDragStart = (event: React.DragEvent<HTMLDivElement>, nodeType: string) => {
     event.dataTransfer.setData("application/reactflow", nodeType);

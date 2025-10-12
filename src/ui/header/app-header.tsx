@@ -32,58 +32,39 @@ import {
   formatKeyCombination,
   useKeyboardShortcuts,
 } from "@/src/lib/keyboard-shortcuts";
-import { ReactFlowInstance } from "reactflow";
 import { Sheet, SheetContent } from "@/src/ui/components/ui/sheet";
+import { useCanvas } from "@/src/canvas/canvas-context";
 
-interface AppHeaderProps {
-  onOpenFile: (file: File) => void;
-  onSaveWorkflow: (workflow: Workflow) => void;
-  onRunWorkflow: () => void;
-  onLoadWorkflow: (workflow: Workflow) => void;
-  isRunning: boolean;
-  setIsRunning: (isRunning: boolean) => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  onUndo: () => void;
-  onRedo: () => void;
-  getFlowObject: () => any;
-  currentWorkflow: Workflow | null;
-  reactFlowInstance: ReactFlowInstance | null;
-  showGrid: boolean;
-  setShowGrid: (show: boolean) => void;
-  showMinimap: boolean;
-  setShowMinimap: (show: boolean) => void;
-  onSelectAll: () => void;
-  onCopy: () => void;
-  onCut: () => void;
-  onPaste: () => void;
-  onDelete: () => void;
-}
+export function AppHeader() {
+  // Canvas state from context - NO MORE PROPS!
+  const {
+    handleOpenFile: onOpenFile,
+    handleSaveWorkflow,
+    handleRunWorkflow: onRunWorkflow,
+    handleLoadWorkflow: onLoadWorkflow,
+    isRunning,
+    setIsRunning,
+    canUndo,
+    canRedo,
+    handleUndo: onUndo,
+    handleRedo: onRedo,
+    getFlowObject,
+    currentWorkflow,
+    reactFlowInstance,
+    showGrid,
+    setShowGrid,
+    showMinimap,
+    setShowMinimap,
+    handleSelectAll: onSelectAll,
+    handleCopy: onCopy,
+    handleCut: onCut,
+    handlePaste: onPaste,
+    handleDelete: onDelete,
+  } = useCanvas();
 
-export function AppHeader({
-  onOpenFile,
-  onSaveWorkflow,
-  onRunWorkflow,
-  onLoadWorkflow,
-  isRunning,
-  setIsRunning,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-  getFlowObject,
-  currentWorkflow,
-  reactFlowInstance,
-  showGrid,
-  setShowGrid,
-  showMinimap,
-  setShowMinimap,
-  onSelectAll,
-  onCopy,
-  onCut,
-  onPaste,
-  onDelete,
-}: AppHeaderProps) {
+  const onSaveWorkflow = (workflow: Workflow) => {
+    handleSaveWorkflow(workflow.name, workflow.flowData);
+  };
   const [openFileDialogOpen, setOpenFileDialogOpen] = useState(false);
   const [saveWorkflowDialogOpen, setSaveWorkflowDialogOpen] = useState(false);
   const [workflowLibraryOpen, setWorkflowLibraryOpen] = useState(false);

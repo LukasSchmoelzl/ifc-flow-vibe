@@ -2,8 +2,8 @@
 
 import "reactflow/dist/style.css";
 
-import { CanvasHeader } from "@/src/canvas/components/canvas-header";
-import { CanvasToolbar } from "@/src/canvas/components/canvas-toolbar";
+import { AppHeader } from "@/src/ui/header/app-header";
+import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/components/flow-canvas";
 import { ChatInput } from "@/src/ui/components/chat";
 import { PropertiesDialog } from "@/src/ui/dialogs/properties-dialog";
@@ -23,10 +23,10 @@ function AppContent() {
     <div className="flex flex-col h-screen w-full bg-background">
       
       {/* ========== HEADER ========== */}
-      <CanvasHeader />
+      <AppHeader />
 
       {/* ========== TOOLBAR ========== */}
-      <CanvasToolbar />
+      <NodesToolbar />
 
       {/* ========== MAIN CONTENT ========== */}
       <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper}>
