@@ -9,7 +9,6 @@ import { NodesToolbar } from "@/src/header/toolbar/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/ui/flow-canvas";
 import { ChatInput } from "@/src/llm/ui/chat";
 import { PropertiesDialog } from "@/src/header/dialogs/properties-dialog";
-import { Toaster } from "@/src/shared/components/toaster";
 
 // Canvas State
 import { useCanvasStore } from "@/src/canvas/state/store";
@@ -50,8 +49,6 @@ function AppContent() {
         setNodes={setNodes as React.Dispatch<React.SetStateAction<any[]>>}
       />
 
-      {/* ========== TOASTER (SHARED) ========== */}
-      <Toaster />
     </div>
   );
 }
