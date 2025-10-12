@@ -2,15 +2,19 @@ import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow/exec
 import * as FRAGS from "@thatopen/fragments";
 
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
+const DEFAULT_IFC_FILE = "/bridge.ifc";
 
 export class FileManagerNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
-    if (!node.data.file) {
-      console.warn(`No file provided to file-manager node ${node.id}`);
-      return null;
-    }
+    // Use provided file or load default bridge.ifc
+    let file = node.data.file;
+    let isDefaultFile = false;
 
-    const file = node.data.file;
+    if (!file) {
+      console.log(`[FileManager] No file provided, loading default: ${DEFAULT_IFC_FILE}`);
+      file = await this.loadDefaultFile();
+      isDefaultFile = true;
+    }
 
     // Only IFC files are supported
     if (!file.name.toLowerCase().endsWith('.ifc')) {
@@ -86,6 +90,7 @@ export class FileManagerNodeProcessor implements NodeProcessor {
         ...node.data,
         isLoading: false,
         fileName: file.name,
+        isDefaultFile,
         fileInfo: {
           fileName: file.name,
           fileType: 'ifc' as const,
@@ -140,5 +145,21 @@ export class FileManagerNodeProcessor implements NodeProcessor {
     // Clear the models registry
     window.__fragmentsModels = {};
     console.log('[FileManager] Cleared all existing models');
+  }
+
+  private async loadDefaultFile(): Promise<File> {
+    try {
+      const response = await fetch(DEFAULT_IFC_FILE);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${DEFAULT_IFC_FILE}: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const file = new File([blob], "bridge.ifc", { type: "application/octet-stream" });
+      
+      return file;
+    } catch (error) {
+      throw new Error(`Failed to load default IFC file: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

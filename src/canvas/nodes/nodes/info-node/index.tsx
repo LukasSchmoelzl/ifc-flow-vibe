@@ -66,7 +66,7 @@ export const InfoNode = memo(({ data, isConnectable }: NodeProps<InfoNodeData>) 
             {inputData.model && (
               <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-2">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                  Model Type:
+                  Type:
                 </div>
                 <div className="text-sm font-mono text-gray-800 dark:text-gray-200">
                   {getDataType(inputData.model)}

@@ -3,6 +3,7 @@
 import type { Node, Edge, Connection, ReactFlowInstance, NodeChange, EdgeChange } from "reactflow";
 import { applyNodeChanges, applyEdgeChanges } from "reactflow";
 import { useCanvasStore } from "./store";
+import { getNodeLabel } from "../nodes/node-registry";
 
 // Flow event handlers
 export const flowHandlers = {
@@ -55,7 +56,7 @@ export const flowHandlers = {
       id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: nodeType,
       position,
-      data: { label: `New ${nodeType}` },
+      data: { label: getNodeLabel(nodeType) },
     };
 
     const updatedNodes = [...nodes, newNode];
@@ -106,7 +107,7 @@ export const flowHandlers = {
         id: `${selectedNodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: selectedNodeType,
         position,
-        data: { label: `New ${selectedNodeType}` },
+        data: { label: getNodeLabel(selectedNodeType) },
       };
 
       const updatedNodes = [...nodes, newNode];

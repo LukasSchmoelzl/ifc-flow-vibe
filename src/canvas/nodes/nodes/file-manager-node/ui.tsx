@@ -15,19 +15,16 @@ interface FileManagerNodeUIProps {
 export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIProps) {
   const { fileName, fileInfo } = data;
 
-  // Show drop zone if no file loaded
+  // Show drop zone if no file loaded (will load bridge.ifc by default on execution)
   if (!fileName && !fileInfo) {
     return (
       <div className="p-4">
         <div className={`flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-md transition-colors ${
           isDraggingOver ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'
         }`}>
-          <FolderOpen className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
+          <Box className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Drop .ifc file here
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            or double-click to browse
+            Drop .ifc file or execute to load bridge.ifc
           </p>
         </div>
       </div>
@@ -68,10 +65,6 @@ export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIPro
           </div>
         )}
 
-        {/* Hint */}
-        <div className="text-xs text-gray-400 dark:text-gray-500 italic mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-          Double-click to load another file
-        </div>
       </div>
     </div>
   );
