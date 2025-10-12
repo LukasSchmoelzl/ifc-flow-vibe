@@ -2,22 +2,12 @@
 
 import { useState, useCallback, useRef } from "react";
 import {
-  ReactFlowProvider,
   useNodesState,
   useEdgesState,
   useReactFlow,
   type Edge,
   type Node,
 } from "reactflow";
-import "reactflow/dist/style.css";
-
-// Components
-import { PropertiesDialog } from "@/src/ui/dialogs/properties-dialog";
-import { AppHeader } from "@/src/ui/header/app-header";
-import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
-import { FlowCanvas } from "@/src/canvas/components/flow-canvas";
-import { Toaster } from "@/src/ui/components/toaster";
-import { ChatInput } from "@/src/ui/components/chat";
 
 // Hooks
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -40,7 +30,7 @@ import { useFileDropHandler } from "@/src/canvas/hooks/use-file-drop-handler";
 // Types
 import type { Workflow } from "@/src/canvas/workflow-storage";
 
-function CanvasAppContent() {
+export function useCanvasState() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -220,97 +210,67 @@ function CanvasAppContent() {
     [isMobile, placementMode, selectedNodeType, reactFlowInstance, nodes, edges, placeNode, focusedViewerId, setFocusedViewerId, setEditingNode]
   );
 
-  return (
-    <div className="flex flex-col h-screen w-full bg-background">
-      {/* Header Row 1: Menu & Actions */}
-      <AppHeader
-        onOpenFile={handleOpenFile}
-        onSaveWorkflow={(wf: Workflow) => handleSaveWorkflow(wf.name, wf.flowData)}
-        onRunWorkflow={handleRunWorkflow}
-        onLoadWorkflow={handleLoadWorkflow}
-        isRunning={isRunning}
-        setIsRunning={setIsRunning}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        getFlowObject={getFlowObject}
-        currentWorkflow={currentWorkflow}
-        reactFlowInstance={reactFlowInstance}
-        showGrid={showGrid}
-        setShowGrid={setShowGrid}
-        showMinimap={showMinimap}
-        setShowMinimap={setShowMinimap}
-        onSelectAll={handleSelectAll}
-        onCopy={handleCopy}
-        onCut={handleCut}
-        onPaste={handlePaste}
-        onDelete={handleDelete}
-      />
-
-      {/* Header Row 2: Nodes Toolbar */}
-      <NodesToolbar
-        onNodeSelect={handleMobileNodeSelect}
-        selectedNodeType={selectedNodeType}
-        placementMode={placementMode}
-      />
-
-      {/* Main Content: Canvas & Viewer */}
-      <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper}>
-        <FlowCanvas
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onNodeClick={onNodeClick}
-          onNodeDoubleClick={onNodeDoubleClick}
-          onPaneClick={handleCanvasClick}
-          isFileDragging={isFileDragging}
-          isMobile={isMobile}
-          placementMode={placementMode}
-          selectedNodeType={selectedNodeType}
-          showGrid={showGrid}
-          showMinimap={showMinimap}
-          isSettingsLoaded={isSettingsLoaded}
-          focusedViewerId={focusedViewerId}
-          setFocusedViewerId={setFocusedViewerId}
-          currentWorkflow={currentWorkflow}
-        />
-
-        {/* AI Chat Input - Bottom Center */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4 z-50 pointer-events-none">
-          <div className="pointer-events-auto h-32">
-            <ChatInput variant="desktop" />
-          </div>
-        </div>
-      </div>
-
-      {/* Dialogs */}
-      <PropertiesDialog
-        node={editingNode}
-        open={!!editingNode}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditingNode(null);
-          }
-        }}
-        setNodes={setNodes as React.Dispatch<React.SetStateAction<any[]>>}
-      />
-      
-      <Toaster />
-    </div>
-  );
+  return {
+    // Canvas state
+    nodes,
+    edges,
+    editingNode,
+    currentWorkflow,
+    focusedViewerId,
+    
+    // Canvas handlers
+    onNodesChange: handleNodesChange,
+    onEdgesChange,
+    onConnect,
+    onDrop,
+    onDragOver,
+    onNodeClick,
+    onNodeDoubleClick,
+    onCanvasClick: handleCanvasClick,
+    setEditingNode,
+    setNodes,
+    setFocusedViewerId,
+    
+    // Workflow operations
+    handleOpenFile,
+    handleSaveWorkflow,
+    handleLoadWorkflow,
+    handleRunWorkflow,
+    isRunning,
+    setIsRunning,
+    
+    // History
+    canUndo,
+    canRedo,
+    handleUndo,
+    handleRedo,
+    
+    // Clipboard
+    handleSelectAll,
+    handleCopy,
+    handleCut,
+    handlePaste,
+    handleDelete,
+    
+    // Mobile placement
+    selectedNodeType,
+    placementMode,
+    handleMobileNodeSelect,
+    
+    // View settings
+    showGrid,
+    showMinimap,
+    isSettingsLoaded,
+    setShowGrid,
+    setShowMinimap,
+    
+    // File drag
+    isFileDragging,
+    
+    // Utils
+    isMobile,
+    reactFlowWrapper,
+    reactFlowInstance,
+    getFlowObject,
+  };
 }
-
-// Main export with ReactFlowProvider wrapper
-export function CanvasApp() {
-  return (
-    <ReactFlowProvider>
-      <CanvasAppContent />
-    </ReactFlowProvider>
-  );
-}
-
