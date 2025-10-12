@@ -1,13 +1,9 @@
 "use client";
 
-import { useCallback } from "react";
 import ReactFlow, {
   Controls,
   Background,
   Panel,
-  MiniMap,
-  type Edge,
-  type Node,
   type SelectionMode,
 } from "reactflow";
 import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
@@ -17,59 +13,37 @@ import { MobilePlacementOverlay } from "@/src/canvas/components/flow/MobilePlace
 import { ViewerFocusProvider } from "@/src/viewer/viewer-focus-context";
 import { nodeTypes } from "@/src/canvas/nodes/nodes";
 import { getNodeLabel } from "@/src/canvas/nodes/node-registry";
-import type { Workflow } from "@/src/canvas/workflow-storage";
+import { useCanvas } from "@/src/canvas/canvas-context";
 
-const edgeTypes = {} as const;
-const snapGrid: [number, number] = [15, 15];
-const proOptions = { hideAttribution: true };
-const defaultStyle = { cursor: "default" };
-const placementStyle = { cursor: "crosshair" };
+const EDGE_TYPES = {} as const;
+const SNAP_GRID: [number, number] = [15, 15];
+const PRO_OPTIONS = { hideAttribution: true };
+const DEFAULT_STYLE = { cursor: "default" };
+const PLACEMENT_STYLE = { cursor: "crosshair" };
 
-interface FlowCanvasProps {
-  nodes: Node[];
-  edges: Edge[];
-  onNodesChange: (changes: any) => void;
-  onEdgesChange: (changes: any) => void;
-  onConnect: (connection: any) => void;
-  onDrop: (event: React.DragEvent) => void;
-  onDragOver: (event: React.DragEvent) => void;
-  onNodeClick: (event: React.MouseEvent, node: Node) => void;
-  onNodeDoubleClick: (event: React.MouseEvent, node: Node) => void;
-  onPaneClick: (event: React.MouseEvent) => void;
-  isFileDragging: boolean;
-  isMobile: boolean;
-  placementMode: boolean;
-  selectedNodeType: string | null;
-  showGrid: boolean;
-  showMinimap: boolean;
-  isSettingsLoaded: boolean;
-  focusedViewerId: string | null;
-  setFocusedViewerId: (id: string | null) => void;
-  currentWorkflow: Workflow | null;
-}
+export function FlowCanvas() {
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onDrop,
+    onDragOver,
+    onNodeClick,
+    onNodeDoubleClick,
+    onCanvasClick,
+    isFileDragging,
+    isMobile,
+    placementMode,
+    selectedNodeType,
+    showGrid,
+    isSettingsLoaded,
+    focusedViewerId,
+    setFocusedViewerId,
+    currentWorkflow,
+  } = useCanvas();
 
-export function FlowCanvas({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  onConnect,
-  onDrop,
-  onDragOver,
-  onNodeClick,
-  onNodeDoubleClick,
-  onPaneClick,
-  isFileDragging,
-  isMobile,
-  placementMode,
-  selectedNodeType,
-  showGrid,
-  showMinimap,
-  isSettingsLoaded,
-  focusedViewerId,
-  setFocusedViewerId,
-  currentWorkflow,
-}: FlowCanvasProps) {
   return (
     <>
       <FileDropOverlay isVisible={isFileDragging} />
@@ -97,15 +71,15 @@ export function FlowCanvas({
             onNodeDoubleClick={onNodeDoubleClick}
             autoPanOnConnect={false}
             autoPanOnNodeDrag={false}
-            onPaneClick={onPaneClick}
+            onPaneClick={onCanvasClick}
             nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
+            edgeTypes={EDGE_TYPES}
             snapToGrid={isSettingsLoaded ? showGrid : false}
-            snapGrid={snapGrid}
+            snapGrid={SNAP_GRID}
             minZoom={0.1}
             maxZoom={2}
-            proOptions={proOptions}
-            style={isMobile && placementMode ? placementStyle : defaultStyle}
+            proOptions={PRO_OPTIONS}
+            style={isMobile && placementMode ? PLACEMENT_STYLE : DEFAULT_STYLE}
             multiSelectionKeyCode="Meta"
             selectionOnDrag={true}
             selectNodesOnDrag={false}
@@ -136,4 +110,3 @@ export function FlowCanvas({
     </>
   );
 }
-
