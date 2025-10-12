@@ -76,32 +76,15 @@ export function PropertiesDialog({
             <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
                 <DialogHeader className="pb-2">
                     <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <DialogTitle>Properties</DialogTitle>
-                            <DialogDescription>
-                                Configure settings for this node.
-                            </DialogDescription>
-                        </div>
-                        {/* Editable node name in the top-right */}
-                        <div className="pt-1">
-                            <Input
-                                value={nodeName}
-                                onChange={(e) => setNodeName(e.target.value)}
-                                placeholder="Node name"
-                                className="h-7 text-xs w-[240px] text-right"
-                            />
-                        </div>
+                        <DialogTitle>Properties</DialogTitle>
+                        <Input
+                            value={nodeName}
+                            onChange={(e) => setNodeName(e.target.value)}
+                            placeholder="Node name"
+                            className="h-7 text-xs w-[240px]"
+                        />
                     </div>
                 </DialogHeader>
-
-                {/* Scrollable content */}
-                <ScrollArea className="flex-1 min-h-0 overflow-auto pr-3">
-                    <div className="space-y-6">
-                        <div className="text-sm text-muted-foreground">
-                            No additional properties available for this node type.
-                        </div>
-                    </div>
-                </ScrollArea>
 
                 <DialogFooter className="gap-2 pt-3">
                     <Button variant="outline" onClick={handleCancel}>
