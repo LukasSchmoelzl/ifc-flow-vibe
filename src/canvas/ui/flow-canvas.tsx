@@ -15,7 +15,7 @@ import { MobilePlacementOverlay } from "./overlays/mobile-placement";
 import { nodeTypes } from "../nodes/nodes";
 import { getNodeLabel } from "../nodes/node-registry";
 import { useCanvasStore } from "../state/store";
-import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useIsMobile } from "@/src/shared/hooks/use-mobile";
 import { flowHandlers } from "../state/handlers";
 
 const EDGE_TYPES = {} as const;

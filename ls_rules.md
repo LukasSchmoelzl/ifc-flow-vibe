@@ -11,3 +11,5 @@ Allgemein:
     * Schlechter Kommentar
     */
 
+    Domain-based architecture
+    YAGNI

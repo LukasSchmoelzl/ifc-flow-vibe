@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CoffeeSupport from "@/src/ui/components/coffee-support";
+import CoffeeSupport from "@/src/shared/components/coffee-support";
 import { useCanvasStore } from "../../state/store";
 
 export function FooterPill() {

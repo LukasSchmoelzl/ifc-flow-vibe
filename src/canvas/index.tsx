@@ -1,6 +1,7 @@
-// Main Canvas export - clean entry point
-export { Canvas } from "./ui/canvas";
+// Canvas Domain Export
+// Note: The main app composition is now in app/page.tsx
+// This domain only exports its core canvas functionality
 
-// Re-export types for convenience
-export type { Workflow } from "./workflow/storage";
-
+export { FlowCanvas } from "./ui/flow-canvas";
+export { useCanvasStore } from "./state/store";
+export * from "./state/actions";

@@ -35,8 +35,20 @@ export const workflowActions = {
 
   saveWorkflow: async (name: string, flowData: any, toast: any) => {
     try {
-      const workflow = await workflowStorage.saveWorkflow(name, flowData);
-      useCanvasStore.getState().setCurrentWorkflow(workflow);
+      const { currentWorkflow } = useCanvasStore.getState();
+      const workflow: Workflow = {
+        id: currentWorkflow?.id || crypto.randomUUID(),
+        name,
+        description: currentWorkflow?.description || "",
+        createdAt: currentWorkflow?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tags: currentWorkflow?.tags || [],
+        thumbnail: currentWorkflow?.thumbnail,
+        flowData,
+      };
+      
+      const savedWorkflow = workflowStorage.saveWorkflow(workflow);
+      useCanvasStore.getState().setCurrentWorkflow(savedWorkflow);
       
       toast({
         title: "Workflow Saved",
@@ -90,8 +102,8 @@ export const workflowActions = {
     setIsRunning(true);
 
     try {
-      const executor = new WorkflowExecutor();
-      await executor.execute(nodes, edges, updateNodeData);
+      const executor = new WorkflowExecutor(nodes, edges, updateNodeData);
+      await executor.execute();
       
       toast({
         title: "Workflow Executed",

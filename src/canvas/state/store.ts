@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { Node, Edge, ReactFlowInstance } from "reactflow";
-import type { Workflow } from "./workflow-storage";
+import type { Workflow } from "../workflow/storage";
 
 // Constants
 const MAX_HISTORY_LENGTH = 50;

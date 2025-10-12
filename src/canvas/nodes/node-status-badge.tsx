@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/src/ui/components/ui/badge";
+import { Badge } from "@/src/shared/components/ui/badge";
 import { Wrench, Sparkles } from "lucide-react";
 
 export type NodeStatus = "working" | "wip" | "new";

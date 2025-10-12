@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow-executor';
+import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow/executor';
 import * as FRAGS from "@thatopen/fragments";
 
 // Use web-ifc version 0.0.72 (worked before restructuring)
