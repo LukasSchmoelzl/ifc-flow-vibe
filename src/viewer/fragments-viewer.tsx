@@ -8,6 +8,7 @@ import Stats from "stats.js";
 
 // Constants
 const GITHUB_WORKER_URL = "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+// Use web-ifc version 0.0.72 (worked before restructuring)
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
 interface FragmentsViewerProps {

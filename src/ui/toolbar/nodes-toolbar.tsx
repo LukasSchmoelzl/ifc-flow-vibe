@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/src/ui/components/ui/tooltip";
 import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, GitBranch, BarChart, Download, Clock, Terminal, Shuffle, Database, Layers } from "lucide-react";
-import { nodeCategories } from "@/src/ui/components/sidebar";
+import { getAllNodes } from "@/src/canvas/nodes/node-registry";
 import { NodeStatusBadge } from "@/src/canvas/components/node-status-badge";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 
@@ -104,21 +104,15 @@ export function NodesToolbar({
     );
   };
 
+  const allNodes = getAllNodes();
+
   // Desktop: Horizontal scrollable toolbar with all nodes
   if (!isMobile) {
     return (
       <div className="border-b bg-card">
         <ScrollArea className="w-full">
           <div className="flex items-center gap-3 px-4 py-2">
-            {nodeCategories.map((category, idx) => (
-              <div key={category.name} className="flex items-center gap-2">
-                {idx > 0 && <div className="h-6 w-px bg-border mx-1" />}
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                  {category.name}
-                </span>
-                {category.nodes.map(renderNodeItem)}
-              </div>
-            ))}
+            {allNodes.map(renderNodeItem)}
           </div>
         </ScrollArea>
       </div>
@@ -150,7 +144,7 @@ export function NodesToolbar({
       )}
       <ScrollArea className="w-full">
         <div className="flex gap-2 p-3">
-          {nodeCategories.flatMap(category => category.nodes).map(renderNodeItem)}
+          {allNodes.map(renderNodeItem)}
         </div>
       </ScrollArea>
     </div>

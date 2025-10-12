@@ -12,7 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/src/ui/components/ui/dialog";
-import { NodePropertyRenderer } from "../properties-panel/node-property-renderer";
 import type { Node as ReactFlowNode } from "reactflow";
 
 interface Node extends ReactFlowNode {
@@ -35,12 +34,10 @@ export function PropertiesDialog({
     onOpenChange,
     setNodes,
 }: PropertiesDialogProps) {
-    const [properties, setProperties] = useState<Record<string, any>>({});
     const [nodeName, setNodeName] = useState("");
 
     useEffect(() => {
         if (node && node.data) {
-            setProperties(node.data.properties || {});
             setNodeName(node.data.label || "");
         }
     }, [node]);
@@ -56,7 +53,6 @@ export function PropertiesDialog({
                         data: {
                             ...n.data,
                             label: nodeName,
-                            properties,
                         },
                     };
                 }
@@ -68,7 +64,6 @@ export function PropertiesDialog({
 
     const handleCancel = () => {
         if (node && node.data) {
-            setProperties(node.data.properties || {});
             setNodeName(node.data.label || "");
         }
         onOpenChange(false);
@@ -102,17 +97,9 @@ export function PropertiesDialog({
                 {/* Scrollable content */}
                 <ScrollArea className="flex-1 min-h-0 overflow-auto pr-3">
                     <div className="space-y-6">
-                        {/* Node-specific Properties */}
-                        <section className="space-y-3">
-                            <div className="text-sm font-medium">Configuration</div>
-                            <div className="rounded-md border p-3">
-                                <NodePropertyRenderer
-                                    node={node}
-                                    properties={properties}
-                                    setProperties={setProperties}
-                                />
-                            </div>
-                        </section>
+                        <div className="text-sm text-muted-foreground">
+                            No additional properties available for this node type.
+                        </div>
                     </div>
                 </ScrollArea>
 

@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/src/ui/components/ui/button";
 import { Input } from "@/src/ui/components/ui/input";
 import { Label } from "@/src/ui/components/ui/label";
-import { Separator } from "@/src/ui/components/ui/separator";
 import { ScrollArea } from "@/src/ui/components/ui/scroll-area";
-import { NodePropertyRenderer } from "./node-property-renderer";
 import { Node as ReactFlowNode } from "reactflow";
 
 interface Node extends ReactFlowNode {
@@ -28,32 +25,6 @@ export function PropertiesPanel({
   setNodes,
   setSelectedNode,
 }: PropertiesPanelProps) {
-  const [properties, setProperties] = useState<Record<string, any>>({});
-
-  useEffect(() => {
-    if (node && node.data) {
-      setProperties(node.data.properties || {});
-    }
-  }, [node]);
-
-  const updateNodeProperties = () => {
-    setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === node?.id) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              properties,
-            },
-          };
-        }
-        return n;
-      })
-    );
-    setSelectedNode(null);
-  };
-
   if (!node) return null;
 
   return (
@@ -94,20 +65,6 @@ export function PropertiesPanel({
                 }}
               />
             </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          <NodePropertyRenderer
-            node={node}
-            properties={properties}
-            setProperties={setProperties}
-          />
-
-          <div className="mt-6">
-            <Button onClick={updateNodeProperties} className="w-full">
-              Apply Changes
-            </Button>
           </div>
         </div>
       </ScrollArea>

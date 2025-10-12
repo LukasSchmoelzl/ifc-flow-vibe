@@ -35,7 +35,6 @@ import { useViewSettings } from "@/src/canvas/hooks/use-view-settings";
 import { useNodeOperations } from "@/src/canvas/hooks/use-node-operations";
 import { useFlowHandlers } from "@/src/canvas/hooks/use-flow-handlers";
 import { useFileDropHandler } from "@/src/canvas/hooks/use-file-drop-handler";
-import { useIfcExport } from "@/src/viewer/use-ifc-export";
 
 // Types
 import type { Workflow } from "@/src/canvas/workflow-storage";
@@ -173,9 +172,6 @@ function FlowWithProvider() {
     setIsFileDragging,
     reactFlowWrapper,
   });
-
-  // IFC Export
-  useIfcExport();
 
   // Keyboard shortcuts
   useAppHotkeys({

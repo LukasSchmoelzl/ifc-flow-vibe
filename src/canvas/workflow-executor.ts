@@ -1,5 +1,6 @@
 import { IfcNodeProcessor } from "@/src/canvas/nodes/nodes/ifc-node/ifc-loader";
 import { TemplateNodeProcessor } from "@/src/canvas/nodes/nodes/template-node/text-processor";
+import { InfoNodeProcessor } from "@/src/canvas/nodes/nodes/info-node/info-processor";
 
 // Types and interfaces
 
@@ -65,6 +66,7 @@ export function topologicalSort(nodes: any[], edges: any[]): string[] {
 const NODE_PROCESSORS = {
   ifcNode: new IfcNodeProcessor(),
   templateNode: new TemplateNodeProcessor(),
+  infoNode: new InfoNodeProcessor(),
 } as const;
 
 export class WorkflowExecutor {

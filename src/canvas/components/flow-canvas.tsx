@@ -16,7 +16,7 @@ import { FileDropOverlay } from "@/src/canvas/components/flow/FileDropOverlay";
 import { MobilePlacementOverlay } from "@/src/canvas/components/flow/MobilePlacementOverlay";
 import { ViewerFocusProvider } from "@/src/viewer/viewer-focus-context";
 import { nodeTypes } from "@/src/canvas/nodes/nodes";
-import { getNodeLabel } from "@/src/canvas/node-factory";
+import { getNodeLabel } from "@/src/canvas/nodes/node-registry";
 import type { Workflow } from "@/src/canvas/workflow-storage";
 
 const edgeTypes = {} as const;

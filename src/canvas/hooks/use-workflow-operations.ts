@@ -4,8 +4,7 @@ import { useState, useCallback } from "react";
 import type { Node, Edge } from "reactflow";
 import { useToast } from "@/src/hooks/use-toast";
 import { WorkflowExecutor } from "@/src/canvas/workflow-executor";
-import { loadIfcFile, getIfcFile } from "@/src/lib/ifc-utils";
-import { createIfcNodeFromFile } from "@/src/canvas/nodes/nodes/ifc-node/factory";
+import { createIfcNodeFromFile } from "@/src/canvas/nodes/node-registry";
 import type { Workflow } from "@/src/canvas/workflow-storage";
 
 export function useWorkflowOperations(
@@ -20,28 +19,26 @@ export function useWorkflowOperations(
   const [isRunning, setIsRunning] = useState(false);
   const [executionResults, setExecutionResults] = useState(new Map());
 
-  // Handle file opening
+  // Handle file opening - creates IFC node, actual loading happens in workflow execution
   const handleOpenFile = useCallback(
     async (file: File) => {
       try {
         // Save current state to history before opening new file
         saveToHistory(nodes, edges);
 
-        const result = await loadIfcFile(file);
-
         const position = { x: 100, y: 100 };
-        const newNode = createIfcNodeFromFile(position, file, result);
+        const newNode = createIfcNodeFromFile(position, file);
 
         setNodes((nds) => [...nds, newNode]);
 
         toast({
-          title: "IFC File Loaded",
-          description: `Successfully loaded ${file.name}`,
+          title: "IFC Node Created",
+          description: `Created IFC node for ${file.name}`,
         });
       } catch (error) {
         toast({
           title: "Error",
-          description: `Failed to load IFC file: ${error}`,
+          description: `Failed to create IFC node: ${error}`,
           variant: "destructive",
         });
       }

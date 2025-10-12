@@ -1,6 +1,7 @@
 import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow-executor';
 import * as FRAGS from "@thatopen/fragments";
 
+// Use web-ifc version 0.0.72 (worked before restructuring)
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
 export class IfcNodeProcessor implements NodeProcessor {
@@ -38,15 +39,15 @@ export class IfcNodeProcessor implements NodeProcessor {
       const ifcBuffer = await node.data.file.arrayBuffer();
       const typedArray = new Uint8Array(ifcBuffer);
       console.log(`[IFC Processor] Converting IFC to Fragments...`);
-      
-      const bytes = await serializer.process({ bytes: typedArray, raw: true });
-      console.log(`[IFC Processor] Fragments bytes generated: ${bytes.byteLength} bytes`);
+
+      // Process IFC to Fragments (without raw flag to get compressed data)
+      const fragmentsBytes = await serializer.process({ bytes: typedArray });
+      console.log(`[IFC Processor] Fragments bytes generated: ${fragmentsBytes.byteLength} bytes`);
 
       console.log(`[IFC Processor] Loading model into Fragments viewer...`);
-      const model = await fragments.load(bytes.buffer as ArrayBuffer, {
+      const model = await fragments.load(fragmentsBytes.buffer as ArrayBuffer, {
         modelId: node.id,
         camera: world.camera.three as any,
-        raw: true,
       });
 
       console.log(`[IFC Processor] Model loaded:`, model);

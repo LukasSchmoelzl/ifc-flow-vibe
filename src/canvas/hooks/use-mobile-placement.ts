@@ -3,8 +3,7 @@
 import { useState, useCallback } from "react";
 import type { Node, Edge } from "reactflow";
 import { useToast } from "@/src/hooks/use-toast";
-import { createNode } from "@/src/canvas/nodes/nodes/node-factory-registry";
-import { getNodeLabel } from "@/src/canvas/node-factory";
+import { createNode, getNodeLabel } from "@/src/canvas/nodes/node-registry";
 
 export function useMobilePlacement(
   isMobile: boolean,

@@ -304,56 +304,48 @@ export class WorkflowStorage {
 export function cleanWorkflowData(flowData: any): any {
   if (!flowData) return flowData;
 
-  // Create a deep copy to avoid mutating the original
-  const cleanedData = JSON.parse(JSON.stringify(flowData));
+  // Build clean structure from scratch - only copy serializable data
+  const cleanedData: any = {
+    viewport: flowData.viewport,
+    edges: flowData.edges ? [...flowData.edges] : [],
+    nodes: []
+  };
 
-  // Clean nodes if they exist
-  if (cleanedData.nodes && Array.isArray(cleanedData.nodes)) {
-    cleanedData.nodes = cleanedData.nodes.map((node: any) => {
-      // Create a clean copy of the node
-      const cleanNode = { ...node };
-
-      // Clean the node data
-      if (cleanNode.data) {
-        const cleanData = { ...cleanNode.data };
-
-        // For IFC nodes, remove the actual model data
-        if (node.type === 'ifcNode') {
-          // Remove heavy data properties
-          delete cleanData.model;
-          delete cleanData.modelInfo;
-          delete cleanData.file;
-          delete cleanData.fileHandle;
-          delete cleanData.modelState;
-          delete cleanData.elements;
-
-          // Keep only essential properties for restoration
-          cleanData.isEmptyNode = true; // Mark as empty for loading
-          if (cleanData.properties?.filename) {
-            cleanData.fileName = cleanData.properties.filename; // Preserve filename for reference
-          }
+  // Manually build each node with only safe data
+  if (flowData.nodes && Array.isArray(flowData.nodes)) {
+    cleanedData.nodes = flowData.nodes.map((node: any) => {
+      // Start with basic node structure
+      const cleanNode: any = {
+        id: node.id,
+        type: node.type,
+        position: node.position ? { ...node.position } : { x: 0, y: 0 },
+        data: {
+          label: node.data?.label || node.type
         }
+      };
 
-        // For other nodes that might have cached IFC data
-        if (cleanData.modelInfo) {
-          delete cleanData.modelInfo;
+      // Copy only safe properties
+      if (node.selected !== undefined) cleanNode.selected = node.selected;
+      if (node.dragging !== undefined) cleanNode.dragging = node.dragging;
+      if (node.width !== undefined) cleanNode.width = node.width;
+      if (node.height !== undefined) cleanNode.height = node.height;
+
+      // For IFC nodes, mark as empty and preserve filename
+      if (node.type === 'ifcNode') {
+        cleanNode.data.isEmptyNode = true;
+        if (node.data?.fileName) {
+          cleanNode.data.fileName = node.data.fileName;
         }
-        if (cleanData.inputData?.value && cleanData.inputData.type === 'ifcModel') {
-          // Clear the actual model data but keep the type info
-          cleanData.inputData = {
-            ...cleanData.inputData,
-            value: null,
-            isCleared: true
-          };
-        }
+      }
 
-        // Remove any execution results or temporary data
-        delete cleanData.executionResult;
-        delete cleanData.error;
-        delete cleanData.isLoading;
-        delete cleanData.progress;
+      // For template nodes, copy the template text
+      if (node.type === 'templateNode' && node.data?.template) {
+        cleanNode.data.template = node.data.template;
+      }
 
-        cleanNode.data = cleanData;
+      // For info nodes, don't copy displayData (will be regenerated)
+      if (node.type === 'infoNode') {
+        // No extra data needed
       }
 
       return cleanNode;

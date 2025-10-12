@@ -1,7 +1,27 @@
 import { useState } from "react";
 import { Info, Building } from "lucide-react";
-import { getElementTypeColor, formatElementType } from "@/src/lib/ifc/element-utils";
 import { IfcNodeData as BaseIfcNodeData } from "../node-types";
+
+// Simple utility functions for element type formatting
+const getElementTypeColor = (type: string): string => {
+  const colors: Record<string, string> = {
+    IFCWALL: "bg-blue-500",
+    IFCWALLSTANDARDCASE: "bg-blue-500",
+    IFCSLAB: "bg-gray-500",
+    IFCBEAM: "bg-yellow-500",
+    IFCCOLUMN: "bg-red-500",
+    IFCDOOR: "bg-green-500",
+    IFCWINDOW: "bg-cyan-500",
+    IFCROOF: "bg-purple-500",
+    IFCSTAIR: "bg-orange-500",
+    IFCSPACE: "bg-indigo-500",
+  };
+  return colors[type] || "bg-gray-400";
+};
+
+const formatElementType = (type: string): string => {
+  return type.replace(/^IFC/, "").replace(/([A-Z])/g, " $1").trim();
+};
 
 interface ExtendedIfcNodeData extends BaseIfcNodeData {
   model?: {
