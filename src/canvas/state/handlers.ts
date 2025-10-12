@@ -75,10 +75,9 @@ export const flowHandlers = {
     setSelectedNode(node);
   },
 
-  // Handle node double click
+  // Handle node double click (disabled - no properties dialog)
   onNodeDoubleClick: (event: React.MouseEvent, node: Node) => {
-    const { setEditingNode } = useCanvasStore.getState();
-    setEditingNode(node);
+    // Node double-click functionality removed - no properties to edit
   },
 
   // Handle pane/canvas click
@@ -90,7 +89,6 @@ export const flowHandlers = {
       nodes, 
       edges,
       setNodes,
-      setEditingNode,
       setFocusedViewerId,
       focusedViewerId,
       addToHistory,
@@ -117,8 +115,7 @@ export const flowHandlers = {
       return;
     }
 
-    // Clear selections
-    setEditingNode(null);
+    // Clear viewer focus
     if (focusedViewerId) {
       setFocusedViewerId(null);
     }

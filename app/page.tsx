@@ -8,15 +8,10 @@ import { AppHeader } from "@/src/header/menu/app-header";
 import { NodesToolbar } from "@/src/header/toolbar/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/ui/flow-canvas";
 import { ChatInput } from "@/src/llm/ui/chat";
-import { PropertiesDialog } from "@/src/canvas/nodes/properties-dialog";
-
 // Canvas State
 import { useCanvasStore } from "@/src/canvas/state/store";
 
 function AppContent() {
-  const editingNode = useCanvasStore((state) => state.editingNode);
-  const setEditingNode = useCanvasStore((state) => state.setEditingNode);
-  const setNodes = useCanvasStore((state) => state.setNodes);
 
     return (
     <div className="flex flex-col h-screen w-full bg-background">
@@ -38,16 +33,6 @@ function AppContent() {
                 </div>
               </div>
             </div>
-
-      {/* ========== DIALOGS (CANVAS DOMAIN) ========== */}
-      <PropertiesDialog
-        node={editingNode}
-        open={!!editingNode}
-        onOpenChange={(open) => {
-          if (!open) setEditingNode(null);
-        }}
-        setNodes={setNodes as React.Dispatch<React.SetStateAction<any[]>>}
-      />
 
     </div>
   );

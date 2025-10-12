@@ -19,7 +19,6 @@ interface CanvasState {
   nodes: Node[];
   edges: Edge[];
   selectedNode: Node | null;
-  editingNode: Node | null;
   focusedViewerId: string | null;
   reactFlowWrapper: React.RefObject<HTMLDivElement> | null;
   reactFlowInstance: ReactFlowInstance | null;
@@ -53,7 +52,6 @@ interface CanvasActions {
   setNodes: (nodes: Node[] | ((prev: Node[]) => Node[])) => void;
   setEdges: (edges: Edge[] | ((prev: Edge[]) => Edge[])) => void;
   setSelectedNode: (node: Node | null) => void;
-  setEditingNode: (node: Node | null) => void;
   setFocusedViewerId: (id: string | null) => void;
   setReactFlowWrapper: (ref: React.RefObject<HTMLDivElement> | null) => void;
   setReactFlowInstance: (instance: ReactFlowInstance | null) => void;
@@ -91,9 +89,8 @@ export const useCanvasStore = create<CanvasStore>()(
       // Initial state
       nodes: [],
       edges: [],
-      selectedNode: null,
-      editingNode: null,
-      focusedViewerId: null,
+              selectedNode: null,
+              focusedViewerId: null,
       reactFlowWrapper: null,
       reactFlowInstance: null,
       currentWorkflow: null,
@@ -125,9 +122,8 @@ export const useCanvasStore = create<CanvasStore>()(
         }));
       },
 
-      setSelectedNode: (node) => set({ selectedNode: node }),
-      setEditingNode: (node) => set({ editingNode: node }),
-      setFocusedViewerId: (id) => set({ focusedViewerId: id }),
+              setSelectedNode: (node) => set({ selectedNode: node }),
+              setFocusedViewerId: (id) => set({ focusedViewerId: id }),
       setReactFlowWrapper: (ref) => set({ reactFlowWrapper: ref }),
       setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
 
