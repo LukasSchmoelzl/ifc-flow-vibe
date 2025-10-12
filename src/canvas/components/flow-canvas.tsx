@@ -122,8 +122,7 @@ export function FlowCanvas({
           >
             <Controls />
             {isSettingsLoaded && showGrid && <Background color="#aaa" gap={16} />}
-            {isSettingsLoaded && showMinimap && <MiniMap />}
-            <Panel position="bottom-right">
+            <Panel position="bottom-left">
               <FooterPill currentWorkflow={currentWorkflow} />
             </Panel>
           </ReactFlow>
