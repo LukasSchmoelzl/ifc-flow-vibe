@@ -1,4 +1,4 @@
-import { Canvas } from "@/src/canvas/canvas";
+import { Canvas } from "@/src/canvas";
 
 export default function Home() {
   return <Canvas />;

@@ -26,15 +26,15 @@ import { AboutDialog } from "@/src/ui/dialogs/about-dialog";
 import { WorkflowLibrary } from "@/src/ui/components/workflow-library";
 import { useToast } from "@/src/hooks/use-toast";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import type { Workflow } from "@/src/canvas/workflow-storage";
-import { cleanWorkflowData } from "@/src/canvas/workflow-storage";
+import type { Workflow } from "@/src/canvas/workflow/storage";
+import { cleanWorkflowData } from "@/src/canvas/workflow/storage";
 import {
   formatKeyCombination,
   useKeyboardShortcuts,
 } from "@/src/lib/keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/src/ui/components/ui/sheet";
-import { useCanvasStore } from "@/src/canvas/store";
-import { workflowActions, nodeActions } from "@/src/canvas/actions";
+import { useCanvasStore } from "@/src/canvas/state/store";
+import { workflowActions, nodeActions } from "@/src/canvas/state/actions";
 
 export function AppHeader() {
   // Zustand store - atomic selections

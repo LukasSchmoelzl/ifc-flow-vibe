@@ -25,7 +25,7 @@ import {
   HelpCircle,
   Upload,
 } from "lucide-react";
-import { workflowStorage, type Workflow } from "@/src/canvas/workflow-storage";
+import { workflowStorage, type Workflow } from "@/src/canvas/workflow/storage";
 import {
   Tooltip,
   TooltipContent,

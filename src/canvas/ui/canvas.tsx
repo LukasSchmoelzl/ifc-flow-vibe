@@ -5,12 +5,12 @@ import { ReactFlowProvider } from "reactflow";
 
 import { AppHeader } from "@/src/ui/header/app-header";
 import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
-import { FlowCanvas } from "@/src/canvas/components/flow-canvas";
+import { FlowCanvas } from "./flow-canvas";
 import { ChatInput } from "@/src/ui/components/chat";
 import { PropertiesDialog } from "@/src/ui/dialogs/properties-dialog";
 import { Toaster } from "@/src/ui/components/toaster";
 
-import { useCanvasStore } from "@/src/canvas/store";
+import { useCanvasStore } from "../state/store";
 
 function CanvasContent() {
   const editingNode = useCanvasStore((state) => state.editingNode);

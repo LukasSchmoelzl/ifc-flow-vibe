@@ -16,9 +16,9 @@ import {
 } from "@/src/ui/components/ui/tooltip";
 import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, GitBranch, BarChart, Download, Clock, Terminal, Shuffle, Database, Layers } from "lucide-react";
 import { getAllNodes } from "@/src/canvas/nodes/node-registry";
-import { NodeStatusBadge } from "@/src/canvas/components/node-status-badge";
+import { NodeStatusBadge } from "@/src/canvas/nodes/node-status-badge";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import { useCanvasStore } from "@/src/canvas/store";
+import { useCanvasStore } from "@/src/canvas/state/store";
 
 function getStatusTooltipContent(status: string): string | null {
   switch (status) {

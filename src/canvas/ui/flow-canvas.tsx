@@ -9,14 +9,14 @@ import ReactFlow, {
   type SelectionMode,
 } from "reactflow";
 import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
-import { FooterPill } from "@/src/canvas/components/flow/FooterPill";
-import { FileDropOverlay } from "@/src/canvas/components/flow/FileDropOverlay";
-import { MobilePlacementOverlay } from "@/src/canvas/components/flow/MobilePlacementOverlay";
-import { nodeTypes } from "@/src/canvas/nodes/nodes";
-import { getNodeLabel } from "@/src/canvas/nodes/node-registry";
-import { useCanvasStore } from "@/src/canvas/store";
+import { FooterPill } from "./overlays/footer-pill";
+import { FileDropOverlay } from "./overlays/file-drop";
+import { MobilePlacementOverlay } from "./overlays/mobile-placement";
+import { nodeTypes } from "../nodes/nodes";
+import { getNodeLabel } from "../nodes/node-registry";
+import { useCanvasStore } from "../state/store";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import { flowHandlers } from "@/src/canvas/flow-handlers";
+import { flowHandlers } from "../state/handlers";
 
 const EDGE_TYPES = {} as const;
 const SNAP_GRID: [number, number] = [15, 15];
