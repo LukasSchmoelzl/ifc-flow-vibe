@@ -99,7 +99,7 @@ export function AppHeader() {
         <div className="border-b bg-card flex items-center justify-between px-2 py-1">
           <div className="flex items-center gap-2">
             <Image
-              src="/logo-ifcflow.svg"
+              src="/workflow.svg"
               alt="IFCflow Logo"
               width={24}
               height={24}
