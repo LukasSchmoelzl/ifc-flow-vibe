@@ -1,5 +1,5 @@
 import type { Node } from "reactflow";
-import { FileUp, FileText, Info } from "lucide-react";
+import { FileUp, FileText, Info, FolderOpen } from "lucide-react";
 
 // Generate unique node ID
 const generateNodeId = (): string => {
@@ -18,6 +18,20 @@ export const NODE_REGISTRY = {
       position,
       data: {
         label: "IFC File",
+        ...additionalData,
+      },
+    }),
+  },
+  fileManagerNode: {
+    label: "File Manager",
+    icon: <FolderOpen className="h-4 w-4 mr-2" />,
+    status: "working" as const,
+    factory: (position: { x: number; y: number }, additionalData?: Record<string, any>): Node => ({
+      id: generateNodeId(),
+      type: "fileManagerNode",
+      position,
+      data: {
+        label: "File Manager",
         ...additionalData,
       },
     }),

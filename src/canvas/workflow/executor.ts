@@ -1,6 +1,7 @@
 import { IfcNodeProcessor } from "@/src/canvas/nodes/nodes/ifc-node/ifc-loader";
 import { TemplateNodeProcessor } from "@/src/canvas/nodes/nodes/template-node/text-processor";
 import { InfoNodeProcessor } from "@/src/canvas/nodes/nodes/info-node/info-processor";
+import { FileManagerNodeProcessor } from "@/src/canvas/nodes/nodes/file-manager-node/file-loader";
 
 // Types and interfaces
 
@@ -67,6 +68,7 @@ const NODE_PROCESSORS = {
   ifcNode: new IfcNodeProcessor(),
   templateNode: new TemplateNodeProcessor(),
   infoNode: new InfoNodeProcessor(),
+  fileManagerNode: new FileManagerNodeProcessor(),
 } as const;
 
 export class WorkflowExecutor {
