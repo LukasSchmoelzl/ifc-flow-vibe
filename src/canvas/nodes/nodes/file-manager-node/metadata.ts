@@ -9,7 +9,7 @@ export const fileManagerNodeMetadata: NodeMetadata = {
   status: "working",
   processor: new FileManagerNodeProcessor(),
   defaultData: {
-    label: "File Manager",
+    label: "IFC Loader",
   },
 };
 

@@ -1,22 +1,17 @@
-// File Manager Node Types
-
-export type SupportedFileType = 'ifc' | 'frag' | 'ids';
-export type FileCategory = 'model' | 'specification';
-
-export interface FileMetadata {
-  originalName: string;
-  mimeType?: string;
-  description?: string;
-  tags?: string[];
-  modelId?: string;
-}
+// File Manager Node Types - IFC files only
 
 export interface LoadedFileInfo {
   fileName: string;
-  fileType: SupportedFileType;
-  category: FileCategory;
+  fileType: 'ifc';
+  category: 'model';
   size: number;
-  metadata: FileMetadata;
   loadedAt: Date;
+  metadata: FileMetadata;
 }
 
+export interface FileMetadata {
+  schema?: string;
+  project?: { Name?: string };
+  totalElements?: number;
+  elementCounts?: Record<string, number>;
+}

@@ -1,7 +1,5 @@
 import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow/executor';
 import * as FRAGS from "@thatopen/fragments";
-import { validateFile, getFileType, getFileCategory, generateModelId, ensureArrayBuffer, convertIfcToFragment } from './file-utils';
-import type { LoadedFileInfo } from './types';
 
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
@@ -14,9 +12,9 @@ export class FileManagerNodeProcessor implements NodeProcessor {
 
     const file = node.data.file;
 
-    // Validate file
-    if (!validateFile(file)) {
-      throw new Error(`Unsupported file type: ${file.name}. Only .ifc, .frag, and .ids are supported.`);
+    // Only IFC files are supported
+    if (!file.name.toLowerCase().endsWith('.ifc')) {
+      throw new Error(`Only .ifc files are supported. Got: ${file.name}`);
     }
 
     try {
@@ -26,122 +24,121 @@ export class FileManagerNodeProcessor implements NodeProcessor {
         error: null,
       });
 
-      console.log(`[FileManager Processor] Loading file: ${file.name}`);
-
-      const fileType = getFileType(file.name);
-      const category = getFileCategory(fileType);
-      const bytes = await file.arrayBuffer();
-
-      let result: LoadedFileInfo | null = null;
-
-      if (category === 'model') {
-        result = await this.loadModel(node, bytes, file.name, fileType, context);
-      } else if (category === 'specification') {
-        result = await this.loadSpecification(bytes, file.name, fileType);
+      // Get fragments viewer
+      const fragmentsViewer = window.__fragmentsViewer;
+      if (!fragmentsViewer) {
+        throw new Error("Fragments viewer not initialized");
       }
+
+      const { fragments, world } = fragmentsViewer;
+
+      // Clear existing model if any (only one model at a time)
+      await this.clearExistingModels(fragments, world);
+
+      // Convert IFC to Fragments
+      const serializer = new FRAGS.IfcImporter();
+      serializer.wasm = {
+        absolute: true,
+        path: WASM_PATH,
+      };
+
+      console.log(`[FileManager] Loading file: ${file.name}, size: ${file.size} bytes`);
+      
+      const ifcBuffer = await file.arrayBuffer();
+      const typedArray = new Uint8Array(ifcBuffer);
+      console.log(`[FileManager] Converting IFC to Fragments...`);
+
+      const fragmentsBytes = await serializer.process({ bytes: typedArray });
+      console.log(`[FileManager] Fragments bytes generated: ${fragmentsBytes.byteLength} bytes`);
+
+      console.log(`[FileManager] Loading model into Fragments viewer...`);
+      const model = await fragments.load(fragmentsBytes.buffer as ArrayBuffer, {
+        modelId: node.id,
+        camera: world.camera.three as any,
+      });
+
+      world.scene.three.add(model.object);
+      await fragments.update(true);
+      console.log(`[FileManager] Model added to scene`);
+
+      // Extract metadata
+      const metadata = await model.getMetadata();
+      const categories = await model.getCategories();
+      const itemsWithGeometry = await model.getItemsIdsWithGeometry();
+      const totalElements = itemsWithGeometry.length;
+
+      const elementCounts: Record<string, number> = {};
+      for (const category of categories) {
+        const itemsOfCategory = await model.getItemsOfCategories([new RegExp(`^${category}$`)]);
+        const count = Object.values(itemsOfCategory).flat().length;
+        if (count > 0) {
+          elementCounts[category] = count;
+        }
+      }
+
+      // Store model globally (single model only)
+      if (!window.__fragmentsModels) {
+        window.__fragmentsModels = {};
+      }
+      window.__fragmentsModels[node.id] = model;
 
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
-        fileInfo: result,
+        fileName: file.name,
+        fileInfo: {
+          fileName: file.name,
+          fileType: 'ifc' as const,
+          category: 'model' as const,
+          size: file.size,
+          loadedAt: new Date(),
+          metadata: {
+            schema: metadata?.schema || "IFC",
+            project: { Name: metadata?.name || file.name },
+            totalElements,
+            elementCounts,
+          },
+        },
       });
 
-      console.log(`[FileManager Processor] Processing complete for node ${node.id}`);
-      
-      return result;
+      console.log(`[FileManager] Processing complete for node ${node.id}`);
+
+      return {
+        name: file.name,
+        model,
+      };
     } catch (error) {
       console.error(`Error processing file-manager node ${node.id}:`, error);
+      
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
         error: error instanceof Error ? error.message : String(error),
       });
+
       throw error;
     }
   }
 
-  private async loadModel(
-    node: any,
-    bytes: ArrayBuffer,
-    filename: string,
-    fileType: string,
-    context: ProcessorContext
-  ): Promise<LoadedFileInfo> {
-    const modelId = generateModelId(filename);
-    let finalBytes = bytes;
-    let finalFilename = filename;
-
-    // Convert IFC to Fragment if needed
-    if (fileType === 'ifc') {
-      finalBytes = await convertIfcToFragment(bytes);
-      finalFilename = filename.replace('.ifc', '.frag');
-    }
-
-    // Load into Fragments viewer
-    const viewer = window.__fragmentsViewer;
-    if (!viewer) {
-      throw new Error('Fragments viewer not initialized');
-    }
-
-    const arrayBuffer = ensureArrayBuffer(finalBytes);
-    const camera = viewer.world.camera.three as any;
-    const model = await viewer.fragments.load(arrayBuffer, {
-      modelId: modelId,
-      camera,
-      raw: true,
-    });
-
-    viewer.world.scene.three.add(model.object);
-    await viewer.fragments.update(true);
-
-    // Store model globally
+  private async clearExistingModels(fragments: any, world: any): Promise<void> {
     if (!window.__fragmentsModels) {
-      window.__fragmentsModels = {};
+      return;
     }
-    window.__fragmentsModels[modelId] = model;
 
-    const fileInfo: LoadedFileInfo = {
-      fileName: filename,
-      fileType: fileType as 'ifc' | 'frag' | 'ids',
-      category: 'model',
-      size: finalBytes.byteLength,
-      metadata: {
-        originalName: filename,
-        mimeType: 'application/octet-stream',
-        description: `BIM model loaded from ${filename}`,
-        tags: ['bim', 'model', '3d'],
-        modelId,
-      },
-      loadedAt: new Date(),
-    };
+    // Remove all existing models
+    for (const [modelId, model] of Object.entries(window.__fragmentsModels)) {
+      try {
+        if (model && (model as any).object?.parent) {
+          world.scene.three.remove((model as any).object);
+        }
+        (model as any).dispose?.();
+      } catch (error) {
+        console.warn(`Error removing model ${modelId}:`, error);
+      }
+    }
 
-    console.log(`✅ Model loaded: ${filename}`);
-    return fileInfo;
-  }
-
-  private async loadSpecification(
-    bytes: ArrayBuffer,
-    filename: string,
-    fileType: string
-  ): Promise<LoadedFileInfo> {
-    const content = new TextDecoder('utf-8').decode(bytes);
-
-    const fileInfo: LoadedFileInfo = {
-      fileName: filename,
-      fileType: fileType as 'ifc' | 'frag' | 'ids',
-      category: 'specification',
-      size: bytes.byteLength,
-      metadata: {
-        originalName: filename,
-        mimeType: 'application/xml',
-        description: `IDS specification loaded from ${filename}`,
-        tags: ['ids', 'specification'],
-      },
-      loadedAt: new Date(),
-    };
-
-    console.log(`✅ Specification loaded: ${filename}`);
-    return fileInfo;
+    // Clear the models registry
+    window.__fragmentsModels = {};
+    console.log('[FileManager] Cleared all existing models');
   }
 }
-

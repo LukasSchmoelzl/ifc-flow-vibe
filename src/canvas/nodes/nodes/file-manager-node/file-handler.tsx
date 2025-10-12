@@ -24,11 +24,7 @@ export function useFileHandler(nodeId: string) {
     setIsDraggingOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const file = files.find(f => 
-      f.name.endsWith('.ifc') || 
-      f.name.endsWith('.frag') || 
-      f.name.endsWith('.ids')
-    );
+    const file = files.find(f => f.name.toLowerCase().endsWith('.ifc'));
 
     if (file) {
       setNodes((nodes) =>
@@ -44,7 +40,7 @@ export function useFileHandler(nodeId: string) {
   const handleDoubleClick = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".ifc,.frag,.ids";
+    input.accept = ".ifc";
     input.style.display = "none";
 
     input.onchange = (event) => {
@@ -77,4 +73,3 @@ export function useFileHandler(nodeId: string) {
     onDoubleClick: handleDoubleClick,
   };
 }
-

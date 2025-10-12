@@ -1,4 +1,4 @@
-import { FolderOpen, File, FileText, Box } from "lucide-react";
+import { FolderOpen, Box } from "lucide-react";
 import type { LoadedFileInfo } from "./types";
 
 interface FileManagerNodeData {
@@ -24,7 +24,7 @@ export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIPro
         }`}>
           <FolderOpen className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Drop .ifc, .frag or .ids file
+            Drop .ifc file here
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             or double-click to browse
@@ -40,13 +40,7 @@ export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIPro
       <div className="space-y-2">
         {/* File Name */}
         <div className="flex items-center gap-2">
-          {fileInfo?.category === 'model' ? (
-            <Box className="w-4 h-4 text-blue-500" />
-          ) : fileInfo?.category === 'specification' ? (
-            <FileText className="w-4 h-4 text-purple-500" />
-          ) : (
-            <File className="w-4 h-4 text-gray-500" />
-          )}
+          <Box className="w-4 h-4 text-blue-500" />
           <span className="text-xs font-medium truncate" title={fileName}>
             {fileName}
           </span>
@@ -56,23 +50,19 @@ export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIPro
         {fileInfo && (
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
             <div className="flex justify-between">
-              <span>Type:</span>
-              <span className="font-mono">{fileInfo.fileType.toUpperCase()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Category:</span>
-              <span className="capitalize">{fileInfo.category}</span>
-            </div>
-            <div className="flex justify-between">
               <span>Size:</span>
               <span>{(fileInfo.size / 1024 / 1024).toFixed(2)} MB</span>
             </div>
-            {fileInfo.metadata.modelId && (
+            {fileInfo.metadata.totalElements && (
               <div className="flex justify-between">
-                <span>Model ID:</span>
-                <span className="font-mono text-xs truncate" title={fileInfo.metadata.modelId}>
-                  {fileInfo.metadata.modelId.slice(0, 12)}...
-                </span>
+                <span>Elements:</span>
+                <span>{fileInfo.metadata.totalElements}</span>
+              </div>
+            )}
+            {fileInfo.metadata.schema && (
+              <div className="flex justify-between">
+                <span>Schema:</span>
+                <span className="font-mono">{fileInfo.metadata.schema}</span>
               </div>
             )}
           </div>
@@ -86,4 +76,3 @@ export function FileManagerNodeUI({ data, isDraggingOver }: FileManagerNodeUIPro
     </div>
   );
 }
-
