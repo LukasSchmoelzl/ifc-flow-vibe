@@ -96,7 +96,6 @@ export class IfcNodeProcessor implements NodeProcessor {
       console.log(`[IFC Processor] Processing complete for node ${node.id}`);
 
       return {
-        file: node.data.file,
         name: node.data.file.name,
         model,
       };
