@@ -12,7 +12,8 @@ import { FileDropOverlay } from "@/src/canvas/components/flow/FileDropOverlay";
 import { MobilePlacementOverlay } from "@/src/canvas/components/flow/MobilePlacementOverlay";
 import { nodeTypes } from "@/src/canvas/nodes/nodes";
 import { getNodeLabel } from "@/src/canvas/nodes/node-registry";
-import { useCanvas } from "@/src/canvas/canvas-context";
+import { useCanvasStore } from "@/src/canvas/store";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 const EDGE_TYPES = {} as const;
 const SNAP_GRID: [number, number] = [15, 15];
@@ -21,27 +22,29 @@ const DEFAULT_STYLE = { cursor: "default" };
 const PLACEMENT_STYLE = { cursor: "crosshair" };
 
 export function FlowCanvas() {
-  const {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    onDrop,
-    onDragOver,
-    onNodeClick,
-    onNodeDoubleClick,
-    onCanvasClick,
-    isFileDragging,
-    isMobile,
-    placementMode,
-    selectedNodeType,
-    showGrid,
-    isSettingsLoaded,
-    focusedViewerId,
-    setFocusedViewerId,
-    currentWorkflow,
-  } = useCanvas();
+  const isMobile = useIsMobile();
+  
+  // Zustand store - atomic selections
+  const nodes = useCanvasStore(state => state.nodes);
+  const edges = useCanvasStore(state => state.edges);
+  const isFileDragging = useCanvasStore(state => state.isFileDragging);
+  const placementMode = useCanvasStore(state => state.placementMode);
+  const selectedNodeType = useCanvasStore(state => state.selectedNodeType);
+  const showGrid = useCanvasStore(state => state.showGrid);
+  const isSettingsLoaded = useCanvasStore(state => state.isSettingsLoaded);
+  const focusedViewerId = useCanvasStore(state => state.focusedViewerId);
+  const setFocusedViewerId = useCanvasStore(state => state.setFocusedViewerId);
+  
+  // TODO: These need to be implemented as actions
+  // For now, create placeholder functions
+  const onNodesChange = () => {};
+  const onEdgesChange = () => {};
+  const onConnect = () => {};
+  const onDrop = () => {};
+  const onDragOver = () => {};
+  const onNodeClick = () => {};
+  const onNodeDoubleClick = () => {};
+  const onCanvasClick = () => {};
 
   return (
     <>

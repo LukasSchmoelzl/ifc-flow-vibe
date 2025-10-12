@@ -33,38 +33,25 @@ import {
   useKeyboardShortcuts,
 } from "@/src/lib/keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/src/ui/components/ui/sheet";
-import { useCanvas } from "@/src/canvas/canvas-context";
+import { useCanvasStore } from "@/src/canvas/store";
+import { workflowActions, nodeActions } from "@/src/canvas/actions";
 
 export function AppHeader() {
-  // Canvas state from context - NO MORE PROPS!
-  const {
-    handleOpenFile: onOpenFile,
-    handleSaveWorkflow,
-    handleRunWorkflow: onRunWorkflow,
-    handleLoadWorkflow: onLoadWorkflow,
-    isRunning,
-    setIsRunning,
-    canUndo,
-    canRedo,
-    handleUndo: onUndo,
-    handleRedo: onRedo,
-    getFlowObject,
-    currentWorkflow,
-    reactFlowInstance,
-    showGrid,
-    setShowGrid,
-    showMinimap,
-    setShowMinimap,
-    handleSelectAll: onSelectAll,
-    handleCopy: onCopy,
-    handleCut: onCut,
-    handlePaste: onPaste,
-    handleDelete: onDelete,
-  } = useCanvas();
+  // Zustand store - atomic selections
+  const isRunning = useCanvasStore(state => state.isRunning);
+  const canUndo = useCanvasStore(state => state.canUndo);
+  const canRedo = useCanvasStore(state => state.canRedo);
+  const currentWorkflow = useCanvasStore(state => state.currentWorkflow);
+  const reactFlowInstance = useCanvasStore(state => state.reactFlowInstance);
+  const showGrid = useCanvasStore(state => state.showGrid);
+  const showMinimap = useCanvasStore(state => state.showMinimap);
+  const setShowGrid = useCanvasStore(state => state.setShowGrid);
+  const setShowMinimap = useCanvasStore(state => state.setShowMinimap);
+  const undo = useCanvasStore(state => state.undo);
+  const redo = useCanvasStore(state => state.redo);
+  const setNodes = useCanvasStore(state => state.setNodes);
+  const setEdges = useCanvasStore(state => state.setEdges);
 
-  const onSaveWorkflow = (workflow: Workflow) => {
-    handleSaveWorkflow(workflow.name, workflow.flowData);
-  };
   const [openFileDialogOpen, setOpenFileDialogOpen] = useState(false);
   const [saveWorkflowDialogOpen, setSaveWorkflowDialogOpen] = useState(false);
   const [workflowLibraryOpen, setWorkflowLibraryOpen] = useState(false);
@@ -81,344 +68,182 @@ export function AppHeader() {
     return shortcuts.find((s) => s.id === id);
   };
 
-  const getShortcutDisplay = (id: string) => {
-    const shortcut = findShortcut(id);
-    return shortcut ? formatKeyCombination(shortcut.keys) : "";
+  // Action handlers using Zustand actions
+  const handleOpenFile = (file: File) => workflowActions.openFile(file, toast);
+  const handleSaveWorkflow = (name: string, flowData: any) => workflowActions.saveWorkflow(name, flowData, toast);
+  const handleLoadWorkflow = (workflow: Workflow) => workflowActions.loadWorkflow(workflow, setNodes, setEdges, toast);
+  const handleRunWorkflow = () => workflowActions.runWorkflow(toast, (nodeId, data) => {
+    // Update node data callback
+    setNodes((nodes: any) => nodes.map((n: any) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
+  });
+  
+  const handleSelectAll = () => nodeActions.selectAll(setNodes);
+  const handleCopy = () => nodeActions.copy(toast);
+  const handleCut = () => nodeActions.cut(setNodes, setEdges, toast);
+  const handlePaste = () => nodeActions.paste(setNodes, setEdges, toast);
+  const handleDelete = () => nodeActions.delete(setNodes, setEdges, toast);
+
+  const getFlowObject = () => {
+    if (!reactFlowInstance) return { nodes: [], edges: [] };
+    return reactFlowInstance.toObject();
   };
 
-  const handleOpenFile = (file: File) => {
-    onOpenFile(file);
-    setOpenFileDialogOpen(false);
-    toast({
-      title: "File opened",
-      description: `Successfully opened ${file.name}`,
-    });
-  };
-
-  const handleSaveToLibrary = (workflow: Workflow) => {
-    onSaveWorkflow(workflow);
-    toast({
-      title: "Workflow saved to library",
-      description: `${workflow.name} has been saved to your workflow library`,
-    });
-  };
-
-  const handleSaveLocally = (workflow: Workflow) => {
-    const json = JSON.stringify(workflow, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${workflow.name.replace(/\s+/g, "-").toLowerCase()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Workflow saved locally",
-      description: `${workflow.name} has been saved to your device`,
-    });
-  };
-
-  const handleLoadWorkflow = (workflow: Workflow) => {
-    onLoadWorkflow(workflow);
-    toast({
-      title: "Workflow loaded",
-      description: `${workflow.name} has been loaded successfully`,
-    });
-  };
-
-  const handleRunWorkflow = () => {
-    if (isRunning) {
-      setIsRunning(false);
-      toast({
-        title: "Execution paused",
-        description: "Workflow execution has been paused",
-      });
-    } else {
-      setIsRunning(true);
-      try {
-        onRunWorkflow();
-        toast({
-          title: "Execution started",
-          description: "Workflow execution has started",
-        });
-      } catch (error: unknown) {
-        console.error("Error executing workflow:", error);
-        let errorMessage = "Unknown error";
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (error && typeof error === "object" && "toString" in error) {
-          errorMessage = error.toString();
-        }
-        toast({
-          title: "Execution error",
-          description: `Error: ${errorMessage}`,
-          variant: "destructive",
-        });
-        setIsRunning(false);
-      }
-    }
-  };
-
-  const handleUndo = () => {
-    if (canUndo) {
-      onUndo();
-      toast({
-        title: "Undo",
-        description: "Last action undone",
-        variant: "default",
-      });
-    }
-  };
-
-  const handleRedo = () => {
-    if (canRedo) {
-      onRedo();
-      toast({
-        title: "Redo",
-        description: "Action redone",
-        variant: "default",
-      });
-    }
-  };
-
-  const handleZoomIn = () => {
-    if (reactFlowInstance) {
-      const zoom = reactFlowInstance.getZoom();
-      reactFlowInstance.zoomTo(Math.min(zoom + 0.2, 2));
-      toast({
-        title: "Zoom In",
-        description: "Canvas zoomed in",
-      });
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (reactFlowInstance) {
-      const zoom = reactFlowInstance.getZoom();
-      reactFlowInstance.zoomTo(Math.max(zoom - 0.2, 0.2));
-      toast({
-        title: "Zoom Out",
-        description: "Canvas zoomed out",
-      });
-    }
-  };
-
-  const handleFitView = () => {
-    if (reactFlowInstance) {
-      reactFlowInstance.fitView({ padding: 0.2 });
-      toast({
-        title: "Fit View",
-        description: "Canvas adjusted to fit all nodes",
-      });
-    }
-  };
-
-  const handleToggleGrid = () => {
-    setShowGrid(!showGrid);
-  };
-
-  const handleToggleMinimap = () => {
-    setShowMinimap(!showMinimap);
+  const onSaveWorkflow = (workflow: Workflow) => {
+    handleSaveWorkflow(workflow.name, workflow.flowData);
   };
 
   return (
     <>
-      {/* Desktop Header */}
-      <div className="hidden md:flex flex-col border-b bg-card">
-        {/* Header Row 1: Logo + Menus + Run Button */}
-        <div className="flex items-center justify-between px-4 py-2 border-b">
-          <div className="flex items-center gap-4">
-            {/* Logo and Brand */}
-            <div className="flex items-center gap-2 pr-4 border-r">
-              <img 
-                src="/workflow.svg" 
-                alt="IFCflow" 
-                width={24} 
-                height={24}
-                className="text-primary"
-              />
-              <span className="text-lg font-semibold">IFCflow</span>
-            </div>
-
-            {/* Menubar */}
-            <Menubar className="border-none">
+      {/* Desktop Menubar */}
+      {!isMobile ? (
+        <div className="border-b bg-card flex items-center justify-between px-2 py-1">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo-ifcflow.svg"
+              alt="IFCflow Logo"
+              width={24}
+              height={24}
+              className="dark:invert"
+            />
+            <Menubar className="border-none bg-transparent">
+              {/* File Menu */}
               <MenubarMenu>
-                <MenubarTrigger>File</MenubarTrigger>
+                <MenubarTrigger className="cursor-pointer">File</MenubarTrigger>
                 <MenubarContent>
-                  <MenubarItem
-                    onClick={() => setOpenFileDialogOpen(true)}
-                    data-open-file-dialog-trigger
-                  >
+                  <MenubarItem onClick={() => setOpenFileDialogOpen(true)}>
                     Open IFC File
-                    <MenubarShortcut>{getShortcutDisplay("open-file")}</MenubarShortcut>
+                    {findShortcut("openFile") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("openFile")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
-                  <MenubarItem
-                    onClick={() => setSaveWorkflowDialogOpen(true)}
-                    data-save-workflow-dialog-trigger
-                  >
+                  <MenubarSeparator />
+                  <MenubarItem onClick={() => setSaveWorkflowDialogOpen(true)}>
                     Save Workflow
-                    <MenubarShortcut>{getShortcutDisplay("save-workflow")}</MenubarShortcut>
+                    {findShortcut("saveWorkflow") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("saveWorkflow")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
-                  <MenubarItem
-                    onClick={() => setWorkflowLibraryOpen(true)}
-                    data-workflow-library-trigger
-                  >
-                    Open Workflow Library
-                    <MenubarShortcut>{getShortcutDisplay("open-workflow-library")}</MenubarShortcut>
+                  <MenubarItem onClick={() => setWorkflowLibraryOpen(true)}>
+                    Workflow Library
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
 
+              {/* Edit Menu */}
               <MenubarMenu>
-                <MenubarTrigger>Edit</MenubarTrigger>
+                <MenubarTrigger className="cursor-pointer">Edit</MenubarTrigger>
                 <MenubarContent>
-                  <MenubarItem onClick={handleUndo} disabled={!canUndo}>
+                  <MenubarItem onClick={undo} disabled={!canUndo}>
                     Undo
-                    <MenubarShortcut>{getShortcutDisplay("undo")}</MenubarShortcut>
+                    {findShortcut("undo") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("undo")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
-                  <MenubarItem onClick={handleRedo} disabled={!canRedo}>
+                  <MenubarItem onClick={redo} disabled={!canRedo}>
                     Redo
-                    <MenubarShortcut>{getShortcutDisplay("redo")}</MenubarShortcut>
+                    {findShortcut("redo") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("redo")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
                   <MenubarSeparator />
-                  <MenubarItem onClick={onCut}>
-                    Cut
-                    <MenubarShortcut>{getShortcutDisplay("cut")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem onClick={onCopy}>
-                    Copy
-                    <MenubarShortcut>{getShortcutDisplay("copy")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem onClick={onPaste}>
-                    Paste
-                    <MenubarShortcut>{getShortcutDisplay("paste")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem onClick={onSelectAll}>
+                  <MenubarItem onClick={handleSelectAll}>
                     Select All
-                    <MenubarShortcut>{getShortcutDisplay("select-all")}</MenubarShortcut>
+                    {findShortcut("selectAll") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("selectAll")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
-                  <MenubarItem onClick={onDelete}>
-                    Delete Selected
-                    <MenubarShortcut>{getShortcutDisplay("delete")}</MenubarShortcut>
+                  <MenubarItem onClick={handleCopy}>
+                    Copy
+                    {findShortcut("copy") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("copy")!.keys)}
+                      </MenubarShortcut>
+                    )}
+                  </MenubarItem>
+                  <MenubarItem onClick={handleCut}>
+                    Cut
+                    {findShortcut("cut") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("cut")!.keys)}
+                      </MenubarShortcut>
+                    )}
+                  </MenubarItem>
+                  <MenubarItem onClick={handlePaste}>
+                    Paste
+                    {findShortcut("paste") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("paste")!.keys)}
+                      </MenubarShortcut>
+                    )}
+                  </MenubarItem>
+                  <MenubarItem onClick={handleDelete}>
+                    Delete
+                    {findShortcut("delete") && (
+                      <MenubarShortcut>
+                        {formatKeyCombination(findShortcut("delete")!.keys)}
+                      </MenubarShortcut>
+                    )}
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
 
+              {/* View Menu */}
               <MenubarMenu>
-                <MenubarTrigger>View</MenubarTrigger>
+                <MenubarTrigger className="cursor-pointer">View</MenubarTrigger>
                 <MenubarContent>
-                  <MenubarItem onClick={handleZoomIn}>
-                    Zoom In
-                    <MenubarShortcut>{getShortcutDisplay("zoom-in")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem onClick={handleZoomOut}>
-                    Zoom Out
-                    <MenubarShortcut>{getShortcutDisplay("zoom-out")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem onClick={handleFitView}>
-                    Fit View
-                    <MenubarShortcut>{getShortcutDisplay("fit-view")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarCheckboxItem
-                    checked={showGrid}
-                    onCheckedChange={handleToggleGrid}
-                  >
+                  <MenubarCheckboxItem checked={showGrid} onCheckedChange={setShowGrid}>
                     Show Grid
-                    <MenubarShortcut>{getShortcutDisplay("toggle-grid")}</MenubarShortcut>
                   </MenubarCheckboxItem>
-                  <MenubarCheckboxItem
-                    checked={showMinimap}
-                    onCheckedChange={handleToggleMinimap}
-                  >
+                  <MenubarCheckboxItem checked={showMinimap} onCheckedChange={setShowMinimap}>
                     Show Minimap
-                    <MenubarShortcut>{getShortcutDisplay("toggle-minimap")}</MenubarShortcut>
                   </MenubarCheckboxItem>
                   <MenubarSeparator />
                   <MenubarSub>
                     <MenubarSubTrigger>Theme</MenubarSubTrigger>
                     <MenubarSubContent>
-                      <MenubarSub>
-                        <MenubarSubTrigger>Boring</MenubarSubTrigger>
-                        <MenubarSubContent>
-                          <MenubarItem onClick={() => setTheme('light')}>
-                            Light
-                            {theme === 'light' && <Check className="h-4 w-4 ml-auto" />}
-                          </MenubarItem>
-                          <MenubarItem onClick={() => setTheme('dark')}>
-                            Dark
-                            {theme === 'dark' && <Check className="h-4 w-4 ml-auto" />}
-                          </MenubarItem>
-                        </MenubarSubContent>
-                      </MenubarSub>
-                      <MenubarSub>
-                        <MenubarSubTrigger>Less Boring</MenubarSubTrigger>
-                        <MenubarSubContent>
-                          <MenubarItem onClick={() => setTheme('tokyo-night-light')}>
-                            Light
-                            {theme === 'tokyo-night-light' && (
-                              <Check className="h-4 w-4 ml-auto" />
-                            )}
-                          </MenubarItem>
-                          <MenubarItem onClick={() => setTheme('tokyo-night-dark')}>
-                            Dark
-                            {theme === 'tokyo-night-dark' && (
-                              <Check className="h-4 w-4 ml-auto" />
-                            )}
-                          </MenubarItem>
-                        </MenubarSubContent>
-                      </MenubarSub>
+                      <MenubarItem onClick={() => setTheme("light")}>
+                        Light
+                        {theme === "light" && <Check className="ml-auto h-4 w-4" />}
+                      </MenubarItem>
+                      <MenubarItem onClick={() => setTheme("dark")}>
+                        Dark
+                        {theme === "dark" && <Check className="ml-auto h-4 w-4" />}
+                      </MenubarItem>
+                      <MenubarItem onClick={() => setTheme("system")}>
+                        System
+                        {theme === "system" && <Check className="ml-auto h-4 w-4" />}
+                      </MenubarItem>
                     </MenubarSubContent>
                   </MenubarSub>
                 </MenubarContent>
               </MenubarMenu>
 
+              {/* Settings Menu */}
               <MenubarMenu>
-                <MenubarTrigger>Help</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem
-                    onClick={() => setHelpDialogOpen(true)}
-                    data-help-dialog-trigger
-                  >
-                    Documentation
-                    <MenubarShortcut>{getShortcutDisplay("help")}</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem
-                    onClick={() => {
-                      setHelpDialogOpen(true);
-                      setTimeout(() => {
-                        const shortcutsTab = document.querySelector(
-                          '[data-tab="shortcuts"]'
-                        ) as HTMLElement;
-                        if (shortcutsTab) shortcutsTab.click();
-                      }, 100);
-                    }}
-                  >
-                    Keyboard Shortcuts
-                    <MenubarShortcut>
-                      {getShortcutDisplay("keyboard-shortcuts")}
-                    </MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem onClick={() => setAboutDialogOpen(true)}>
-                    About IFCflow
-                  </MenubarItem>
-                </MenubarContent>
+                <MenubarTrigger className="cursor-pointer" onClick={() => setSettingsDialogOpen(true)}>
+                  Settings
+                </MenubarTrigger>
               </MenubarMenu>
 
+              {/* Help Menu */}
               <MenubarMenu>
-                <MenubarTrigger>Presets</MenubarTrigger>
+                <MenubarTrigger className="cursor-pointer">Help</MenubarTrigger>
                 <MenubarContent>
-                  <MenubarItem onClick={() => setWorkflowLibraryOpen(true)}>
-                    Workflow Library
+                  <MenubarItem onClick={() => setHelpDialogOpen(true)}>
+                    Keyboard Shortcuts
                   </MenubarItem>
-                  <MenubarItem onClick={() => setSaveWorkflowDialogOpen(true)}>
-                    Save as Preset
+                  <MenubarItem onClick={() => setAboutDialogOpen(true)}>
+                    About IFCflow
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
@@ -426,134 +251,92 @@ export function AppHeader() {
           </div>
 
           {/* Run Button */}
-          <div className="flex items-center gap-2">
-            {currentWorkflow && (
-              <div className="text-sm font-medium text-muted-foreground">
-                {currentWorkflow.name}
-              </div>
+          <Button
+            onClick={handleRunWorkflow}
+            disabled={isRunning}
+            variant="default"
+            size="sm"
+            className="gap-2"
+          >
+            {isRunning ? (
+              <>
+                <Pause className="h-4 w-4" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Run Workflow
+              </>
             )}
+          </Button>
+        </div>
+      ) : (
+        /* Mobile Header */
+        <div className="border-b bg-card flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo-ifcflow.svg"
+              alt="IFCflow Logo"
+              width={20}
+              height={20}
+              className="dark:invert"
+            />
+            <span className="text-sm font-semibold">IFCflow</span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <Button
-              variant={isRunning ? "destructive" : "default"}
-              size="sm"
-              className="gap-1.5"
               onClick={handleRunWorkflow}
-              data-testid="run-workflow-button"
+              disabled={isRunning}
+              variant="default"
+              size="sm"
+              className="gap-1"
             >
-              {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isRunning ? "Stop" : "Run"}
+              {isRunning ? (
+                <>
+                  <Pause className="h-3 w-3" />
+                  <span className="text-xs">Running</span>
+                </>
+              ) : (
+                <>
+                  <Play className="h-3 w-3" />
+                  <span className="text-xs">Run</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Header */}
-      <div className="flex md:hidden items-center justify-between border-b p-2 bg-card">
-        <div className="flex items-center gap-2">
-          <img 
-            src="/workflow.svg" 
-            alt="IFCflow" 
-            width={20} 
-            height={20}
-          />
-          {currentWorkflow && (
-            <span className="text-sm font-medium truncate max-w-[150px]">
-              {currentWorkflow.name}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={isRunning ? "destructive" : "default"}
-            size="icon"
-            onClick={handleRunWorkflow}
-          >
-            {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            <span className="sr-only">Run</span>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)}>
-            <MoreVertical className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="top" className="p-2 pt-4">
-          <Menubar className="border-none flex-col md:flex-row">
-            <MenubarMenu>
-              <MenubarTrigger>File</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={() => {
-                  setOpenFileDialogOpen(true);
-                  setMobileMenuOpen(false);
-                }}>
-                  Open IFC File
-                </MenubarItem>
-                <MenubarItem onClick={() => {
-                  setSaveWorkflowDialogOpen(true);
-                  setMobileMenuOpen(false);
-                }}>
-                  Save Workflow
-                </MenubarItem>
-                <MenubarItem onClick={() => {
-                  setWorkflowLibraryOpen(true);
-                  setMobileMenuOpen(false);
-                }}>
-                  Workflow Library
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-
-            <MenubarMenu>
-              <MenubarTrigger>Edit</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={handleUndo} disabled={!canUndo}>Undo</MenubarItem>
-                <MenubarItem onClick={handleRedo} disabled={!canRedo}>Redo</MenubarItem>
-                <MenubarSeparator />
-                <MenubarItem onClick={onCut}>Cut</MenubarItem>
-                <MenubarItem onClick={onCopy}>Copy</MenubarItem>
-                <MenubarItem onClick={onPaste}>Paste</MenubarItem>
-                <MenubarSeparator />
-                <MenubarItem onClick={onSelectAll}>Select All</MenubarItem>
-                <MenubarItem onClick={onDelete}>Delete</MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-
-            <MenubarMenu>
-              <MenubarTrigger>View</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={handleZoomIn}>Zoom In</MenubarItem>
-                <MenubarItem onClick={handleZoomOut}>Zoom Out</MenubarItem>
-                <MenubarItem onClick={handleFitView}>Fit View</MenubarItem>
-                <MenubarSeparator />
-                <MenubarCheckboxItem checked={showGrid} onCheckedChange={handleToggleGrid}>
-                  Show Grid
-                </MenubarCheckboxItem>
-                <MenubarCheckboxItem checked={showMinimap} onCheckedChange={handleToggleMinimap}>
-                  Show Minimap
-                </MenubarCheckboxItem>
-              </MenubarContent>
-            </MenubarMenu>
-
-            <MenubarMenu>
-              <MenubarTrigger>Help</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={() => {
-                  setHelpDialogOpen(true);
-                  setMobileMenuOpen(false);
-                }}>
-                  Documentation
-                </MenubarItem>
-                <MenubarItem onClick={() => {
-                  setAboutDialogOpen(true);
-                  setMobileMenuOpen(false);
-                }}>
-                  About
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-          </Menubar>
+        <SheetContent side="right" className="w-[80vw]">
+          <div className="flex flex-col gap-4 py-4">
+            <Button onClick={() => { setOpenFileDialogOpen(true); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start">
+              Open IFC File
+            </Button>
+            <Button onClick={() => { setSaveWorkflowDialogOpen(true); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start">
+              Save Workflow
+            </Button>
+            <Button onClick={() => { setWorkflowLibraryOpen(true); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start">
+              Workflow Library
+            </Button>
+            <Button onClick={() => { setSettingsDialogOpen(true); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start">
+              Settings
+            </Button>
+            <Button onClick={() => { setHelpDialogOpen(true); setMobileMenuOpen(false); }} variant="outline" className="w-full justify-start">
+              Help
+            </Button>
+          </div>
         </SheetContent>
       </Sheet>
 
@@ -567,10 +350,7 @@ export function AppHeader() {
       <SaveWorkflowDialog
         open={saveWorkflowDialogOpen}
         onOpenChange={setSaveWorkflowDialogOpen}
-        onSave={handleSaveToLibrary}
-        onSaveLocally={handleSaveLocally}
-        flowData={cleanWorkflowData(getFlowObject())}
-        existingWorkflow={currentWorkflow}
+        onSave={onSaveWorkflow}
       />
 
       <WorkflowLibrary
@@ -590,4 +370,3 @@ export function AppHeader() {
     </>
   );
 }
-
