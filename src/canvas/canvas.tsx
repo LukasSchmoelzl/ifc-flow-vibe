@@ -1,6 +1,7 @@
 "use client";
 
 import "reactflow/dist/style.css";
+import { ReactFlowProvider } from "reactflow";
 
 import { AppHeader } from "@/src/ui/header/app-header";
 import { NodesToolbar } from "@/src/ui/toolbar/nodes-toolbar";
@@ -9,15 +10,13 @@ import { ChatInput } from "@/src/ui/components/chat";
 import { PropertiesDialog } from "@/src/ui/dialogs/properties-dialog";
 import { Toaster } from "@/src/ui/components/toaster";
 
-import { CanvasProvider, useCanvas } from "@/src/canvas/canvas-context";
+import { useCanvasStore } from "@/src/canvas/store";
 
 function CanvasContent() {
-  const {
-    editingNode,
-    setEditingNode,
-    setNodes,
-    reactFlowWrapper,
-  } = useCanvas();
+  const editingNode = useCanvasStore((state) => state.editingNode);
+  const setEditingNode = useCanvasStore((state) => state.setEditingNode);
+  const setNodes = useCanvasStore((state) => state.setNodes);
+  const reactFlowWrapper = useCanvasStore((state) => state.reactFlowWrapper);
 
   return (
     <div className="flex flex-col h-screen w-full bg-background">
@@ -29,7 +28,7 @@ function CanvasContent() {
       <NodesToolbar />
 
       {/* ========== MAIN CONTENT ========== */}
-      <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper}>
+      <div className="flex-1 flex overflow-hidden relative" ref={reactFlowWrapper as any}>
         
         {/* Canvas + Viewer */}
         <FlowCanvas />
@@ -58,12 +57,11 @@ function CanvasContent() {
   );
 }
 
-// Main Canvas Component with Provider
+// Main Canvas Component with ReactFlowProvider
 export function Canvas() {
   return (
-    <CanvasProvider>
+    <ReactFlowProvider>
       <CanvasContent />
-    </CanvasProvider>
+    </ReactFlowProvider>
   );
 }
-
