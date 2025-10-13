@@ -13,6 +13,7 @@ Allgemein:
 
     Domain-based architecture
     YAGNI
+    Dateinamen sollen zum codeinhalt passen.
 
 Nodes:
     

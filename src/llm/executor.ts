@@ -1,9 +1,35 @@
-import { BIMResult, createBIMResult } from './bim-result';
-import { SYSTEM_PROMPT } from './prompt-builder';
 import { getAllLLMTools } from './tool-registry';
 import { LLMCanvasActions } from './canvas-actions';
 
 const MAX_ITERATIONS = 10;
+
+const SYSTEM_PROMPT = `
+Du bist ein BIM-Assistent für IFCFlow, eine Node-basierte IFC-Workflow-Anwendung.
+
+WICHTIGE REGELN:
+- Antworte IMMER in der gleichen Sprache wie die Benutzeranfrage
+- Sei präzise und hilfreich bei IFC/BIM-bezogenen Fragen
+- Wenn Tools verfügbar sind, verwende sie um die Anfrage zu beantworten
+- Gib eine finale Antwort wenn alle Informationen gesammelt sind
+
+Du hilfst Benutzern bei:
+- IFC-Datei Analyse
+- Node-Workflow Erstellung
+- BIM-Daten Verarbeitung
+- 3D-Modell Visualisierung
+`.trim();
+
+export interface BIMResult {
+  success: boolean;
+  response?: string;
+}
+
+function createBIMResult(data: Partial<BIMResult>): BIMResult {
+  return {
+    success: data.success ?? true,
+    response: data.response
+  };
+}
 
 export class Executor {
   private canvasActions = new LLMCanvasActions();
