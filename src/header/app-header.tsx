@@ -23,7 +23,7 @@ import { SaveWorkflowDialog } from "@/src/header/dialogs/save-workflow-dialog";
 import { SettingsDialog } from "@/src/header/dialogs/settings-dialog";
 import { HelpDialog } from "@/src/header/help/help-dialog";
 import { AboutDialog } from "@/src/header/dialogs/about-dialog";
-import { WorkflowLibrary } from "@/src/shared/components/workflow-library";
+import { WorkflowLibrary } from "@/src/canvas/workflow-library";
 import { useToast } from "@/src/shared/hooks/use-toast";
 import { useIsMobile } from "@/src/shared/hooks/use-mobile";
 import type { Workflow } from "@/src/canvas/storage";
