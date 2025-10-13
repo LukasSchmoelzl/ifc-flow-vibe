@@ -3,7 +3,7 @@
 import type { Node, Edge } from "reactflow";
 import { useCanvasStore } from "./store";
 import { WorkflowExecutor } from "../workflow/executor";
-import { createIfcNodeFromFile } from "../nodes/node-registry";
+import { createIfcNodeFromFile, generateNodeId } from "../nodes/auto-registry";
 import type { Workflow } from "../workflow/storage";
 import { WorkflowStorage } from "../workflow/storage";
 
@@ -201,7 +201,7 @@ export const nodeActions = {
 
     const idMap: Record<string, string> = {};
     const newNodes = clipboard.nodes.map(node => {
-      const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newId = generateNodeId();
       idMap[node.id] = newId;
 
       return {
@@ -217,7 +217,7 @@ export const nodeActions = {
 
     const newEdges = clipboard.edges.map(edge => ({
       ...edge,
-      id: `e-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      id: `e-${generateNodeId()}`,
       source: idMap[edge.source],
       target: idMap[edge.target],
     }));

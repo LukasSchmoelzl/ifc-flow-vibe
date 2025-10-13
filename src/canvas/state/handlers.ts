@@ -3,7 +3,7 @@
 import type { Node, Edge, Connection, ReactFlowInstance, NodeChange, EdgeChange } from "reactflow";
 import { applyNodeChanges, applyEdgeChanges } from "reactflow";
 import { useCanvasStore } from "./store";
-import { getNodeLabel } from "../nodes/node-registry";
+import { createNode, getNodeLabel } from "../nodes/auto-registry";
 
 // Flow event handlers
 export const flowHandlers = {
@@ -52,13 +52,7 @@ export const flowHandlers = {
       y: event.clientY - reactFlowBounds.top,
     });
 
-    const newNode: Node = {
-      id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: nodeType,
-      position,
-      data: { label: getNodeLabel(nodeType) },
-    };
-
+    const newNode = createNode(nodeType, position);
     const updatedNodes = [...nodes, newNode];
     setNodes(updatedNodes);
     addToHistory(updatedNodes, edges);
@@ -103,13 +97,7 @@ export const flowHandlers = {
         y: event.clientY - reactFlowBounds.top,
       });
 
-      const newNode: Node = {
-        id: `${selectedNodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        type: selectedNodeType,
-        position,
-        data: { label: getNodeLabel(selectedNodeType) },
-      };
-
+      const newNode = createNode(selectedNodeType, position);
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
       addToHistory(updatedNodes, edges);

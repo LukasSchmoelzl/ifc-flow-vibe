@@ -114,7 +114,7 @@ export class WorkflowStorage {
       import('react'),
       import('react-dom/client'),
       import('reactflow'),
-      import('@/src/canvas/nodes/nodes'),
+      import('@/src/canvas/nodes/auto-registry'),
     ]);
 
     const nodeTypes = (nodesModule as any).nodeTypes || undefined;

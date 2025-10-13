@@ -37,7 +37,7 @@ export const NODE_PROCESSORS: Record<string, NodeProcessor> = Object.entries(NOD
 );
 
 // Generate unique node ID
-const generateNodeId = (): string => {
+export const generateNodeId = (): string => {
   return `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 

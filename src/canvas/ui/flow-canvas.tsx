@@ -12,13 +12,13 @@ import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
 import { FooterPill } from "./overlays/footer-pill";
 import { FileDropOverlay } from "./overlays/file-drop";
 import { MobilePlacementOverlay } from "./overlays/mobile-placement";
-import { getNodeLabel } from "../nodes/node-registry";
+import { getNodeLabel } from "../nodes/auto-registry";
 import { useCanvasStore } from "../state/store";
 import { useIsMobile } from "@/src/shared/hooks/use-mobile";
 import { flowHandlers } from "../state/handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
-import { nodeTypes } from "../nodes/nodes";
+import { nodeTypes } from "../nodes/auto-registry";
 const EDGE_TYPES = {} as const;
 const SNAP_GRID: [number, number] = [15, 15];
 const PRO_OPTIONS = { hideAttribution: true };

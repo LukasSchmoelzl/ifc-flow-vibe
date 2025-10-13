@@ -208,9 +208,3 @@ export const useCanvasStore = create<CanvasStore>()(
   )
 );
 
-// Selectors for better performance
-export const selectNodes = (state: CanvasStore) => state.nodes;
-export const selectEdges = (state: CanvasStore) => state.edges;
-export const selectIsRunning = (state: CanvasStore) => state.isRunning;
-export const selectCurrentWorkflow = (state: CanvasStore) => state.currentWorkflow;
-

@@ -47,9 +47,6 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
         components.init();
         world.scene.setup();
 
-        const grids = components.get(OBC.Grids);
-        const grid = grids.create(world);
-
         stats = new Stats();
         stats.showPanel(2);
         stats.dom.style.position = "absolute";
