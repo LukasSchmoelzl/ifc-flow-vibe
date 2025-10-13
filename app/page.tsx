@@ -7,7 +7,7 @@ import { ReactFlowProvider } from "reactflow";
 import { AppHeader } from "@/src/header/menu/app-header";
 import { NodesToolbar } from "@/src/header/toolbar/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/ui/flow-canvas";
-import { ChatInput } from "@/src/llm/ui/chat";
+import { ChatInput } from "@/src/llm/chat-input";
 // Canvas State
 import { useCanvasStore } from "@/src/canvas/state/store";
 

@@ -1,5 +1,3 @@
-// AI Hook - Simplified for IFCFlow
-
 import { useRef, useCallback, useState } from 'react';
 import { Executor, BIMResult } from '@/src/llm';
 
