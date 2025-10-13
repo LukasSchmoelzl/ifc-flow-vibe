@@ -1,8 +1,8 @@
 import { useRef, useCallback, useState } from 'react';
-import { Executor, BIMResult } from '@/src/llm';
+import { Executor, ExecutionResult } from '@/src/llm';
 
 interface UseAIProps {
-  onResult: (result: BIMResult) => void;
+  onResult: (result: ExecutionResult) => void;
   onError: (error: string) => void;
 }
 

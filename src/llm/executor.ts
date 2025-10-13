@@ -19,16 +19,9 @@ Du hilfst Benutzern bei:
 - 3D-Modell Visualisierung
 `.trim();
 
-export interface BIMResult {
+export interface ExecutionResult {
   success: boolean;
   response?: string;
-}
-
-function createBIMResult(data: Partial<BIMResult>): BIMResult {
-  return {
-    success: data.success ?? true,
-    response: data.response
-  };
 }
 
 export class Executor {
@@ -37,14 +30,14 @@ export class Executor {
   async processUserMessage(
     userMessage: string, 
     chatHistory?: Array<{role: 'user' | 'assistant', content: string}>
-  ): Promise<BIMResult> {
+  ): Promise<ExecutionResult> {
     return this.runToolChain(userMessage, chatHistory || []);
   }
 
   private async runToolChain(
     userMessage: string, 
     chatHistory: Array<{role: 'user' | 'assistant', content: string}>
-  ): Promise<BIMResult> {
+  ): Promise<ExecutionResult> {
     const messages: Array<{role: 'user' | 'assistant', content: any}> = [];
     this.canvasActions.reset();
     
@@ -67,7 +60,7 @@ export class Executor {
           const textContent = response.content.find((c: any) => c.type === 'text');
           if (textContent) {
             console.log(`✅ Final answer after ${iteration} iterations`);
-            return createBIMResult({ response: textContent.text, success: true });
+            return { success: true, response: textContent.text };
           }
           break;
         }
@@ -112,17 +105,17 @@ export class Executor {
         break;
       }
 
-      return createBIMResult({ 
-        response: 'Die Verarbeitung wurde nach maximalen Iterationen beendet.', 
-        success: false 
-      });
+      return { 
+        success: false,
+        response: 'Die Verarbeitung wurde nach maximalen Iterationen beendet.'
+      };
       
     } catch (error) {
       console.error('❌ Execution failed:', error);
-      return createBIMResult({ 
-        response: 'Es gab einen Fehler bei der Verarbeitung Ihrer Anfrage.', 
-        success: false 
-      });
+      return { 
+        success: false,
+        response: 'Es gab einen Fehler bei der Verarbeitung Ihrer Anfrage.'
+      };
     }
   }
 
