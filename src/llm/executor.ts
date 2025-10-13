@@ -1,5 +1,5 @@
 import { BIMResult, createBIMResult } from './bim-result';
-import { PromptBuilder } from './prompt-builder';
+import { SYSTEM_PROMPT } from './prompt-builder';
 import { getAllLLMTools } from './tool-registry';
 import { LLMCanvasActions } from './canvas-actions';
 
@@ -35,14 +35,13 @@ export class Executor {
       while (iteration < MAX_ITERATIONS) {
         iteration++;
         
-        const systemPrompt = PromptBuilder.createSystemPrompt();
-        const response = await this.sendRequestToClaude(messages, tools, systemPrompt);
+        const response = await this.sendRequestToClaude(messages, tools, SYSTEM_PROMPT);
         
         if (response.stop_reason === 'end_turn') {
           const textContent = response.content.find((c: any) => c.type === 'text');
           if (textContent) {
             console.log(`✅ Final answer after ${iteration} iterations`);
-            return this.buildSuccessResponse(textContent.text);
+            return createBIMResult({ response: textContent.text, success: true });
           }
           break;
         }
@@ -87,11 +86,17 @@ export class Executor {
         break;
       }
 
-      return this.buildMaxIterationsResponse();
+      return createBIMResult({ 
+        response: 'Die Verarbeitung wurde nach maximalen Iterationen beendet.', 
+        success: false 
+      });
       
     } catch (error) {
       console.error('❌ Execution failed:', error);
-      return this.buildErrorResponse();
+      return createBIMResult({ 
+        response: 'Es gab einen Fehler bei der Verarbeitung Ihrer Anfrage.', 
+        success: false 
+      });
     }
   }
 
@@ -115,27 +120,6 @@ export class Executor {
     }
 
     return await response.json();
-  }
-
-  private buildSuccessResponse(response: string): BIMResult {
-    return createBIMResult({
-      response,
-      success: true
-    });
-  }
-
-  private buildErrorResponse(): BIMResult {
-    return createBIMResult({
-      response: 'Es gab einen Fehler bei der Verarbeitung Ihrer Anfrage.',
-      success: false
-    });
-  }
-
-  private buildMaxIterationsResponse(): BIMResult {
-    return createBIMResult({
-      response: 'Die Verarbeitung wurde nach maximalen Iterationen beendet.',
-      success: false
-    });
   }
 }
 

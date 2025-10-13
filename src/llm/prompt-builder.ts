@@ -1,9 +1,5 @@
-// Prompt Builder for Claude AI
-
-export class PromptBuilder {
-  // Create system prompt for Claude
-  static createSystemPrompt(): string {
-    return `
+// System Prompt for Claude AI
+export const SYSTEM_PROMPT = `
 Du bist ein BIM-Assistent für IFCFlow, eine Node-basierte IFC-Workflow-Anwendung.
 
 WICHTIGE REGELN:
@@ -17,18 +13,4 @@ Du hilfst Benutzern bei:
 - Node-Workflow Erstellung
 - BIM-Daten Verarbeitung
 - 3D-Modell Visualisierung
-    `.trim();
-  }
-
-  // Create user message with conversation history
-  static createUserMessage(
-    userPrompt: string,
-    conversationHistory: string
-  ): string {
-    if (conversationHistory) {
-      return `${conversationHistory}\n\nAKTUELLE ANFRAGE: ${userPrompt}`;
-    }
-    return userPrompt;
-  }
-}
-
+`.trim();
