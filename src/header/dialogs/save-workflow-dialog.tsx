@@ -10,12 +10,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/src/shared/components/ui/dialog";
-import { Input } from "@/src/shared/components/ui/input";
-import { Button } from "@/src/shared/components/ui/button";
-import { Textarea } from "@/src/shared/components/ui/textarea";
-import { Label } from "@/src/shared/components/ui/label";
-import { Badge } from "@/src/shared/components/ui/badge";
+} from "@/src/shared/ui/dialog";
+import { Input } from "@/src/shared/ui/input";
+import { Button } from "@/src/shared/ui/button";
+import { Textarea } from "@/src/shared/ui/textarea";
+import { Label } from "@/src/shared/ui/label";
+import { Badge } from "@/src/shared/ui/badge";
 import {
   X,
   Plus,
@@ -31,10 +31,10 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/src/shared/components/ui/tooltip";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/components/ui/tabs";
-import { Alert, AlertDescription } from "@/src/shared/components/ui/alert";
-import { RadioGroup, RadioGroupItem } from "@/src/shared/components/ui/radio-group";
+} from "@/src/shared/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/ui/tabs";
+import { Alert, AlertDescription } from "@/src/shared/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/src/shared/ui/radio-group";
 
 interface SaveWorkflowDialogProps {
   open: boolean;

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { Toaster } from "@/src/shared/components/ui/toaster"
-import { ThemeProvider } from "@/src/shared/components/theme-provider"
+import { Toaster } from "@/src/shared/ui/toaster"
+import { ThemeProvider } from "@/src/shared/theme-provider"
 
 export const metadata: Metadata = {
   title: 'IFCflow',

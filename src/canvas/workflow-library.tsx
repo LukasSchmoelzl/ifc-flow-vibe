@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/src/shared/components/ui/dialog";
+} from "@/src/shared/ui/dialog";
 import {
   Card,
   CardContent,
@@ -17,13 +17,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/src/shared/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/components/ui/tabs";
-import { Input } from "@/src/shared/components/ui/input";
-import { Button } from "@/src/shared/components/ui/button";
-import { Badge } from "@/src/shared/components/ui/badge";
-import { Separator } from "@/src/shared/components/ui/separator";
-import { ScrollArea } from "@/src/shared/components/ui/scroll-area";
+} from "@/src/shared/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/ui/tabs";
+import { Input } from "@/src/shared/ui/input";
+import { Button } from "@/src/shared/ui/button";
+import { Badge } from "@/src/shared/ui/badge";
+import { Separator } from "@/src/shared/ui/separator";
+import { ScrollArea } from "@/src/shared/ui/scroll-area";
 import {
   Tag,
   SearchIcon,
@@ -37,9 +37,9 @@ import {
   Check,
 } from "lucide-react";
 import { type Workflow, workflowStorage } from "./storage";
-import { useToast } from "@/src/shared/components/ui/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/src/shared/components/ui/alert";
-import { AspectRatio } from "@/src/shared/components/ui/aspect-ratio";
+import { useToast } from "@/src/shared/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/src/shared/ui/alert";
+import { AspectRatio } from "@/src/shared/ui/aspect-ratio";
 
 interface WorkflowLibraryProps {
   open: boolean;

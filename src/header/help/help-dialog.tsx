@@ -8,14 +8,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/src/shared/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/components/ui/tabs";
-import { Button } from "@/src/shared/components/ui/button";
+} from "@/src/shared/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/ui/tabs";
+import { Button } from "@/src/shared/ui/button";
 import {
   formatKeyCombination,
   useKeyboardShortcuts,
-} from "@/src/shared/lib/keyboard-shortcuts";
-import { parseTutorialStep } from "@/src/shared/lib/utils";
+} from "@/src/shared/keyboard-shortcuts";
+import { parseTutorialStep } from "@/src/shared/utils";
 import {
   Table,
   TableBody,
@@ -23,8 +23,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/src/shared/components/ui/table";
-import { ScrollArea } from "@/src/shared/components/ui/scroll-area";
+} from "@/src/shared/ui/table";
+import { ScrollArea } from "@/src/shared/ui/scroll-area";
 import {
   AlertCircle,
   Info,
@@ -38,14 +38,14 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-import { Input } from "@/src/shared/components/ui/input";
-import { Badge } from "@/src/shared/components/ui/badge";
+import { Input } from "@/src/shared/ui/input";
+import { Badge } from "@/src/shared/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/src/shared/components/ui/accordion";
+} from "@/src/shared/ui/accordion";
 import { nodeCategories } from "./node-documentation";
 import { tutorialSteps } from "./tutorial-steps";
 

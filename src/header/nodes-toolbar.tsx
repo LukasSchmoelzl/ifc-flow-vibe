@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ScrollArea } from "@/src/shared/components/ui/scroll-area";
-import { Button } from "@/src/shared/components/ui/button";
+import { ScrollArea } from "@/src/shared/ui/scroll-area";
+import { Button } from "@/src/shared/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/shared/components/ui/popover";
+} from "@/src/shared/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/src/shared/components/ui/tooltip";
+} from "@/src/shared/ui/tooltip";
 import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, GitBranch, BarChart, Download, Clock, Terminal, Shuffle, Database, Layers } from "lucide-react";
 import { getAllNodes } from "@/src/canvas/nodes/auto-registry";
 import { NodeStatusBadge } from "@/src/canvas/nodes/node-status-badge";

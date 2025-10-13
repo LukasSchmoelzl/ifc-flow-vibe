@@ -15,8 +15,8 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
   MenubarCheckboxItem,
-} from "@/src/shared/components/ui/menubar";
-import { Button } from "@/src/shared/components/ui/button";
+} from "@/src/shared/ui/menubar";
+import { Button } from "@/src/shared/ui/button";
 import { Play, Pause, Check, Menu, MoreVertical } from "lucide-react";
 import { OpenFileDialog } from "@/src/header/dialogs/open-file-dialog";
 import { SaveWorkflowDialog } from "@/src/header/dialogs/save-workflow-dialog";
@@ -24,15 +24,15 @@ import { SettingsDialog } from "@/src/header/dialogs/settings-dialog";
 import { HelpDialog } from "@/src/header/help/help-dialog";
 import { AboutDialog } from "@/src/header/dialogs/about-dialog";
 import { WorkflowLibrary } from "@/src/canvas/workflow-library";
-import { useToast } from "@/src/shared/hooks/use-toast";
+import { useToast } from "@/src/shared/use-toast";
 import { useUIStore } from "@/src/shared/ui-store";
 import type { Workflow } from "@/src/canvas/storage";
 import { cleanWorkflowData } from "@/src/canvas/storage";
 import {
   formatKeyCombination,
   useKeyboardShortcuts,
-} from "@/src/shared/lib/keyboard-shortcuts";
-import { Sheet, SheetContent } from "@/src/shared/components/ui/sheet";
+} from "@/src/shared/keyboard-shortcuts";
+import { Sheet, SheetContent } from "@/src/shared/ui/sheet";
 import { useCanvasStore } from "@/src/canvas/store";
 import { workflowActions, nodeActions } from "@/src/canvas/actions";
 

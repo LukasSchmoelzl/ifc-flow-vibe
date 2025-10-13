@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
-import { Button } from '@/src/shared/components/ui/button';
+import { Button } from '@/src/shared/ui/button';
 import { useAI } from '@/src/llm/use-ai';
 
 const PLACEHOLDER_TEXT = 'Frage nach BIM Daten, Eigenschaften oder lade ein Model hoch...';

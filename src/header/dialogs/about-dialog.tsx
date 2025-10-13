@@ -7,16 +7,16 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/src/shared/components/ui/dialog";
+} from "@/src/shared/ui/dialog";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/src/shared/components/ui/card";
-import { Badge } from "@/src/shared/components/ui/badge";
-import { Button } from "@/src/shared/components/ui/button";
+} from "@/src/shared/ui/card";
+import { Badge } from "@/src/shared/ui/badge";
+import { Button } from "@/src/shared/ui/button";
 import { Building, ChevronRight, Github, Info, Link } from "lucide-react";
 
 interface AboutDialogProps {

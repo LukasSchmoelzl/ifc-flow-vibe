@@ -8,10 +8,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/src/shared/components/ui/dialog"
-import { Button } from "@/src/shared/components/ui/button"
-import { Input } from "@/src/shared/components/ui/input"
-import { Label } from "@/src/shared/components/ui/label"
+} from "@/src/shared/ui/dialog"
+import { Button } from "@/src/shared/ui/button"
+import { Input } from "@/src/shared/ui/input"
+import { Label } from "@/src/shared/ui/label"
 import { FileUp } from "lucide-react"
 
 interface OpenFileDialogProps {
