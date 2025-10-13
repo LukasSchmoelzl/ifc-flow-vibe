@@ -7,17 +7,29 @@ import type { NodeMetadata, NodeStatus } from "./node-metadata";
 import { TemplateNode } from "./nodes/template-node";
 import { InfoNode } from "./nodes/info-node";
 import { FileManagerNode } from "./nodes/file-manager-node";
+import { SearchNode } from "./nodes/search-node";
+import { ProjectInfoNode } from "./nodes/project-info-node";
+import { UserSelectionNode } from "./nodes/user-selection-node";
+import { AIVisibilityNode } from "./nodes/ai-visibility-node";
 
 // Import all node metadata
 import { templateNodeMetadata } from "./nodes/template-node/metadata";
 import { infoNodeMetadata } from "./nodes/info-node/metadata";
 import { fileManagerNodeMetadata } from "./nodes/file-manager-node/metadata";
+import { searchNodeMetadata } from "./nodes/search-node/metadata";
+import { projectInfoNodeMetadata } from "./nodes/project-info-node/metadata";
+import { userSelectionNodeMetadata } from "./nodes/user-selection-node/metadata";
+import { aiVisibilityNodeMetadata } from "./nodes/ai-visibility-node/metadata";
 
 // Registry of all nodes with their metadata
 const NODE_METADATA_MAP: Record<string, NodeMetadata> = {
   templateNode: templateNodeMetadata,
   infoNode: infoNodeMetadata,
   fileManagerNode: fileManagerNodeMetadata,
+  searchNode: searchNodeMetadata,
+  projectInfoNode: projectInfoNodeMetadata,
+  userSelectionNode: userSelectionNodeMetadata,
+  aiVisibilityNode: aiVisibilityNodeMetadata,
 };
 
 // React Flow node types (for rendering)
@@ -25,6 +37,10 @@ export const nodeTypes: NodeTypes = {
   templateNode: TemplateNode,
   infoNode: InfoNode,
   fileManagerNode: FileManagerNode,
+  searchNode: SearchNode,
+  projectInfoNode: ProjectInfoNode,
+  userSelectionNode: UserSelectionNode,
+  aiVisibilityNode: AIVisibilityNode,
 } as const;
 
 // Node processors (for workflow execution)
