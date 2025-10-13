@@ -14,7 +14,7 @@ import { getNodeLabel } from "./nodes/auto-registry";
 import { useCanvasStore } from "./store";
 import { useUIStore } from "@/src/shared/ui-store";
 import { useSettingsStore } from "@/src/shared/settings-store";
-import { flowHandlers } from "./handlers";
+import * as eventHandlers from "./event-handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
 import { nodeTypes } from "./nodes/auto-registry";
@@ -51,21 +51,21 @@ export function FlowCanvas() {
     }
   }, [setReactFlowWrapper]);
   
-  // Flow handlers
-  const handleNodesChange = (changes: any) => flowHandlers.onNodesChange(changes);
-  const handleEdgesChange = (changes: any) => flowHandlers.onEdgesChange(changes);
-  const handleConnect = (connection: any) => flowHandlers.onConnect(connection);
+  // Event handlers
+  const handleNodesChange = (changes: any) => eventHandlers.onNodesChange(changes);
+  const handleEdgesChange = (changes: any) => eventHandlers.onEdgesChange(changes);
+  const handleConnect = (connection: any) => eventHandlers.onConnect(connection);
   const handleDrop = (event: React.DragEvent) => {
     if (wrapperRef.current) {
-      flowHandlers.onDrop(event, reactFlowInstance, wrapperRef.current);
+      eventHandlers.onDrop(event, reactFlowInstance, wrapperRef.current);
     }
   };
-  const handleDragOver = (event: React.DragEvent) => flowHandlers.onDragOver(event);
-  const handleNodeClick = (event: React.MouseEvent, node: any) => flowHandlers.onNodeClick(event, node);
-  const handleNodeDoubleClick = (event: React.MouseEvent, node: any) => flowHandlers.onNodeDoubleClick(event, node);
+  const handleDragOver = (event: React.DragEvent) => eventHandlers.onDragOver(event);
+  const handleNodeClick = (event: React.MouseEvent, node: any) => eventHandlers.onNodeClick(event, node);
+  const handleNodeDoubleClick = (event: React.MouseEvent, node: any) => eventHandlers.onNodeDoubleClick(event, node);
   const handlePaneClick = (event: React.MouseEvent) => {
     if (wrapperRef.current) {
-      flowHandlers.onPaneClick(event, reactFlowInstance, wrapperRef.current);
+      eventHandlers.onPaneClick(event, reactFlowInstance, wrapperRef.current);
     }
   };
 

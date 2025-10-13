@@ -33,9 +33,10 @@ import {
   useKeyboardShortcuts,
 } from "@/src/shared/keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/src/shared/ui/sheet";
-import { useCanvasStore } from "@/src/canvas/store";
+import { useCanvasStore, getFlowObject } from "@/src/canvas/store";
 import { useSettingsStore } from "@/src/shared/settings-store";
-import { workflowActions, nodeActions } from "@/src/canvas/actions";
+import * as workflowOps from "@/src/canvas/workflow-operations";
+import * as clipboardOps from "@/src/canvas/clipboard-operations";
 
 export function AppHeader() {
   // Zustand store - atomic selections
@@ -68,25 +69,108 @@ export function AppHeader() {
     return shortcuts.find((s) => s.id === id);
   };
 
-  // Action handlers using Zustand actions
-  const handleOpenFile = (file: File) => workflowActions.openFile(file, toast);
-  const handleSaveWorkflow = (name: string, flowData: any) => workflowActions.saveWorkflow(name, flowData, toast);
-  const handleLoadWorkflow = (workflow: Workflow) => workflowActions.loadWorkflow(workflow, setNodes, setEdges, toast);
-  const handleRunWorkflow = () => workflowActions.runWorkflow(toast, (nodeId, data) => {
-    // Update node data callback
-    setNodes((nodes: any) => nodes.map((n: any) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
-  });
-  
-  const handleSelectAll = () => nodeActions.selectAll(setNodes);
-  const handleCopy = () => nodeActions.copy(toast);
-  const handleCut = () => nodeActions.cut(setNodes, setEdges, toast);
-  const handlePaste = () => nodeActions.paste(setNodes, setEdges, toast);
-  const handleDelete = () => nodeActions.delete(setNodes, setEdges, toast);
-
-  const getFlowObject = () => {
-    if (!reactFlowInstance) return { nodes: [], edges: [] };
-    return reactFlowInstance.toObject();
+  // Action handlers with error handling
+  const handleOpenFile = async (file: File) => {
+    try {
+      await workflowOps.openFile(file, toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to open file",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleSaveWorkflow = async (name: string, flowData: any) => {
+    try {
+      await workflowOps.saveWorkflow(name, flowData, toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLoadWorkflow = (workflow: Workflow) => {
+    try {
+      workflowOps.loadWorkflow(workflow, toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to load workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRunWorkflow = async () => {
+    try {
+      await workflowOps.runWorkflow(toast, (nodeId, data) => {
+        setNodes((nodes: any) => nodes.map((n: any) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to execute workflow",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleSelectAll = () => clipboardOps.selectAll();
+  
+  const handleCopy = () => {
+    try {
+      clipboardOps.copy(toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to copy",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCut = () => {
+    try {
+      clipboardOps.cut(toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to cut",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePaste = () => {
+    try {
+      clipboardOps.paste(toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to paste",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    try {
+      clipboardOps.deleteNodes(toast);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getCurrentFlowObject = () => getFlowObject(reactFlowInstance);
 
   const onSaveWorkflow = (workflow: Workflow) => {
     handleSaveWorkflow(workflow.name, workflow.flowData);
@@ -352,7 +436,7 @@ export function AppHeader() {
         onOpenChange={setSaveWorkflowDialogOpen}
         onSave={onSaveWorkflow}
         onSaveLocally={onSaveWorkflow}
-        flowData={getFlowObject()}
+        flowData={getCurrentFlowObject()}
         existingWorkflow={currentWorkflow}
       />
 
@@ -373,3 +457,4 @@ export function AppHeader() {
     </>
   );
 }
+

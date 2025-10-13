@@ -192,3 +192,10 @@ export const useCanvasStore = create<CanvasStore>()(
   )
 );
 
+export function getFlowObject(reactFlowInstance: ReactFlowInstance | null): { nodes: Node[]; edges: Edge[] } {
+  if (!reactFlowInstance) {
+    const { nodes, edges } = useCanvasStore.getState();
+    return { nodes, edges };
+  }
+  return reactFlowInstance.toObject();
+}
