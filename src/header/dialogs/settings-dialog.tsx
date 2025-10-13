@@ -8,7 +8,7 @@ import { Label } from "@/src/shared/components/ui/label"
 import { Switch } from "@/src/shared/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/shared/components/ui/select"
 import { Slider } from "@/src/shared/components/ui/slider"
-import { useAppSettings } from "@/src/shared/lib/settings-manager"
+import { useSettingsStore } from "@/src/shared/settings-store"
 import { Monitor, Moon, Sun } from "lucide-react"
 
 interface SettingsDialogProps {
@@ -18,8 +18,11 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState("general")
-  const { settings, updateGeneralSettings, updateViewerSettings, updatePerformanceSettings, resetSettings } =
-    useAppSettings()
+  const settings = useSettingsStore(state => state.settings);
+  const updateGeneralSettings = useSettingsStore(state => state.updateGeneralSettings);
+  const updateViewerSettings = useSettingsStore(state => state.updateViewerSettings);
+  const updatePerformanceSettings = useSettingsStore(state => state.updatePerformanceSettings);
+  const resetSettings = useSettingsStore(state => state.resetSettings);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

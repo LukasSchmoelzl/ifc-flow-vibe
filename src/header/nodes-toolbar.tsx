@@ -17,7 +17,7 @@ import {
 import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, GitBranch, BarChart, Download, Clock, Terminal, Shuffle, Database, Layers } from "lucide-react";
 import { getAllNodes } from "@/src/canvas/nodes/auto-registry";
 import { NodeStatusBadge } from "@/src/canvas/nodes/node-status-badge";
-import { useIsMobile } from "@/src/shared/hooks/use-mobile";
+import { useUIStore } from "@/src/shared/ui-store";
 import { useCanvasStore } from "@/src/canvas/store";
 
 function getStatusTooltipContent(status: string): string | null {
@@ -34,7 +34,7 @@ function getStatusTooltipContent(status: string): string | null {
 }
 
 export function NodesToolbar() {
-  const isMobile = useIsMobile();
+  const isMobile = useUIStore(state => state.isMobile);
   
   // Canvas state from Zustand store
   const selectedNodeType = useCanvasStore(state => state.selectedNodeType);

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import "reactflow/dist/style.css";
 import { ReactFlowProvider } from "reactflow";
 
@@ -12,14 +13,21 @@ import { FileDropOverlay } from "@/src/overlays/file-drop";
 import { MobilePlacementOverlay } from "@/src/overlays/mobile-placement";
 // Canvas State
 import { useCanvasStore } from "@/src/canvas/store";
-import { useIsMobile } from "@/src/shared/hooks/use-mobile";
+import { useUIStore } from "@/src/shared/ui-store";
 import { getNodeLabel } from "@/src/canvas/nodes/auto-registry";
 
 function AppContent() {
-  const isMobile = useIsMobile();
+  const isMobile = useUIStore(state => state.isMobile);
+  const initMobile = useUIStore(state => state.initMobile);
   const isFileDragging = useCanvasStore(state => state.isFileDragging);
   const placementMode = useCanvasStore(state => state.placementMode);
   const selectedNodeType = useCanvasStore(state => state.selectedNodeType);
+
+  // Initialize mobile detection
+  React.useEffect(() => {
+    const cleanup = initMobile();
+    return cleanup;
+  }, [initMobile]);
 
     return (
     <div className="flex flex-col h-screen w-full bg-background">

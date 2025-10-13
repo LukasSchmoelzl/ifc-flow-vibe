@@ -14,6 +14,7 @@ Allgemein:
     Domain-based architecture
     YAGNI
     Dateinamen sollen zum codeinhalt passen.
+    verwende zustand statt hooks
 
 Nodes:
     

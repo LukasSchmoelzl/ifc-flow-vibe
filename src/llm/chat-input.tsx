@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/src/shared/components/ui/button';
-import { EventBus } from '@/src/shared/lib/event-bus';
 import { useAI } from '@/src/llm/use-ai';
 
 const PLACEHOLDER_TEXT = 'Frage nach BIM Daten, Eigenschaften oder lade ein Model hoch...';
@@ -12,14 +11,12 @@ interface ChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   variant?: 'default' | 'desktop';
-  eventName?: string;
 }
 
 export function ChatInput({ 
   placeholder = PLACEHOLDER_TEXT,
   disabled = false,
   variant = 'desktop',
-  eventName = 'chat:send-message'
 }: ChatInputProps) {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -41,32 +38,22 @@ export function ChatInput({
     }
   });
 
-  useEffect(() => {
-    const unsubscribe = EventBus.on(eventName, async (data: { message: string }) => {
-      if (!data.message.trim() || isProcessing) return;
-
-      const userMessage = data.message.trim();
-      console.log('💬 User:', userMessage);
-
-      setChatHistory(prev => [...prev, {
-        role: 'user',
-        content: userMessage
-      }]);
-
-      const lastTen = chatHistory.slice(-10);
-      await processMessage(userMessage, lastTen);
-    });
-
-    return () => unsubscribe();
-  }, [eventName, isProcessing, processMessage, chatHistory]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim() || disabled || isProcessing) return;
 
     const message = inputValue.trim();
-    EventBus.emit(eventName, { message });
+    console.log('💬 User:', message);
+
+    setChatHistory(prev => [...prev, {
+      role: 'user',
+      content: message
+    }]);
+
     setInputValue('');
+
+    const lastTen = chatHistory.slice(-10);
+    await processMessage(message, lastTen);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

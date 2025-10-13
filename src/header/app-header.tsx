@@ -25,7 +25,7 @@ import { HelpDialog } from "@/src/header/help/help-dialog";
 import { AboutDialog } from "@/src/header/dialogs/about-dialog";
 import { WorkflowLibrary } from "@/src/canvas/workflow-library";
 import { useToast } from "@/src/shared/hooks/use-toast";
-import { useIsMobile } from "@/src/shared/hooks/use-mobile";
+import { useUIStore } from "@/src/shared/ui-store";
 import type { Workflow } from "@/src/canvas/storage";
 import { cleanWorkflowData } from "@/src/canvas/storage";
 import {
@@ -58,7 +58,7 @@ export function AppHeader() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const isMobile = useUIStore(state => state.isMobile);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { shortcuts } = useKeyboardShortcuts();

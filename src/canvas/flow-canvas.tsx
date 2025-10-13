@@ -12,7 +12,7 @@ import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
 import { FooterPill } from "@/src/overlays/footer-pill";
 import { getNodeLabel } from "./nodes/auto-registry";
 import { useCanvasStore } from "./store";
-import { useIsMobile } from "@/src/shared/hooks/use-mobile";
+import { useUIStore } from "@/src/shared/ui-store";
 import { flowHandlers } from "./handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
@@ -24,7 +24,7 @@ const DEFAULT_STYLE = { cursor: "default" };
 const PLACEMENT_STYLE = { cursor: "crosshair" };
 
 export function FlowCanvas() {
-  const isMobile = useIsMobile();
+  const isMobile = useUIStore(state => state.isMobile);
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
   
