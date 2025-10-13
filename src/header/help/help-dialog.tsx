@@ -46,8 +46,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/src/shared/components/ui/accordion";
-import { nodeCategories } from "./help-content/node-documentation";
-import { tutorialSteps } from "./help-content/tutorial-steps";
+import { nodeCategories } from "./node-documentation";
+import { tutorialSteps } from "./tutorial-steps";
 
 interface HelpDialogProps {
   open: boolean;

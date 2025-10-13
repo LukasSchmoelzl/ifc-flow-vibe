@@ -4,8 +4,8 @@ import "reactflow/dist/style.css";
 import { ReactFlowProvider } from "reactflow";
 
 // Domains
-import { AppHeader } from "@/src/header/menu/app-header";
-import { NodesToolbar } from "@/src/header/toolbar/nodes-toolbar";
+import { AppHeader } from "@/src/header/app-header";
+import { NodesToolbar } from "@/src/header/nodes-toolbar";
 import { FlowCanvas } from "@/src/canvas/ui/flow-canvas";
 import { ChatInput } from "@/src/llm/chat-input";
 // Canvas State

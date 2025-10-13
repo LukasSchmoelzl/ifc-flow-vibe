@@ -21,7 +21,7 @@ import { Play, Pause, Check, Menu, MoreVertical } from "lucide-react";
 import { OpenFileDialog } from "@/src/header/dialogs/open-file-dialog";
 import { SaveWorkflowDialog } from "@/src/header/dialogs/save-workflow-dialog";
 import { SettingsDialog } from "@/src/header/dialogs/settings-dialog";
-import { HelpDialog } from "@/src/header/dialogs/help-dialog";
+import { HelpDialog } from "@/src/header/help/help-dialog";
 import { AboutDialog } from "@/src/header/dialogs/about-dialog";
 import { WorkflowLibrary } from "@/src/shared/components/workflow-library";
 import { useToast } from "@/src/shared/hooks/use-toast";
