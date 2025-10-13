@@ -1,6 +1,6 @@
-import { createNode } from "@/src/canvas/nodes/auto-registry";
+import { createNode, NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
 import { useCanvasStore } from "@/src/canvas/state/store";
-import { WorkflowExecutor } from "@/src/canvas/workflow/executor";
+import type { ProcessorContext } from "@/src/canvas/workflow/executor";
 import { getNodeTypeForTool } from "./tool-registry";
 
 const NODE_SPACING = 300;
@@ -10,6 +10,7 @@ interface LLMExecutionContext {
   iteration: number;
   nodeChain: string[];
   lastNodeId: string | null;
+  nodeResults: Map<string, any>;
 }
 
 export class LLMCanvasActions {
@@ -17,6 +18,7 @@ export class LLMCanvasActions {
     iteration: 0,
     nodeChain: [],
     lastNodeId: null,
+    nodeResults: new Map(),
   };
 
   createNodeFromTool(toolName: string, params: any): string {
@@ -58,15 +60,38 @@ export class LLMCanvasActions {
 
   async executeNode(nodeId: string): Promise<any> {
     const { nodes, edges } = useCanvasStore.getState();
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) throw new Error(`Node ${nodeId} not found`);
+
     const updateNodeData = (id: string, data: any) => {
       useCanvasStore.getState().setNodes((nodes) =>
         nodes.map((n) => (n.id === id ? { ...n, data } : n))
       );
     };
 
-    const executor = new WorkflowExecutor(nodes, edges, updateNodeData);
-    await executor.processNode(nodeId);
-    return executor.getNodeResults().get(nodeId);
+    const inputValues: Record<string, any> = {};
+    if (this.context.lastNodeId && this.context.nodeResults.has(this.context.lastNodeId)) {
+      inputValues.input = this.context.nodeResults.get(this.context.lastNodeId);
+    }
+
+    const context: ProcessorContext = {
+      nodeResults: this.context.nodeResults,
+      edges,
+      nodes,
+      updateNodeData,
+    };
+
+    const nodeType = node.type;
+    if (!nodeType) throw new Error(`Node ${nodeId} has no type`);
+    
+    const metadata = NODE_METADATA_MAP[nodeType];
+    if (!metadata) throw new Error(`No metadata for node type: ${nodeType}`);
+
+    const processor = metadata.processor;
+    const result = await processor.process(node, inputValues, context);
+    
+    this.context.nodeResults.set(nodeId, result);
+    return result;
   }
 
   updateContext(nodeId: string): void {
@@ -78,6 +103,7 @@ export class LLMCanvasActions {
       iteration: 0,
       nodeChain: [],
       lastNodeId: null,
+      nodeResults: new Map(),
     };
   }
 }

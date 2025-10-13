@@ -48,6 +48,13 @@ export class Executor {
         }
 
         if (response.stop_reason === 'tool_use') {
+          messages.push({
+            role: 'assistant',
+            content: response.content,
+          });
+          
+          const toolResults: any[] = [];
+          
           for (const content of response.content) {
             if (content.type === 'tool_use') {
               const { name, input, id } = content;
@@ -59,22 +66,21 @@ export class Executor {
               const result = await this.canvasActions.executeNode(nodeId);
               this.canvasActions.updateContext(nodeId);
               
-              messages.push({
-                role: 'assistant',
-                content: response.content,
-              });
-              messages.push({
-                role: 'user',
-                content: [{
-                  type: 'tool_result',
-                  tool_use_id: id,
-                  content: JSON.stringify(result),
-                }],
+              toolResults.push({
+                type: 'tool_result',
+                tool_use_id: id,
+                content: JSON.stringify(result),
               });
               
               console.log(`✅ Result:`, result);
             }
           }
+          
+          messages.push({
+            role: 'user',
+            content: toolResults,
+          });
+          
           continue;
         }
         
