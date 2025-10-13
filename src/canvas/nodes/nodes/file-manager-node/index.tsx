@@ -1,73 +1,53 @@
 "use client";
 
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "reactflow";
-import { FolderOpen } from "lucide-react";
-import { NodeLoadingIndicator } from "../node-loading-indicator";
-import { BaseNodeData } from "../node-types";
+import React from "react";
+import type { NodeProps } from "reactflow";
+import { Handle, Position } from "reactflow";
+import { Card } from "@/src/shared/ui/card";
 import { useFileHandler } from "./file-handler";
 import { FileManagerNodeUI } from "./ui";
-import type { LoadedFileInfo } from "./types";
 
-interface FileManagerNodeData extends BaseNodeData {
-  isLoading?: boolean;
-  error?: string | null;
-  fileName?: string;
-  file?: File;
-  fileInfo?: LoadedFileInfo;
-}
-
-export const FileManagerNode = memo(({ id, data, isConnectable }: NodeProps<FileManagerNodeData>) => {
+export const FileManagerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const { dropRef, isDraggingOver, onDragOver, onDragLeave, onDrop, onDoubleClick } = useFileHandler(id);
 
   return (
-    <div
+    <Card
       ref={dropRef}
-      className={`bg-white dark:bg-gray-800 border-2 ${
-        isDraggingOver ? "border-purple-700 bg-purple-50 dark:bg-purple-900" : "border-purple-500 dark:border-purple-400"
-      } rounded-md shadow-md w-64 transition-colors duration-200 ease-in-out`}
+      className={`min-w-[280px] max-w-[400px] ${
+        selected ? "ring-2 ring-primary" : ""
+      } ${isDraggingOver ? "ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-950" : ""}`}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDoubleClick={onDoubleClick}
     >
-      {/* Header */}
-      <div className="bg-purple-500 text-white px-3 py-1 flex items-center gap-2">
-        <FolderOpen className="h-4 w-4 flex-shrink-0" />
-        <div className="text-sm font-medium truncate" title={data.label}>
-          {data.label}
-        </div>
+      <Handle type="source" position={Position.Right} />
+      
+      <div className="p-4">
+        <div className="font-semibold mb-2">{data.label || "File Manager"}</div>
+        
+        {/* Loading state */}
+        {data.isLoading && (
+          <div className="text-xs text-muted-foreground">
+            Loading file...
+          </div>
+        )}
+
+        {/* Error state */}
+        {!data.isLoading && data.error && (
+          <div className="text-xs text-red-500">
+            Error: {data.error}
+          </div>
+        )}
+
+        {/* Content */}
+        {!data.isLoading && !data.error && (
+          <FileManagerNodeUI data={data} isDraggingOver={isDraggingOver} />
+        )}
       </div>
-
-      {/* Loading Indicator */}
-      <NodeLoadingIndicator
-        isLoading={data.isLoading || false}
-        message="Loading file..."
-      />
-
-      {/* Error Display */}
-      {!data.isLoading && data.error && (
-        <div className="p-3 text-xs text-red-500 break-words">
-          Error: {data.error}
-        </div>
-      )}
-
-      {/* Content */}
-      {!data.isLoading && !data.error && (
-        <FileManagerNodeUI data={data} isDraggingOver={isDraggingOver} />
-      )}
-
-      {/* Output Handle */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{ background: "#555", width: 8, height: 8 }}
-        isConnectable={isConnectable}
-      />
-    </div>
+    </Card>
   );
-});
+};
 
-FileManagerNode.displayName = "FileManagerNode";
+export { fileManagerNodeMetadata } from "./metadata";
 

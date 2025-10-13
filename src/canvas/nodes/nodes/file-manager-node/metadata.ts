@@ -1,5 +1,5 @@
 import { FolderOpen } from "lucide-react";
-import { FileManagerNodeProcessor } from "./file-loader";
+import { FileManagerNodeProcessor } from "./file-manager-processor";
 import type { NodeMetadata } from "../../node-metadata";
 
 export const fileManagerNodeMetadata: NodeMetadata = {
