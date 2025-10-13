@@ -2,10 +2,10 @@
 
 import type { Node, Edge } from "reactflow";
 import { useCanvasStore } from "./store";
-import { WorkflowExecutor } from "../workflow/executor";
-import { createIfcNodeFromFile, generateNodeId } from "../nodes/auto-registry";
-import type { Workflow } from "../workflow/storage";
-import { WorkflowStorage } from "../workflow/storage";
+import { WorkflowExecutor } from "./executor";
+import { createIfcNodeFromFile, generateNodeId } from "./nodes/auto-registry";
+import type { Workflow } from "./storage";
+import { WorkflowStorage } from "./storage";
 
 const workflowStorage = new WorkflowStorage();
 

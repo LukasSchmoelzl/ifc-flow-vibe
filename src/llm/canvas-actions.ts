@@ -1,6 +1,6 @@
 import { createNode, NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
-import { useCanvasStore } from "@/src/canvas/state/store";
-import type { ProcessorContext } from "@/src/canvas/workflow/executor";
+import { useCanvasStore } from "@/src/canvas/store";
+import type { ProcessorContext } from "@/src/canvas/executor";
 import { getNodeTypeForTool } from "./tool-registry";
 
 const NODE_SPACING = 300;

@@ -1,6 +1,6 @@
 import type { NodeTypes } from "reactflow";
 import type { Node } from "reactflow";
-import type { NodeProcessor } from "../workflow/executor";
+import type { NodeProcessor } from "../executor";
 import type { NodeMetadata, NodeStatus } from "./node-metadata";
 
 // Import all node components

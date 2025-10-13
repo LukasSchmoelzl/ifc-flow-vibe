@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow/executor';
+import type { NodeProcessor, ProcessorContext } from '@/src/canvas/executor';
 import * as FRAGS from "@thatopen/fragments";
 
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";

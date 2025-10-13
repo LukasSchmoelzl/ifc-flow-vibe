@@ -18,7 +18,7 @@ import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, Git
 import { getAllNodes } from "@/src/canvas/nodes/auto-registry";
 import { NodeStatusBadge } from "@/src/canvas/nodes/node-status-badge";
 import { useIsMobile } from "@/src/shared/hooks/use-mobile";
-import { useCanvasStore } from "@/src/canvas/state/store";
+import { useCanvasStore } from "@/src/canvas/store";
 
 function getStatusTooltipContent(status: string): string | null {
   switch (status) {

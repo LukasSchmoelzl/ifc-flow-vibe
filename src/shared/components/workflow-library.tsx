@@ -36,7 +36,7 @@ import {
   AlertTriangle,
   Check,
 } from "lucide-react";
-import { type Workflow, workflowStorage } from "@/src/canvas/workflow/storage";
+import { type Workflow, workflowStorage } from "@/src/canvas/storage";
 import { useToast } from "@/src/shared/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/src/shared/components/ui/alert";
 import { AspectRatio } from "@/src/shared/components/ui/aspect-ratio";

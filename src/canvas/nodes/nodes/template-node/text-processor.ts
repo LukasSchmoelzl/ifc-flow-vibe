@@ -1,4 +1,4 @@
-import type { NodeProcessor, ProcessorContext } from '@/src/canvas/workflow/executor';
+import type { NodeProcessor, ProcessorContext } from '@/src/canvas/executor';
 
 export class TemplateNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {

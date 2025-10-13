@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from "react";
-import { useCanvasStore } from "@/src/canvas/state/store";
+import { useCanvasStore } from "@/src/canvas/store";
 
 export function useFileHandler(nodeId: string) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);

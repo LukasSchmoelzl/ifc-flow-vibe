@@ -3,7 +3,7 @@
 import type { Node, Edge, Connection, ReactFlowInstance, NodeChange, EdgeChange } from "reactflow";
 import { applyNodeChanges, applyEdgeChanges } from "reactflow";
 import { useCanvasStore } from "./store";
-import { createNode, getNodeLabel } from "../nodes/auto-registry";
+import { createNode, getNodeLabel } from "./nodes/auto-registry";
 
 // Flow event handlers
 export const flowHandlers = {

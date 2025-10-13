@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { NodeProcessor } from "../workflow/executor";
+import type { NodeProcessor } from "../executor";
 
 export type NodeStatus = "working" | "wip" | "new";
 

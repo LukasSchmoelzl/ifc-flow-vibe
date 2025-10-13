@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import CoffeeSupport from "./coffee-support";
-import { useCanvasStore } from "@/src/canvas/state/store";
+import { useCanvasStore } from "@/src/canvas/store";
 
 export function FooterPill() {
   const [isHovered, setIsHovered] = useState(false);
