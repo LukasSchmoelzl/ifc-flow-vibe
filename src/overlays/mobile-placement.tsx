@@ -9,7 +9,7 @@ export function MobilePlacementOverlay({ isVisible, nodeLabel }: MobilePlacement
   if (!isVisible) return null;
 
   return (
-    <div className="absolute inset-0 z-20 pointer-events-none">
+    <div className="fixed inset-0 z-50 pointer-events-none">
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
         <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" />
         <span className="text-sm font-medium">

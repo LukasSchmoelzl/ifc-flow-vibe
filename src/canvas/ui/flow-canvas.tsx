@@ -9,9 +9,7 @@ import ReactFlow, {
   type SelectionMode,
 } from "reactflow";
 import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
-import { FooterPill } from "./overlays/footer-pill";
-import { FileDropOverlay } from "./overlays/file-drop";
-import { MobilePlacementOverlay } from "./overlays/mobile-placement";
+import { FooterPill } from "@/src/overlays/footer-pill";
 import { getNodeLabel } from "../nodes/auto-registry";
 import { useCanvasStore } from "../state/store";
 import { useIsMobile } from "@/src/shared/hooks/use-mobile";
@@ -33,13 +31,10 @@ export function FlowCanvas() {
   // Zustand store - atomic selections
   const nodes = useCanvasStore(state => state.nodes);
   const edges = useCanvasStore(state => state.edges);
-  const isFileDragging = useCanvasStore(state => state.isFileDragging);
   const placementMode = useCanvasStore(state => state.placementMode);
-  const selectedNodeType = useCanvasStore(state => state.selectedNodeType);
   const showGrid = useCanvasStore(state => state.showGrid);
   const isSettingsLoaded = useCanvasStore(state => state.isSettingsLoaded);
   const focusedViewerId = useCanvasStore(state => state.focusedViewerId);
-  const setFocusedViewerId = useCanvasStore(state => state.setFocusedViewerId);
   const setReactFlowInstance = useCanvasStore(state => state.setReactFlowInstance);
   const setReactFlowWrapper = useCanvasStore(state => state.setReactFlowWrapper);
   
@@ -76,13 +71,6 @@ export function FlowCanvas() {
 
   return (
     <>
-      <FileDropOverlay isVisible={isFileDragging} />
-
-      <MobilePlacementOverlay
-        isVisible={isMobile && placementMode && selectedNodeType !== null}
-        nodeLabel={selectedNodeType ? getNodeLabel(selectedNodeType) : ""}
-      />
-
       {/* React Flow Canvas - Left Side (50%) */}
       <div ref={wrapperRef} className="w-full md:w-1/2 h-full relative">
         <ReactFlow
