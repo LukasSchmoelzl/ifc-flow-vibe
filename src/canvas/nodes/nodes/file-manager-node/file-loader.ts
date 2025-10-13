@@ -110,7 +110,11 @@ export class FileManagerNodeProcessor implements NodeProcessor {
 
       return {
         name: file.name,
-        model,
+        fileName: file.name,
+        totalElements: totalElements,
+        schema: metadata?.schema || "IFC",
+        projectName: metadata?.name || file.name,
+        elementCounts: elementCounts,
       };
     } catch (error) {
       console.error(`Error processing file-manager node ${node.id}:`, error);

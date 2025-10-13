@@ -13,3 +13,6 @@ Allgemein:
 
     Domain-based architecture
     YAGNI
+
+Nodes:
+    

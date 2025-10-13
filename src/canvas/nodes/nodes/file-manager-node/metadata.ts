@@ -11,5 +11,19 @@ export const fileManagerNodeMetadata: NodeMetadata = {
   defaultData: {
     label: "IFC Loader",
   },
+  llmTools: [{
+    name: "load_ifc_file",
+    description: "Load an IFC building model into the 3D viewer. Use this when user wants to load, open, or view an IFC file.",
+    input_schema: {
+      type: "object",
+      properties: {
+        fileName: { 
+          type: "string", 
+          description: "Name of the IFC file (default: 'bridge.ifc')" 
+        }
+      },
+      required: []
+    }
+  }]
 };
 

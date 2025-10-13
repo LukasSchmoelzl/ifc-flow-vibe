@@ -1,13 +1,13 @@
-// Claude Executor - Simplified for IFCFlow
-
 import { BIMResult, createBIMResult } from './bim-result';
 import { PromptBuilder } from './prompt-builder';
-import { ResponseParser } from './response-parser';
+import { getAllLLMTools } from './tool-registry';
+import { LLMCanvasActions } from './canvas-actions';
 
-const MAX_ITERATIONS = 5;
+const MAX_ITERATIONS = 10;
 
 export class Executor {
-  // Process user message and execute tool chain
+  private canvasActions = new LLMCanvasActions();
+
   async processUserMessage(
     userMessage: string, 
     chatHistory?: Array<{role: 'user' | 'assistant', content: string}>
@@ -15,46 +15,69 @@ export class Executor {
     return this.runToolChain(userMessage, chatHistory || []);
   }
 
-  // Run the tool execution chain with native Claude API
   private async runToolChain(
     userMessage: string, 
     chatHistory: Array<{role: 'user' | 'assistant', content: string}>
   ): Promise<BIMResult> {
     const messages: Array<{role: 'user' | 'assistant', content: any}> = [];
-    let iteration = 0;
+    this.canvasActions.reset();
     
-    // Add chat history
     chatHistory.forEach(msg => {
       messages.push({ role: msg.role, content: msg.content });
     });
     
-    // Add user message
     messages.push({ role: 'user', content: userMessage });
+    
+    const tools = getAllLLMTools();
+    let iteration = 0;
     
     try {
       while (iteration < MAX_ITERATIONS) {
         iteration++;
         
         const systemPrompt = PromptBuilder.createSystemPrompt();
+        const response = await this.sendRequestToClaude(messages, tools, systemPrompt);
         
-        // Send request to Claude (no tools for now)
-        const response = await this.sendRequestToClaude(messages, [], systemPrompt);
-        
-        // Parse response
-        const toolDecision = ResponseParser.extractToolDecision(response);
-
-        if (toolDecision.error) {
-          return this.buildErrorResponse();
+        if (response.stop_reason === 'end_turn') {
+          const textContent = response.content.find((c: any) => c.type === 'text');
+          if (textContent) {
+            console.log(`✅ Final answer after ${iteration} iterations`);
+            return this.buildSuccessResponse(textContent.text);
+          }
+          break;
         }
 
-        // Handle final answer
-        if (toolDecision.finalAnswer) {
-          console.log(`✅ Final answer after ${iteration} iterations`);
-          return this.buildSuccessResponse(toolDecision.finalAnswer);
+        if (response.stop_reason === 'tool_use') {
+          for (const content of response.content) {
+            if (content.type === 'tool_use') {
+              const { name, input, id } = content;
+              
+              console.log(`🔧 Tool: ${name}`, input);
+              
+              const nodeId = this.canvasActions.createNodeFromTool(name, input);
+              this.canvasActions.connectToPreviousNode(nodeId);
+              const result = await this.canvasActions.executeNode(nodeId);
+              this.canvasActions.updateContext(nodeId);
+              
+              messages.push({
+                role: 'assistant',
+                content: response.content,
+              });
+              messages.push({
+                role: 'user',
+                content: [{
+                  type: 'tool_result',
+                  tool_use_id: id,
+                  content: JSON.stringify(result),
+                }],
+              });
+              
+              console.log(`✅ Result:`, result);
+            }
+          }
+          continue;
         }
         
-        // No final answer
-        console.warn(`⚠️ No final answer in iteration ${iteration}`);
         break;
       }
 
@@ -66,7 +89,6 @@ export class Executor {
     }
   }
 
-  // Send request to Claude API
   private async sendRequestToClaude(
     messages: Array<{role: 'user' | 'assistant', content: any}>,
     tools: any[],
@@ -89,7 +111,6 @@ export class Executor {
     return await response.json();
   }
 
-  // Response builders
   private buildSuccessResponse(response: string): BIMResult {
     return createBIMResult({
       response,

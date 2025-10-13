@@ -78,6 +78,10 @@ export class WorkflowExecutor {
     return this.nodes;
   }
 
+  public getNodeResults(): Map<string, any> {
+    return this.nodeResults;
+  }
+
   public async execute(): Promise<Map<string, any>> {
     if (this.isRunning) {
       throw new Error("Workflow is already running");
@@ -127,7 +131,7 @@ export class WorkflowExecutor {
       .map((node) => node.id);
   }
 
-  private async processNode(nodeId: string): Promise<any> {
+  public async processNode(nodeId: string): Promise<any> {
     if (this.nodeResults.has(nodeId)) {
       console.log(`   ⏭️  Node ${nodeId} already processed, using cached result`);
       return this.nodeResults.get(nodeId);

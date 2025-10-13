@@ -11,5 +11,19 @@ export const templateNodeMetadata: NodeMetadata = {
   defaultData: {
     label: "Template",
   },
+  llmTools: [{
+    name: "process_text",
+    description: "Process text by appending ' world' to it. Use for text transformation demonstrations.",
+    input_schema: {
+      type: "object",
+      properties: {
+        input: { 
+          type: "string", 
+          description: "Input text to process" 
+        }
+      },
+      required: ["input"]
+    }
+  }]
 };
 
