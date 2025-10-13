@@ -27,3 +27,4 @@ export const ProjectInfoNode: React.FC<NodeProps> = ({ data, selected }) => {
 
 export { projectInfoNodeMetadata } from "./metadata";
 
+

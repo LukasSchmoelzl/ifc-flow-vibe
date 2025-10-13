@@ -3,7 +3,7 @@
 import type { Node, Edge } from "reactflow";
 import { useCanvasStore } from "./store";
 import { WorkflowExecutor } from "./executor";
-import { createIfcNodeFromFile } from "./nodes/auto-registry";
+import { createFileManagerNodeFromFile } from "./nodes/auto-registry";
 import type { Workflow } from "./storage";
 import { workflowStorage } from "./storage";
 
@@ -20,7 +20,7 @@ export async function openFile(file: File, toast: ToastFn): Promise<void> {
   
   addToHistory(nodes, edges);
   const position = { x: 100, y: 100 };
-  const newNode = createIfcNodeFromFile(position, file);
+  const newNode = createFileManagerNodeFromFile(position, file);
   setNodes([...nodes, newNode]);
   
   toast({

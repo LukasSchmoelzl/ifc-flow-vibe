@@ -13,3 +13,4 @@ export interface IfcEntity {
 
 export type IfcEntityIndex = Record<string, number[]>;
 
+

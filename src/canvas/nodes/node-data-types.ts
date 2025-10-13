@@ -1,0 +1,106 @@
+// Node Data Types - Defines all data types that can flow between nodes
+
+import type { IfcEntity } from "@/src/core/entity-types";
+import type { 
+  ProjectMetadata, 
+  ProjectStatistics, 
+  ProjectStructure 
+} from "./nodes/project-info-node/types";
+
+// Base types for all nodes
+export interface NodeInput {
+  [key: string]: any;
+}
+
+export interface NodeOutput {
+  [key: string]: any;
+}
+
+// File Manager Node Output
+export interface FileManagerOutput {
+  name: string;
+  fileName: string;
+  totalElements: number;
+  schema: string;
+  projectName: string;
+  elementCounts: Record<string, number>;
+  model?: any; // FragmentsModel reference
+}
+
+// Search Node Input
+export interface SearchInput {
+  query?: string;
+  types?: string[];
+  limit?: number;
+  offset?: number;
+}
+
+// Search Node Output
+export interface SearchOutput {
+  searchResults: Array<{
+    name: string;
+    expressID: number;
+    type: string;
+  }>;
+  count: number;
+  query: string;
+  types: string[];
+}
+
+// Project Info Node Output
+export interface ProjectInfoOutput {
+  metadata: ProjectMetadata;
+  statistics: ProjectStatistics;
+  structure: ProjectStructure;
+  projectName: string;
+  totalElements: number;
+}
+
+// User Selection Node Input
+export interface UserSelectionInput {
+  expressIds?: number[];
+  action?: 'get' | 'set' | 'clear';
+}
+
+// User Selection Node Output
+export interface UserSelectionOutput {
+  selectedEntities: Array<{
+    expressID: number;
+    type: string;
+    name: string;
+  }>;
+  count: number;
+  expressIds?: number[];
+  cleared?: boolean;
+}
+
+// AI Visibility Node Input
+export interface AIVisibilityInput {
+  expressIds?: number[];
+  action?: 'get_highlight' | 'clear_highlight' | 'get_invisible' | 'set_visible' | 'set_invisible';
+}
+
+// AI Visibility Node Output
+export interface AIVisibilityOutput {
+  highlightedIds?: number[];
+  invisibleIds?: number[];
+  visibleIds?: number[];
+  count?: number;
+  cleared?: boolean;
+}
+
+// Entity data that can be passed between nodes
+export interface EntityData extends IfcEntity {
+  expressID: number;
+  type: string;
+  name?: string;
+  globalId?: string;
+}
+
+// Collection of entities
+export interface EntityCollection {
+  entities: EntityData[];
+  count: number;
+  types?: Record<string, number>;
+}
+
