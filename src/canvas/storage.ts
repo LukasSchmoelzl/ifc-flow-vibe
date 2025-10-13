@@ -1,6 +1,6 @@
-// Constants
 const THUMBNAIL_WIDTH = 300;
 const THUMBNAIL_HEIGHT = 200;
+const STORAGE_KEY = "ifcflow-workflows";
 
 export interface Workflow {
   id: string;
@@ -13,41 +13,29 @@ export interface Workflow {
   flowData: any;
 }
 
-// Check if localStorage is available (not available during SSR)
-const isLocalStorageAvailable = () => {
-  if (typeof window === 'undefined') return false;
-  try {
-    const testKey = 'test-localStorage';
-    window.localStorage.setItem(testKey, 'test');
-    window.localStorage.removeItem(testKey);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-
-// Storage service for workflows
 export class WorkflowStorage {
-  private storageKey = "ifcflow-workflows";
-
-  // Get all workflows
   getWorkflows(): Workflow[] {
-    if (!isLocalStorageAvailable()) {
+    if (typeof window === 'undefined') {
       throw new Error("localStorage not available");
     }
-    const data = localStorage.getItem(this.storageKey);
-    return data ? JSON.parse(data) : [];
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) {
+      throw new Error("No workflows found");
+    }
+    return JSON.parse(data);
   }
 
-  // Get a single workflow by ID
-  getWorkflow(id: string): Workflow | null {
+  getWorkflow(id: string): Workflow {
     const workflows = this.getWorkflows();
-    return workflows.find((workflow) => workflow.id === id) || null;
+    const workflow = workflows.find((workflow) => workflow.id === id);
+    if (!workflow) {
+      throw new Error(`Workflow with id ${id} not found`);
+    }
+    return workflow;
   }
 
-  // Save a workflow
   saveWorkflow(workflow: Workflow): Workflow {
-    if (!isLocalStorageAvailable()) {
+    if (typeof window === 'undefined') {
       throw new Error("localStorage not available");
     }
 
@@ -75,30 +63,25 @@ export class WorkflowStorage {
       });
     }
 
-    localStorage.setItem(this.storageKey, JSON.stringify(workflows));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(workflows));
     return cleanedWorkflow;
   }
 
-  // Delete a workflow
-  deleteWorkflow(id: string): boolean {
-    if (!isLocalStorageAvailable()) {
+  deleteWorkflow(id: string): void {
+    if (typeof window === 'undefined') {
       throw new Error("localStorage not available");
     }
 
     const workflows = this.getWorkflows();
-    const filteredWorkflows = workflows.filter(
-      (workflow) => workflow.id !== id
-    );
+    const filteredWorkflows = workflows.filter((workflow) => workflow.id !== id);
 
-    if (filteredWorkflows.length !== workflows.length) {
-      localStorage.setItem(this.storageKey, JSON.stringify(filteredWorkflows));
-      return true;
+    if (filteredWorkflows.length === workflows.length) {
+      throw new Error(`Workflow with id ${id} not found`);
     }
 
-    return false;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredWorkflows));
   }
 
-  // Generate a thumbnail from flow data (client-only, renders offscreen ReactFlow)
   async generateThumbnail(flowData: any): Promise<string> {
     if (typeof window === 'undefined') {
       throw new Error('Thumbnail generation requires browser environment');
@@ -218,9 +201,6 @@ export class WorkflowStorage {
       )
     );
 
-    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-
     const dataUrl = await toPng(container, {
       cacheBust: true,
       width: THUMBNAIL_WIDTH,
@@ -231,14 +211,13 @@ export class WorkflowStorage {
     root.unmount();
     document.body.removeChild(container);
 
-    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image') && dataUrl.length > 1000) {
-      return dataUrl;
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image') || dataUrl.length < 1000) {
+      throw new Error('Thumbnail generation produced invalid image data');
     }
 
-    throw new Error('Thumbnail generation produced invalid image data');
+    return dataUrl;
   }
 
-  // Export workflow to file
   exportWorkflow(workflow: Workflow): void {
     if (typeof window === 'undefined') {
       throw new Error("Cannot export workflow in server-side context");
@@ -262,10 +241,9 @@ export class WorkflowStorage {
     URL.revokeObjectURL(url);
   }
 
-  // Import workflow from file
   async importWorkflow(file: File): Promise<Workflow> {
-    if (!isLocalStorageAvailable()) {
-      return Promise.reject(new Error("localStorage not available"));
+    if (typeof window === 'undefined') {
+      throw new Error("localStorage not available");
     }
 
     return new Promise((resolve, reject) => {

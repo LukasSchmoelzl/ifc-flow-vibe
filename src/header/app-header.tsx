@@ -34,6 +34,7 @@ import {
 } from "@/src/shared/keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/src/shared/ui/sheet";
 import { useCanvasStore } from "@/src/canvas/store";
+import { useSettingsStore } from "@/src/shared/settings-store";
 import { workflowActions, nodeActions } from "@/src/canvas/actions";
 
 export function AppHeader() {
@@ -43,10 +44,9 @@ export function AppHeader() {
   const canRedo = useCanvasStore(state => state.canRedo);
   const currentWorkflow = useCanvasStore(state => state.currentWorkflow);
   const reactFlowInstance = useCanvasStore(state => state.reactFlowInstance);
-  const showGrid = useCanvasStore(state => state.showGrid);
-  const showMinimap = useCanvasStore(state => state.showMinimap);
-  const setShowGrid = useCanvasStore(state => state.setShowGrid);
-  const setShowMinimap = useCanvasStore(state => state.setShowMinimap);
+  const showGrid = useSettingsStore(state => state.viewer.showGrid);
+  const showMinimap = useSettingsStore(state => state.viewer.showMinimap);
+  const updateViewerSettings = useSettingsStore(state => state.updateViewerSettings);
   const undo = useCanvasStore(state => state.undo);
   const redo = useCanvasStore(state => state.redo);
   const setNodes = useCanvasStore(state => state.setNodes);
@@ -201,10 +201,10 @@ export function AppHeader() {
               <MenubarMenu>
                 <MenubarTrigger className="cursor-pointer">View</MenubarTrigger>
                 <MenubarContent>
-                  <MenubarCheckboxItem checked={showGrid} onCheckedChange={setShowGrid}>
+                  <MenubarCheckboxItem checked={showGrid} onCheckedChange={(checked) => updateViewerSettings({ showGrid: checked })}>
                     Show Grid
                   </MenubarCheckboxItem>
-                  <MenubarCheckboxItem checked={showMinimap} onCheckedChange={setShowMinimap}>
+                  <MenubarCheckboxItem checked={showMinimap} onCheckedChange={(checked) => updateViewerSettings({ showMinimap: checked })}>
                     Show Minimap
                   </MenubarCheckboxItem>
                   <MenubarSeparator />

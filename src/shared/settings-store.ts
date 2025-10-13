@@ -41,10 +41,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-interface SettingsState {
-  settings: AppSettings;
-}
-
 interface SettingsActions {
   updateSettings: (settings: Partial<AppSettings>) => void;
   updateGeneralSettings: (settings: Partial<AppSettings["general"]>) => void;
@@ -53,49 +49,33 @@ interface SettingsActions {
   resetSettings: () => void;
 }
 
-type SettingsStore = SettingsState & SettingsActions;
+type SettingsStore = AppSettings & SettingsActions;
 
 export const useSettingsStore = create<SettingsStore>()(
   devtools(
     persist(
       (set) => ({
-        // State
-        settings: DEFAULT_SETTINGS,
+        ...DEFAULT_SETTINGS,
 
-        // Actions
         updateSettings: (newSettings) =>
-          set((state) => ({
-            settings: { ...state.settings, ...newSettings },
-          })),
+          set((state) => ({ ...state, ...newSettings })),
 
         updateGeneralSettings: (generalSettings) =>
           set((state) => ({
-            settings: {
-              ...state.settings,
-              general: { ...state.settings.general, ...generalSettings },
-            },
+            general: { ...state.general, ...generalSettings },
           })),
 
         updateViewerSettings: (viewerSettings) =>
           set((state) => ({
-            settings: {
-              ...state.settings,
-              viewer: { ...state.settings.viewer, ...viewerSettings },
-            },
+            viewer: { ...state.viewer, ...viewerSettings },
           })),
 
         updatePerformanceSettings: (performanceSettings) =>
           set((state) => ({
-            settings: {
-              ...state.settings,
-              performance: { ...state.settings.performance, ...performanceSettings },
-            },
+            performance: { ...state.performance, ...performanceSettings },
           })),
 
-        resetSettings: () =>
-          set({
-            settings: DEFAULT_SETTINGS,
-          }),
+        resetSettings: () => set(DEFAULT_SETTINGS),
       }),
       {
         name: SETTINGS_KEY,
@@ -104,20 +84,3 @@ export const useSettingsStore = create<SettingsStore>()(
     { name: "SettingsStore" }
   )
 );
-
-// Helper to load viewer setting (compatibility with old code)
-export const loadViewerSetting = (
-  key: "showGrid" | "showMinimap",
-  defaultValue: boolean
-): boolean => {
-  if (typeof window === "undefined") return defaultValue;
-
-  try {
-    const state = useSettingsStore.getState();
-    return state.settings.viewer[key] ?? defaultValue;
-  } catch (e) {
-    console.error(`Error loading ${key} setting:`, e);
-    return defaultValue;
-  }
-};
-

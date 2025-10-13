@@ -13,6 +13,7 @@ import { FooterPill } from "@/src/overlays/footer-pill";
 import { getNodeLabel } from "./nodes/auto-registry";
 import { useCanvasStore } from "./store";
 import { useUIStore } from "@/src/shared/ui-store";
+import { useSettingsStore } from "@/src/shared/settings-store";
 import { flowHandlers } from "./handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
@@ -25,6 +26,7 @@ const PLACEMENT_STYLE = { cursor: "crosshair" };
 
 export function FlowCanvas() {
   const isMobile = useUIStore(state => state.isMobile);
+  const showGrid = useSettingsStore(state => state.viewer.showGrid);
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
   
@@ -32,8 +34,6 @@ export function FlowCanvas() {
   const nodes = useCanvasStore(state => state.nodes);
   const edges = useCanvasStore(state => state.edges);
   const placementMode = useCanvasStore(state => state.placementMode);
-  const showGrid = useCanvasStore(state => state.showGrid);
-  const isSettingsLoaded = useCanvasStore(state => state.isSettingsLoaded);
   const focusedViewerId = useCanvasStore(state => state.focusedViewerId);
   const setReactFlowInstance = useCanvasStore(state => state.setReactFlowInstance);
   const setReactFlowWrapper = useCanvasStore(state => state.setReactFlowWrapper);
@@ -88,7 +88,7 @@ export function FlowCanvas() {
           onPaneClick={handlePaneClick}
           nodeTypes={nodeTypes}
           edgeTypes={EDGE_TYPES}
-          snapToGrid={isSettingsLoaded ? showGrid : false}
+          snapToGrid={showGrid}
           snapGrid={SNAP_GRID}
           minZoom={0.1}
           maxZoom={2}
@@ -109,7 +109,7 @@ export function FlowCanvas() {
           nodesDraggable={!focusedViewerId && !(isMobile && placementMode)}
         >
           <Controls />
-          {isSettingsLoaded && showGrid && <Background color="#aaa" gap={16} />}
+          {showGrid && <Background color="#aaa" gap={16} />}
           <Panel position="bottom-left">
             <FooterPill />
           </Panel>

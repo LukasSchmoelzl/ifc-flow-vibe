@@ -18,7 +18,9 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState("general")
-  const settings = useSettingsStore(state => state.settings);
+  const general = useSettingsStore(state => state.general);
+  const viewer = useSettingsStore(state => state.viewer);
+  const performance = useSettingsStore(state => state.performance);
   const updateGeneralSettings = useSettingsStore(state => state.updateGeneralSettings);
   const updateViewerSettings = useSettingsStore(state => state.updateViewerSettings);
   const updatePerformanceSettings = useSettingsStore(state => state.updatePerformanceSettings);
@@ -42,7 +44,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <Label>Theme</Label>
               <div className="flex gap-2">
                 <Button
-                  variant={settings.general.theme === "light" ? "default" : "outline"}
+                  variant={general.theme === "light" ? "default" : "outline"}
                   className="flex-1"
                   onClick={() => updateGeneralSettings({ theme: "light" })}
                 >
@@ -50,7 +52,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   Light
                 </Button>
                 <Button
-                  variant={settings.general.theme === "dark" ? "default" : "outline"}
+                  variant={general.theme === "dark" ? "default" : "outline"}
                   className="flex-1"
                   onClick={() => updateGeneralSettings({ theme: "dark" })}
                 >
@@ -58,7 +60,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   Dark
                 </Button>
                 <Button
-                  variant={settings.general.theme === "system" ? "default" : "outline"}
+                  variant={general.theme === "system" ? "default" : "outline"}
                   className="flex-1"
                   onClick={() => updateGeneralSettings({ theme: "system" })}
                 >
@@ -72,7 +74,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <Label htmlFor="auto-save">Auto-save</Label>
                 <Switch
                   id="auto-save"
-                  checked={settings.general.autoSave}
+                  checked={general.autoSave}
                   onCheckedChange={(checked) => updateGeneralSettings({ autoSave: checked })}
                 />
               </div>
@@ -86,12 +88,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   min={1}
                   max={30}
                   step={1}
-                  value={[settings.general.autoSaveInterval]}
+                  value={[general.autoSaveInterval]}
                   onValueChange={(value) => updateGeneralSettings({ autoSaveInterval: value[0] })}
-                  disabled={!settings.general.autoSave}
+                  disabled={!general.autoSave}
                   className="flex-1"
                 />
-                <span className="w-12 text-center">{settings.general.autoSaveInterval}</span>
+                <span className="w-12 text-center">{general.autoSaveInterval}</span>
               </div>
             </div>
           </TabsContent>
@@ -101,7 +103,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <Label htmlFor="show-grid">Show grid</Label>
                 <Switch
                   id="show-grid"
-                  checked={settings.viewer.showGrid}
+                  checked={viewer.showGrid}
                   onCheckedChange={(checked) => updateViewerSettings({ showGrid: checked })}
                 />
               </div>
@@ -112,7 +114,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <Label htmlFor="snap-to-grid">Snap to grid</Label>
                 <Switch
                   id="snap-to-grid"
-                  checked={settings.viewer.snapToGrid}
+                  checked={viewer.snapToGrid}
                   onCheckedChange={(checked) => updateViewerSettings({ snapToGrid: checked })}
                 />
               </div>
@@ -126,11 +128,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   min={5}
                   max={50}
                   step={5}
-                  value={[settings.viewer.gridSize]}
+                  value={[viewer.gridSize]}
                   onValueChange={(value) => updateViewerSettings({ gridSize: value[0] })}
                   className="flex-1"
                 />
-                <span className="w-12 text-center">{settings.viewer.gridSize}px</span>
+                <span className="w-12 text-center">{viewer.gridSize}px</span>
               </div>
             </div>
           </TabsContent>
@@ -143,11 +145,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   min={100}
                   max={5000}
                   step={100}
-                  value={[settings.performance.maxNodes]}
+                  value={[performance.maxNodes]}
                   onValueChange={(value) => updatePerformanceSettings({ maxNodes: value[0] })}
                   className="flex-1"
                 />
-                <span className="w-16 text-center">{settings.performance.maxNodes}</span>
+                <span className="w-16 text-center">{performance.maxNodes}</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Maximum number of nodes allowed in a workflow. Higher values may impact performance.
@@ -156,7 +158,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="space-y-2">
               <Label htmlFor="render-quality">Render quality</Label>
               <Select
-                value={settings.performance.renderQuality}
+                value={performance.renderQuality}
                 onValueChange={(value) =>
                   updatePerformanceSettings({ renderQuality: value as "low" | "medium" | "high" })
                 }
@@ -186,4 +188,5 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     </Dialog>
   )
 }
+
 

@@ -61,14 +61,12 @@ export function WorkflowLibrary({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Function to refresh workflows
   const refreshWorkflows = () => {
     if (typeof window !== 'undefined') {
       try {
         setWorkflows(workflowStorage.getWorkflows());
       } catch (error) {
         console.error("Failed to load workflows:", error);
-        setWorkflows([]);
       }
     }
   };
@@ -291,23 +289,22 @@ export function WorkflowLibrary({
                           </div>
                         </div>
                         <CardDescription className="line-clamp-2 min-h-[34px] text-sm">
-                          {workflow.description || "No description provided"}
+                          {workflow.description}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pb-2">
-                        <div className="mb-2">
-                          <AspectRatio ratio={3 / 2}>
-                            <img
-                              src={
-                                workflow.thumbnail ||
-                                "/placeholder.svg?height=200&width=300"
-                              }
-                              alt={`${workflow.name} thumbnail`}
-                              className="h-full w-full object-cover rounded-md border"
-                              loading="lazy"
-                            />
-                          </AspectRatio>
-                        </div>
+                        {workflow.thumbnail && (
+                          <div className="mb-2">
+                            <AspectRatio ratio={3 / 2}>
+                              <img
+                                src={workflow.thumbnail}
+                                alt={`${workflow.name} thumbnail`}
+                                className="h-full w-full object-cover rounded-md border"
+                                loading="lazy"
+                              />
+                            </AspectRatio>
+                          </div>
+                        )}
                         <div className="flex items-center text-xs text-muted-foreground gap-4 mb-2">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />

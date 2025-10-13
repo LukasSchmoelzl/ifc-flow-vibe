@@ -5,9 +5,7 @@ import { useCanvasStore } from "./store";
 import { WorkflowExecutor } from "./executor";
 import { createIfcNodeFromFile, generateNodeId } from "./nodes/auto-registry";
 import type { Workflow } from "./storage";
-import { WorkflowStorage } from "./storage";
-
-const workflowStorage = new WorkflowStorage();
+import { workflowStorage } from "./storage";
 
 // Workflow Operations
 export const workflowActions = {

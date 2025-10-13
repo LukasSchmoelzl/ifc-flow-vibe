@@ -35,10 +35,6 @@ interface CanvasState {
   isNodeDragging: boolean;
   placementMode: boolean;
   selectedNodeType: string | null;
-  showGrid: boolean;
-  showMinimap: boolean;
-  isSettingsLoaded: boolean;
-  isMobile: boolean;
 
   // History state
   history: HistoryItem[];
@@ -68,10 +64,6 @@ interface CanvasActions {
   setIsNodeDragging: (isDragging: boolean) => void;
   setPlacementMode: (mode: boolean) => void;
   setSelectedNodeType: (type: string | null) => void;
-  setShowGrid: (show: boolean) => void;
-  setShowMinimap: (show: boolean) => void;
-  setIsSettingsLoaded: (loaded: boolean) => void;
-  setIsMobile: (isMobile: boolean) => void;
 
   // History actions
   addToHistory: (nodes: Node[], edges: Edge[]) => void;
@@ -89,8 +81,8 @@ export const useCanvasStore = create<CanvasStore>()(
       // Initial state
       nodes: [],
       edges: [],
-              selectedNode: null,
-              focusedViewerId: null,
+      selectedNode: null,
+      focusedViewerId: null,
       reactFlowWrapper: null,
       reactFlowInstance: null,
       currentWorkflow: null,
@@ -100,10 +92,6 @@ export const useCanvasStore = create<CanvasStore>()(
       isNodeDragging: false,
       placementMode: false,
       selectedNodeType: null,
-      showGrid: true,
-      showMinimap: false,
-      isSettingsLoaded: false,
-      isMobile: false,
       history: [],
       historyIndex: -1,
       canUndo: false,
@@ -139,10 +127,6 @@ export const useCanvasStore = create<CanvasStore>()(
       setIsNodeDragging: (isDragging) => set({ isNodeDragging: isDragging }),
       setPlacementMode: (mode) => set({ placementMode: mode }),
       setSelectedNodeType: (type) => set({ selectedNodeType: type }),
-      setShowGrid: (show) => set({ showGrid: show }),
-      setShowMinimap: (show) => set({ showMinimap: show }),
-      setIsSettingsLoaded: (loaded) => set({ isSettingsLoaded: loaded }),
-      setIsMobile: (isMobile) => set({ isMobile }),
 
       // History actions
       addToHistory: (nodes, edges) => {
