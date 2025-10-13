@@ -1,14 +1,20 @@
 import { NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
 
-const TOOL_TO_NODE_TYPE_MAP: Record<string, string> = {};
+let cachedTools: any[] | null = null;
+let toolToNodeTypeMap: Record<string, string> | null = null;
 
-export function getAllLLMTools() {
+function buildToolRegistry() {
+  if (cachedTools && toolToNodeTypeMap) {
+    return { tools: cachedTools, map: toolToNodeTypeMap };
+  }
+
   const tools: any[] = [];
+  const map: Record<string, string> = {};
   
   Object.entries(NODE_METADATA_MAP).forEach(([nodeType, metadata]) => {
     if (metadata.llmTools) {
       metadata.llmTools.forEach(tool => {
-        TOOL_TO_NODE_TYPE_MAP[tool.name] = nodeType;
+        map[tool.name] = nodeType;
         tools.push({
           name: tool.name,
           description: tool.description,
@@ -18,10 +24,17 @@ export function getAllLLMTools() {
     }
   });
   
-  return tools;
+  cachedTools = tools;
+  toolToNodeTypeMap = map;
+  
+  return { tools, map };
+}
+
+export function getAllLLMTools() {
+  return buildToolRegistry().tools;
 }
 
 export function getNodeTypeForTool(toolName: string): string | null {
-  return TOOL_TO_NODE_TYPE_MAP[toolName] || null;
+  return buildToolRegistry().map[toolName] || null;
 }
 

@@ -8,16 +8,7 @@ interface UseAIProps {
 
 export function useAI(props: UseAIProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const executorRef = useRef<Executor | null>(null);
-
-  const setupExecutor = useCallback(() => {
-    if (executorRef.current) return executorRef.current;
-    
-    const executor = new Executor();
-    executorRef.current = executor;
-    
-    return executor;
-  }, []);
+  const executorRef = useRef<Executor>(new Executor());
 
   const processMessage = useCallback(async (
     message: string, 
@@ -28,24 +19,13 @@ export function useAI(props: UseAIProps) {
     setIsProcessing(true);
 
     try {
-      const executor = setupExecutor();
-      if (!executor) {
-        throw new Error('Executor could not be initialized');
-      }
-      
       console.log('🚀 Executing AI System...');
       
-      const result = await executor.processUserMessage(message, chatHistory);
+      const result = await executorRef.current.processUserMessage(message, chatHistory);
 
       if (!result.success) {
         console.error('❌ Executor error:', result.response);
         props.onError(result.response || 'Unknown error');
-        return;
-      }
-
-      if (!result.response || result.response.trim() === '') {
-        console.error('❌ Empty response received:', result);
-        props.onError('AI returned no valid response. Please try again.');
         return;
       }
       
@@ -59,7 +39,7 @@ export function useAI(props: UseAIProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, setupExecutor, props]);
+  }, [isProcessing, props]);
 
   return {
     processMessage,

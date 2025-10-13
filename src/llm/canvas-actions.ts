@@ -8,7 +8,6 @@ const START_Y = 100;
 
 interface LLMExecutionContext {
   iteration: number;
-  nodeChain: string[];
   lastNodeId: string | null;
   nodeResults: Map<string, any>;
 }
@@ -16,7 +15,6 @@ interface LLMExecutionContext {
 export class LLMCanvasActions {
   private context: LLMExecutionContext = {
     iteration: 0,
-    nodeChain: [],
     lastNodeId: null,
     nodeResults: new Map(),
   };
@@ -35,7 +33,6 @@ export class LLMCanvasActions {
     const { setNodes } = useCanvasStore.getState();
     setNodes((nodes) => [...nodes, node]);
     
-    this.context.nodeChain.push(node.id);
     this.context.iteration++;
     
     return node.id;
@@ -91,17 +88,13 @@ export class LLMCanvasActions {
     const result = await processor.process(node, inputValues, context);
     
     this.context.nodeResults.set(nodeId, result);
-    return result;
-  }
-
-  updateContext(nodeId: string): void {
     this.context.lastNodeId = nodeId;
+    return result;
   }
 
   reset(): void {
     this.context = {
       iteration: 0,
-      nodeChain: [],
       lastNodeId: null,
       nodeResults: new Map(),
     };

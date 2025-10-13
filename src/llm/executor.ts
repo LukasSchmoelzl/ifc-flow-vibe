@@ -82,7 +82,6 @@ export class Executor {
               const nodeId = this.canvasActions.createNodeFromTool(name, input);
               this.canvasActions.connectToPreviousNode(nodeId);
               const result = await this.canvasActions.executeNode(nodeId);
-              this.canvasActions.updateContext(nodeId);
               
               toolResults.push({
                 type: 'tool_result',
