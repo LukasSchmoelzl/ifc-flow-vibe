@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { Toaster } from "@/src/shared/ui/toaster"
+import { Toaster } from "@/src/shared/toaster"
 import { ThemeProvider } from "@/src/shared/theme-provider"
 
 export const metadata: Metadata = {

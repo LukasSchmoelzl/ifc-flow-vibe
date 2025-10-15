@@ -1,8 +1,15 @@
 import type { NodeProcessor, ProcessorContext } from "@/src/canvas/executor";
-import { SelectionManager } from "./selection-manager";
+
+const SAFE_EXTRACT_VALUE = (obj: any, fallback: string = ''): string => {
+  if (!obj) return fallback;
+  if (typeof obj === 'string') return obj;
+  if (obj.value !== undefined) return String(obj.value);
+  return String(obj);
+};
 
 export class UserSelectionNodeProcessor implements NodeProcessor {
-  private selectionManager = new SelectionManager();
+  private selectedEntities: any[] = [];
+  private previousHighlightedIds: number[] = [];
 
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
     console.log(`[UserSelectionNode] Processing node ${node.id}`);
@@ -21,31 +28,36 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
       let resultData: any;
 
       if (action === 'get') {
-        const selectedEntities = this.selectionManager.getSelectedEntities();
+        const types = this.calculateTypesCount(this.selectedEntities);
         resultData = {
-          selectedEntities,
-          count: selectedEntities.length,
+          selectedEntities: this.selectedEntities,
+          count: this.selectedEntities.length,
+          types,
         };
       } else if (action === 'clear') {
-        await this.selectionManager.clear();
+        await this.clearSelection();
         resultData = {
           selectedEntities: [],
           count: 0,
+          types: {},
           cleared: true,
         };
       } else if (expressIds && expressIds.length > 0) {
-        await this.selectionManager.selectEntities(expressIds);
-        const selectedEntities = this.selectionManager.getSelectedEntities();
+        await this.selectEntities(expressIds);
+        const types = this.calculateTypesCount(this.selectedEntities);
         
         resultData = {
-          selectedEntities,
+          selectedEntities: this.selectedEntities,
           count: expressIds.length,
           expressIds,
+          types,
         };
       } else {
+        const types = this.calculateTypesCount(this.selectedEntities);
         resultData = {
-          selectedEntities: this.selectionManager.getSelectedEntities(),
-          count: this.selectionManager.getSelectedEntities().length,
+          selectedEntities: this.selectedEntities,
+          count: this.selectedEntities.length,
+          types,
         };
       }
 
@@ -66,5 +78,89 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
       throw error;
     }
   }
-}
 
+  private async selectEntities(expressIds: number[]): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+    const fragments = (window as any).__fragmentsViewer;
+
+    if (!model) {
+      console.warn('⚠️ [UserSelectionNode] No model available for highlighting');
+      return;
+    }
+
+    if (this.previousHighlightedIds.length > 0) {
+      await model.resetHighlight(this.previousHighlightedIds);
+    }
+
+    if (expressIds.length > 0) {
+      const THREE = await import('three');
+      const highlightMaterial = {
+        color: new THREE.Color('#6366f1'),
+        opacity: 0.6,
+        transparent: true
+      };
+      await model.highlight(expressIds, highlightMaterial);
+      console.log('✅ [UserSelectionNode] Highlighted:', expressIds);
+    }
+
+    this.previousHighlightedIds = [...expressIds];
+
+    if (fragments) {
+      await fragments.update(true);
+    }
+
+    if (model && expressIds.length > 0) {
+      try {
+        const itemsData = await model.getItemsData(expressIds, {
+          attributesDefault: true
+        });
+
+        this.selectedEntities = expressIds.map((id, index) => {
+          const itemData = itemsData[index];
+          return {
+            expressID: id,
+            type: SAFE_EXTRACT_VALUE(itemData?.ObjectType) || SAFE_EXTRACT_VALUE(itemData?.type),
+            name: SAFE_EXTRACT_VALUE(itemData?.Name) || SAFE_EXTRACT_VALUE(itemData?.GlobalId) || `Entity ${id}`
+          };
+        });
+      } catch (error) {
+        this.selectedEntities = expressIds.map(id => ({
+          expressID: id,
+          type: null,
+          name: `Entity ${id}`
+        }));
+      }
+    } else {
+      this.selectedEntities = expressIds.map(id => ({
+        expressID: id,
+        type: null,
+        name: `Entity ${id}`
+      }));
+    }
+  }
+
+  private async clearSelection(): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+    const fragments = (window as any).__fragmentsViewer;
+
+    if (this.previousHighlightedIds.length > 0 && model) {
+      await model.resetHighlight(this.previousHighlightedIds);
+    }
+
+    this.previousHighlightedIds = [];
+    this.selectedEntities = [];
+
+    if (fragments) {
+      await fragments.update(true);
+    }
+  }
+
+  private calculateTypesCount(selectedEntities: any[]): Record<string, number> {
+    const types: Record<string, number> = {};
+    for (const entity of selectedEntities) {
+      const type = entity.type || 'UNKNOWN';
+      types[type] = (types[type] || 0) + 1;
+    }
+    return types;
+  }
+}

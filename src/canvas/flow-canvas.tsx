@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import ReactFlow, {
   Controls,
   Background,
@@ -17,7 +17,7 @@ import { useSettingsStore } from "@/src/shared/settings-store";
 import * as eventHandlers from "./event-handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
-import { nodeTypes } from "./nodes/auto-registry";
+import { nodeTypes as importedNodeTypes } from "./nodes/auto-registry";
 const EDGE_TYPES = {} as const;
 const SNAP_GRID: [number, number] = [15, 15];
 const PRO_OPTIONS = { hideAttribution: true };
@@ -37,6 +37,9 @@ export function FlowCanvas() {
   const focusedViewerId = useCanvasStore(state => state.focusedViewerId);
   const setReactFlowInstance = useCanvasStore(state => state.setReactFlowInstance);
   const setReactFlowWrapper = useCanvasStore(state => state.setReactFlowWrapper);
+  
+  // Memoize nodeTypes to prevent React Flow warning about recreating nodeTypes on every render
+  const nodeTypes = useMemo(() => importedNodeTypes, []);
   
   // Set ReactFlow instance and wrapper in store (useEffect to avoid setState during render)
   React.useEffect(() => {

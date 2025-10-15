@@ -1,23 +1,43 @@
 "use client";
 
 import React from "react";
-import type { ProjectMetadata, ProjectStatistics, ProjectStructure } from "./types";
 
 interface ProjectInfoNodeUIProps {
   data: {
-    metadata?: ProjectMetadata;
-    statistics?: ProjectStatistics;
-    structure?: ProjectStructure;
+    metadata?: any;
+    statistics?: any;
+    structure?: any;
     projectName?: string;
     totalElements?: number;
+    description?: string;
+    format?: string;
+    status?: string;
+    features?: string[];
+    version?: string;
+    modelId?: string;
+    entityCount?: number;
+    attributeNames?: string[];
+    categories?: string[];
+    loadedAt?: string;
+    summary?: string;
   };
 }
 
 export const ProjectInfoNodeUI: React.FC<ProjectInfoNodeUIProps> = ({ data }) => {
-  const { metadata, statistics, structure } = data;
+  const { metadata, statistics, structure, description, summary } = data;
 
   return (
-    <div className="text-xs space-y-3">
+    <div className="text-xs space-y-3 text-white/90">
+      {/* Description/Summary */}
+      {(description || summary) && (
+        <div className="space-y-1">
+          <div className="font-medium">Info</div>
+          <div className="text-muted-foreground text-[10px]">
+            {description || summary}
+          </div>
+        </div>
+      )}
+
       {metadata && (
         <div className="space-y-1">
           <div className="font-semibold text-sm">{metadata.name}</div>
@@ -48,14 +68,14 @@ export const ProjectInfoNodeUI: React.FC<ProjectInfoNodeUIProps> = ({ data }) =>
             <div>Sites: {structure.sites.length}</div>
             <div>
               Buildings:{" "}
-              {structure.sites.reduce((sum, site) => sum + site.buildings.length, 0)}
+              {structure.sites.reduce((sum: number, site: any) => sum + site.buildings.length, 0)}
             </div>
             <div>
               Storeys:{" "}
               {structure.sites.reduce(
-                (sum, site) =>
+                (sum: number, site: any) =>
                   sum +
-                  site.buildings.reduce((bSum, building) => bSum + building.storeys.length, 0),
+                  site.buildings.reduce((bSum: number, building: any) => bSum + building.storeys.length, 0),
                 0
               )}
             </div>

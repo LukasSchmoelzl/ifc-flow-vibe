@@ -173,15 +173,19 @@ export class WorkflowExecutor {
     for (const edge of inputEdges) {
       const sourceResult = await this.processNode(edge.source);
 
-      if (edge.targetHandle === "input") {
-        inputValues.input = sourceResult;
-      } else if (edge.targetHandle === "reference") {
-        inputValues.reference = sourceResult;
-      } else if (edge.targetHandle === "valueInput") {
-        inputValues.valueInput = sourceResult;
-      } else {
-        inputValues[edge.targetHandle || "input"] = sourceResult;
+      // If sourceHandle is specified, extract that specific data
+      let dataToPass = sourceResult;
+      if (edge.sourceHandle && edge.sourceHandle !== "output" && sourceResult) {
+        // Check if the specific handle data exists
+        if (edge.sourceHandle === "full") {
+          dataToPass = sourceResult;
+        } else if (sourceResult[edge.sourceHandle]) {
+          dataToPass = sourceResult[edge.sourceHandle];
+        }
       }
+
+      const handleId = edge.targetHandle || "input";
+      inputValues[handleId] = dataToPass;
     }
 
     return inputValues;

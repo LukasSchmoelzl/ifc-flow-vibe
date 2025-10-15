@@ -16,7 +16,7 @@ export const AIVisibilityNodeUI: React.FC<AIVisibilityNodeUIProps> = ({ data }) 
 
   if (cleared) {
     return (
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-white/60">
         Highlights cleared
       </div>
     );
@@ -26,7 +26,7 @@ export const AIVisibilityNodeUI: React.FC<AIVisibilityNodeUIProps> = ({ data }) 
   const invisibleCount = invisibleIds?.length || 0;
 
   return (
-    <div className="text-xs space-y-2">
+    <div className="text-xs space-y-2 text-white/90">
       <div>
         <span className="font-medium">Highlighted: </span>
         <span>{highlightCount} entities</span>

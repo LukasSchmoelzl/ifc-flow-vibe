@@ -1,13 +1,12 @@
-import { createNode, NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
+import { NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
+import { nodesOnCanvas } from "@/src/canvas/nodes-on-canvas";
 import { useCanvasStore } from "@/src/canvas/store";
 import type { ProcessorContext } from "@/src/canvas/executor";
 import { getNodeTypeForTool } from "./tool-registry";
 
-const NODE_SPACING = 300;
-const START_Y = 100;
-
 interface LLMExecutionContext {
   iteration: number;
+  parameterIndex: number;
   lastNodeId: string | null;
   nodeResults: Map<string, any>;
 }
@@ -15,6 +14,7 @@ interface LLMExecutionContext {
 export class LLMCanvasActions {
   private context: LLMExecutionContext = {
     iteration: 0,
+    parameterIndex: 0,
     lastNodeId: null,
     nodeResults: new Map(),
   };
@@ -23,18 +23,37 @@ export class LLMCanvasActions {
     const nodeType = getNodeTypeForTool(toolName);
     if (!nodeType) throw new Error(`No node type for tool: ${toolName}`);
 
-    const position = {
-      x: this.context.iteration * NODE_SPACING,
-      y: START_Y,
-    };
+    const nodeParams = { ...params, _toolName: toolName };
+    const node = nodesOnCanvas.createNodeAtIteration(
+      nodeType,
+      this.context.iteration,
+      this.context.parameterIndex,
+      nodeParams
+    );
 
-    const node = createNode(nodeType, position, params);
-    
     const { setNodes } = useCanvasStore.getState();
     setNodes((nodes) => [...nodes, node]);
-    
+
     this.context.iteration++;
-    
+    this.context.parameterIndex = 0;
+
+    return node.id;
+  }
+
+  createParameterNode(nodeType: string, params: any): string {
+    const nodeParams = { ...params };
+    const node = nodesOnCanvas.createNodeAtIteration(
+      nodeType,
+      this.context.iteration,
+      this.context.parameterIndex,
+      nodeParams
+    );
+
+    const { setNodes } = useCanvasStore.getState();
+    setNodes((nodes) => [...nodes, node]);
+
+    this.context.parameterIndex++;
+
     return node.id;
   }
 
@@ -95,9 +114,11 @@ export class LLMCanvasActions {
   reset(): void {
     this.context = {
       iteration: 0,
+      parameterIndex: 0,
       lastNodeId: null,
       nodeResults: new Map(),
     };
+    nodesOnCanvas.reset();
   }
 }
 

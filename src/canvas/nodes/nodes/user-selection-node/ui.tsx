@@ -15,7 +15,7 @@ export const UserSelectionNodeUI: React.FC<UserSelectionNodeUIProps> = ({ data }
 
   if (cleared) {
     return (
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-white/60">
         Selection cleared
       </div>
     );
@@ -23,14 +23,14 @@ export const UserSelectionNodeUI: React.FC<UserSelectionNodeUIProps> = ({ data }
 
   if (!count || count === 0) {
     return (
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-white/60">
         No entities selected
       </div>
     );
   }
 
   return (
-    <div className="text-xs space-y-2">
+    <div className="text-xs space-y-2 text-white/90">
       <div>
         <span className="font-medium">Selected: </span>
         <span>{count} entities</span>

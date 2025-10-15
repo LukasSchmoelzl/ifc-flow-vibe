@@ -1,11 +1,6 @@
 // Node Data Types - Defines all data types that can flow between nodes
 
 import type { IfcEntity } from "@/src/core/entity-types";
-import type { 
-  ProjectMetadata, 
-  ProjectStatistics, 
-  ProjectStructure 
-} from "./nodes/project-info-node/types";
 
 // Base types for all nodes
 export interface NodeInput {
@@ -49,11 +44,22 @@ export interface SearchOutput {
 
 // Project Info Node Output
 export interface ProjectInfoOutput {
-  metadata: ProjectMetadata;
-  statistics: ProjectStatistics;
-  structure: ProjectStructure;
-  projectName: string;
-  totalElements: number;
+  metadata?: any;
+  statistics?: any;
+  structure?: any;
+  projectName?: string;
+  totalElements?: number;
+  description?: string;
+  format?: string;
+  status?: string;
+  features?: string[];
+  version?: string;
+  modelId?: string;
+  entityCount?: number;
+  attributeNames?: string[];
+  categories?: string[];
+  loadedAt?: string;
+  summary?: string;
 }
 
 // User Selection Node Input
@@ -70,6 +76,7 @@ export interface UserSelectionOutput {
     name: string;
   }>;
   count: number;
+  types: Record<string, number>;
   expressIds?: number[];
   cleared?: boolean;
 }

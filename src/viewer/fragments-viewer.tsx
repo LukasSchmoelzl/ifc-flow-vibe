@@ -43,9 +43,9 @@ export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewer
         world.scene = new OBC.SimpleScene(components);
         world.renderer = new OBC.SimpleRenderer(components, container);
         world.camera = new OBC.SimpleCamera(components);
-        
-        components.init();
+
         world.scene.setup();
+        components.init();
 
         stats = new Stats();
         stats.showPanel(2);

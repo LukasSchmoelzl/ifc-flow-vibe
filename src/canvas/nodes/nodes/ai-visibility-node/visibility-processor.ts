@@ -1,8 +1,8 @@
 import type { NodeProcessor, ProcessorContext } from "@/src/canvas/executor";
-import { VisibilityManager } from "./visibility-manager";
 
 export class AIVisibilityNodeProcessor implements NodeProcessor {
-  private visibilityManager = new VisibilityManager();
+  private highlightedIds: number[] = [];
+  private invisibleIds: number[] = [];
 
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
     console.log(`[AIVisibilityNode] Processing node ${node.id}`);
@@ -21,33 +21,31 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
       const resultData: Record<string, any> = {};
 
       if (action === 'get_highlight') {
-        const highlightedIds = this.visibilityManager.getHighlighted();
-        resultData.highlightedIds = highlightedIds;
-        resultData.count = highlightedIds.length;
+        resultData.highlightedIds = this.highlightedIds;
+        resultData.count = this.highlightedIds.length;
       } else if (action === 'clear_highlight') {
-        this.visibilityManager.clearHighlight();
+        await this.clearHighlight();
         resultData.highlightedIds = [];
         resultData.count = 0;
         resultData.cleared = true;
       } else if (action === 'get_invisible') {
-        const invisibleIds = this.visibilityManager.getInvisible();
-        resultData.invisibleIds = invisibleIds;
-        resultData.count = invisibleIds.length;
+        resultData.invisibleIds = this.invisibleIds;
+        resultData.count = this.invisibleIds.length;
       } else if (action === 'set_visible' && expressIds) {
-        await this.visibilityManager.setVisible(expressIds);
+        await this.setVisible(expressIds);
         resultData.visibleIds = expressIds;
         resultData.count = expressIds.length;
       } else if (action === 'set_invisible' && expressIds) {
-        await this.visibilityManager.setInvisible(expressIds);
+        await this.setInvisible(expressIds);
         resultData.invisibleIds = expressIds;
         resultData.count = expressIds.length;
       } else if (expressIds && expressIds.length > 0) {
-        await this.visibilityManager.setHighlight(expressIds);
+        await this.setHighlight(expressIds);
         resultData.highlightedIds = expressIds;
         resultData.count = expressIds.length;
       } else {
-        resultData.highlightedIds = this.visibilityManager.getHighlighted();
-        resultData.invisibleIds = this.visibilityManager.getInvisible();
+        resultData.highlightedIds = this.highlightedIds;
+        resultData.invisibleIds = this.invisibleIds;
       }
 
       context.updateNodeData(node.id, {
@@ -67,5 +65,74 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
       throw error;
     }
   }
-}
 
+  private async setHighlight(expressIds: number[]): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+    const fragments = (window as any).__fragmentsViewer;
+
+    if (!model) {
+      console.warn('⚠️ [AIVisibilityNode] No model available');
+      return;
+    }
+
+    if (this.highlightedIds.length > 0) {
+      await model.resetHighlight(this.highlightedIds);
+    }
+
+    if (expressIds.length > 0) {
+      const THREE = await import('three');
+      const highlightMaterial = {
+        color: new THREE.Color('#22c55e'),
+        opacity: 0.6,
+        transparent: true
+      };
+      await model.highlight(expressIds, highlightMaterial);
+      console.log('✅ [AIVisibilityNode] Highlighted:', expressIds);
+    }
+
+    this.highlightedIds = [...expressIds];
+
+    if (fragments) {
+      await fragments.update(true);
+    }
+  }
+
+  private async clearHighlight(): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+    const fragments = (window as any).__fragmentsViewer;
+
+    if (this.highlightedIds.length > 0 && model) {
+      await model.resetHighlight(this.highlightedIds);
+    }
+
+    this.highlightedIds = [];
+
+    if (fragments) {
+      await fragments.update(true);
+    }
+  }
+
+  private async setVisible(expressIds: number[]): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+
+    if (!model) {
+      console.warn('⚠️ [AIVisibilityNode] No model available');
+      return;
+    }
+
+    await model.setVisibility(expressIds, true);
+    this.invisibleIds = this.invisibleIds.filter(id => !expressIds.includes(id));
+  }
+
+  private async setInvisible(expressIds: number[]): Promise<void> {
+    const model = (window as any).__fragmentsModels?.[0];
+
+    if (!model) {
+      console.warn('⚠️ [AIVisibilityNode] No model available');
+      return;
+    }
+
+    await model.setVisibility(expressIds, false);
+    this.invisibleIds = [...new Set([...this.invisibleIds, ...expressIds])];
+  }
+}

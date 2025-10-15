@@ -21,17 +21,13 @@ import { Play, Pause, Check, Menu, MoreVertical } from "lucide-react";
 import { OpenFileDialog } from "@/src/header/dialogs/open-file-dialog";
 import { SaveWorkflowDialog } from "@/src/header/dialogs/save-workflow-dialog";
 import { SettingsDialog } from "@/src/header/dialogs/settings-dialog";
-import { HelpDialog } from "@/src/header/help/help-dialog";
+import { HelpDialog } from "@/src/header/dialogs/help-dialog";
 import { AboutDialog } from "@/src/header/dialogs/about-dialog";
 import { WorkflowLibrary } from "@/src/canvas/workflow-library";
 import { useToast } from "@/src/shared/use-toast";
 import { useUIStore } from "@/src/shared/ui-store";
 import type { Workflow } from "@/src/canvas/storage";
 import { cleanWorkflowData } from "@/src/canvas/storage";
-import {
-  formatKeyCombination,
-  useKeyboardShortcuts,
-} from "@/src/shared/keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/src/shared/ui/sheet";
 import { useCanvasStore, getFlowObject } from "@/src/canvas/store";
 import { useSettingsStore } from "@/src/shared/settings-store";
@@ -62,12 +58,8 @@ export function AppHeader() {
   const isMobile = useUIStore(state => state.isMobile);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
-  const { shortcuts } = useKeyboardShortcuts();
   const { theme, setTheme } = useTheme();
 
-  const findShortcut = (id: string) => {
-    return shortcuts.find((s) => s.id === id);
-  };
 
   // Action handlers with error handling
   const handleOpenFile = async (file: File) => {
@@ -196,20 +188,12 @@ export function AppHeader() {
                 <MenubarContent>
                   <MenubarItem onClick={() => setOpenFileDialogOpen(true)}>
                     Open IFC File
-                    {findShortcut("openFile") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("openFile")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+O</MenubarShortcut>
                   </MenubarItem>
                   <MenubarSeparator />
                   <MenubarItem onClick={() => setSaveWorkflowDialogOpen(true)}>
                     Save Workflow
-                    {findShortcut("saveWorkflow") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("saveWorkflow")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+S</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={() => setWorkflowLibraryOpen(true)}>
                     Workflow Library
@@ -223,60 +207,32 @@ export function AppHeader() {
                 <MenubarContent>
                   <MenubarItem onClick={undo} disabled={!canUndo}>
                     Undo
-                    {findShortcut("undo") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("undo")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+Z</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={redo} disabled={!canRedo}>
                     Redo
-                    {findShortcut("redo") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("redo")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+Y</MenubarShortcut>
                   </MenubarItem>
                   <MenubarSeparator />
                   <MenubarItem onClick={handleSelectAll}>
                     Select All
-                    {findShortcut("selectAll") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("selectAll")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+A</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={handleCopy}>
                     Copy
-                    {findShortcut("copy") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("copy")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+C</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={handleCut}>
                     Cut
-                    {findShortcut("cut") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("cut")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+X</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={handlePaste}>
                     Paste
-                    {findShortcut("paste") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("paste")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Ctrl+V</MenubarShortcut>
                   </MenubarItem>
                   <MenubarItem onClick={handleDelete}>
                     Delete
-                    {findShortcut("delete") && (
-                      <MenubarShortcut>
-                        {formatKeyCombination(findShortcut("delete")!.keys)}
-                      </MenubarShortcut>
-                    )}
+                    <MenubarShortcut>Del</MenubarShortcut>
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>

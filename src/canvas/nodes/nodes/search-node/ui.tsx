@@ -15,7 +15,7 @@ export const SearchNodeUI: React.FC<SearchNodeUIProps> = ({ data }) => {
   const { searchResults, count, query, types } = data;
 
   return (
-    <div className="text-xs space-y-2">
+    <div className="text-xs space-y-2 text-white/90">
       {query && (
         <div>
           <span className="font-medium">Query: </span>

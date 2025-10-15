@@ -3,7 +3,16 @@ import type { LLMTool } from "../../node-metadata";
 export const aiVisibilityLLMTools: LLMTool[] = [
   {
     name: "get_ai_highlight",
-    description: "Get the currently AI-highlighted entities in the 3D viewer.",
+    description: `Get the currently AI-highlighted entities in the 3D viewer.
+
+NODE INPUT:
+- None
+
+NODE OUTPUT:
+- highlightedIds (number[]): Array of highlighted express IDs
+- count (number): Number of highlighted entities
+
+Use this to check what elements the AI has currently highlighted (magenta color).`.trim(),
     input_schema: {
       type: "object",
       properties: {},
@@ -12,7 +21,17 @@ export const aiVisibilityLLMTools: LLMTool[] = [
   },
   {
     name: "set_ai_highlight",
-    description: "Highlight/Color specific entities in the 3D viewer by their express IDs.",
+    description: `Highlight/Color specific entities in the 3D viewer by their express IDs (magenta color).
+
+NODE INPUT:
+- expressIds (number[]): Array of express IDs to highlight
+
+NODE OUTPUT:
+- highlightedIds (number[]): Array of highlighted express IDs
+- count (number): Number of highlighted entities
+
+This creates an AI highlight (magenta), different from user selection (purple).
+Use this to visually emphasize found/analyzed elements to the user.`.trim(),
     input_schema: {
       type: "object",
       properties: {
@@ -27,7 +46,17 @@ export const aiVisibilityLLMTools: LLMTool[] = [
   },
   {
     name: "clear_ai_highlight",
-    description: "Clear all AI highlights in the 3D viewer.",
+    description: `Clear all AI highlights in the 3D viewer.
+
+NODE INPUT:
+- None
+
+NODE OUTPUT:
+- highlightedIds (number[]): Empty array []
+- count (number): 0
+- cleared (boolean): true
+
+Use this to remove all AI highlights and restore normal view.`.trim(),
     input_schema: {
       type: "object",
       properties: {},
@@ -36,7 +65,17 @@ export const aiVisibilityLLMTools: LLMTool[] = [
   },
   {
     name: "set_visible",
-    description: "Make specific entities visible in the 3D viewer.",
+    description: `Make ONLY specific entities visible in the 3D viewer. All other entities will be hidden.
+
+NODE INPUT:
+- expressIds (number[]): Array of express IDs to keep visible
+
+NODE OUTPUT:
+- visibleIds (number[]): Array of visible express IDs
+- count (number): Number of visible entities
+
+Use this to isolate/focus on specific elements by hiding everything else.
+Example: "show only walls" → search walls, then set_visible with those IDs.`.trim(),
     input_schema: {
       type: "object",
       properties: {
@@ -51,7 +90,16 @@ export const aiVisibilityLLMTools: LLMTool[] = [
   },
   {
     name: "get_invisible",
-    description: "Get the currently invisible entities in the 3D viewer.",
+    description: `Get the currently invisible entities in the 3D viewer.
+
+NODE INPUT:
+- None
+
+NODE OUTPUT:
+- invisibleIds (number[]): Array of invisible express IDs
+- count (number): Number of invisible entities
+
+Use this to check which elements are currently hidden.`.trim(),
     input_schema: {
       type: "object",
       properties: {},
@@ -60,7 +108,17 @@ export const aiVisibilityLLMTools: LLMTool[] = [
   },
   {
     name: "set_invisible",
-    description: "Make specific entities invisible in the 3D viewer.",
+    description: `Make specific entities invisible in the 3D viewer. Other entities remain visible.
+
+NODE INPUT:
+- expressIds (number[]): Array of express IDs to hide
+
+NODE OUTPUT:
+- invisibleIds (number[]): Array of invisible express IDs (cumulative)
+- count (number): Number of invisible entities
+
+Use this to hide/remove specific elements from view.
+Example: "hide all doors" → search doors, then set_invisible with those IDs.`.trim(),
     input_schema: {
       type: "object",
       properties: {

@@ -20,7 +20,7 @@ export class WorkflowStorage {
     }
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      throw new Error("No workflows found");
+      return [];
     }
     return JSON.parse(data);
   }
@@ -44,7 +44,12 @@ export class WorkflowStorage {
       flowData: cleanWorkflowData(workflow.flowData)
     };
 
-    const workflows = this.getWorkflows();
+    let workflows: Workflow[] = [];
+    try {
+      workflows = this.getWorkflows();
+    } catch (error) {
+      workflows = [];
+    }
     const existingIndex = workflows.findIndex((w) => w.id === cleanedWorkflow.id);
 
     if (existingIndex >= 0) {

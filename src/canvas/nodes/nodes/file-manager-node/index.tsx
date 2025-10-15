@@ -3,7 +3,7 @@
 import React from "react";
 import type { NodeProps } from "reactflow";
 import { Handle, Position } from "reactflow";
-import { Card } from "@/src/shared/ui/card";
+import { NodeCard } from "../../node-card";
 import { useFileHandler } from "./file-handler";
 import { FileManagerNodeUI } from "./ui";
 
@@ -11,11 +11,10 @@ export const FileManagerNode: React.FC<NodeProps> = ({ id, data, selected }) => 
   const { dropRef, isDraggingOver, onDragOver, onDragLeave, onDrop, onDoubleClick } = useFileHandler(id);
 
   return (
-    <Card
+    <NodeCard
       ref={dropRef}
-      className={`min-w-[280px] max-w-[400px] ${
-        selected ? "ring-2 ring-primary" : ""
-      } ${isDraggingOver ? "ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-950" : ""}`}
+      selected={selected}
+      isDragging={isDraggingOver}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -24,28 +23,28 @@ export const FileManagerNode: React.FC<NodeProps> = ({ id, data, selected }) => 
       <Handle type="source" position={Position.Right} />
       
       <div className="p-4">
-        <div className="font-semibold mb-2">{data.label || "File Manager"}</div>
+        <div className="font-semibold mb-2 text-white">{data.label || "File Manager"}</div>
         
         {/* Loading state */}
         {data.isLoading && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-white/70">
             Loading file...
           </div>
         )}
 
         {/* Error state */}
         {!data.isLoading && data.error && (
-          <div className="text-xs text-red-500">
+          <div className="text-xs text-red-300">
             Error: {data.error}
           </div>
         )}
 
         {/* Content */}
         {!data.isLoading && !data.error && (
-          <FileManagerNodeUI data={data} isDraggingOver={isDraggingOver} />
+          <FileManagerNodeUI data={data} />
         )}
       </div>
-    </Card>
+    </NodeCard>
   );
 };
 
