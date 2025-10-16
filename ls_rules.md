@@ -17,4 +17,5 @@ Allgemein:
     verwende zustand statt hooks
 
 Nodes:
+    In jedem node UI sollen die Eingänge und Ausgänge jeweils als Liste mit Datentyp oder API call als Inhalt
     

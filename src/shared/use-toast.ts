@@ -5,7 +5,6 @@ import * as React from "react"
 import type { ToastActionElement, ToastProps } from "@/src/shared/ui/toast"
 
 const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -52,7 +51,6 @@ interface State {
   toasts: ToasterToast[]
 }
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -70,19 +68,6 @@ const reducer = (state: State, action: Action): State => {
 
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action
-
-      if (toastId) {
-        toastTimeouts.set(
-          toastId,
-          setTimeout(() => {
-            toastTimeouts.delete(toastId)
-            dispatch({
-              type: actionTypes.REMOVE_TOAST,
-              toastId,
-            })
-          }, TOAST_REMOVE_DELAY),
-        )
-      }
 
       return {
         ...state,

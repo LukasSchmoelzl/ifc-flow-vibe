@@ -1,4 +1,4 @@
-import { NODE_METADATA_MAP } from "@/src/canvas/nodes/auto-registry";
+import { NODE_REGISTRY } from "@/src/canvas/nodes/auto-registry";
 
 let cachedTools: any[] | null = null;
 let toolToNodeTypeMap: Record<string, string> | null = null;
@@ -10,23 +10,27 @@ function buildToolRegistry() {
 
   const tools: any[] = [];
   const map: Record<string, string> = {};
-  
-  Object.entries(NODE_METADATA_MAP).forEach(([nodeType, metadata]) => {
+
+  Object.entries(NODE_REGISTRY).forEach(([nodeType, { metadata }]) => {
     if (metadata.llmTools) {
       metadata.llmTools.forEach(tool => {
         map[tool.name] = nodeType;
+
+        // Use description as-is
+        const enhancedDescription = tool.description;
+
         tools.push({
           name: tool.name,
-          description: tool.description,
+          description: enhancedDescription,
           input_schema: tool.input_schema,
         });
       });
     }
   });
-  
+
   cachedTools = tools;
   toolToNodeTypeMap = map;
-  
+
   return { tools, map };
 }
 

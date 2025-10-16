@@ -31,7 +31,7 @@ The codebase follows a domain-based architecture (YAGNI principle) with clear se
 ```
 src/
 ├── canvas/          # Canvas & workflow logic (nodes, executors, storage)
-├── viewer/          # 3D viewer components (FragmentsViewer)
+├── viewer/          # 3D viewer components (fragmentsViewer)
 ├── header/          # Header UI (AppHeader, NodesToolbar)
 ├── llm/             # AI integration (Claude API, tool registry, executor)
 ├── core/            # Entity access layer (entity cache, extractor, types)
@@ -178,7 +178,7 @@ LLM tools are defined in each node's `llm-tools.ts` and automatically collected 
 
 ## 3D Viewer
 
-`FragmentsViewer` (src/viewer/fragments-viewer.tsx) provides IFC visualization:
+`fragmentsViewer` (src/viewer/fragments-viewer.tsx) provides IFC visualization:
 - Uses @thatopen/components and @thatopen/fragments
 - Initializes Three.js scene with SimpleScene/Camera/Renderer
 - Stores global state in `window.__fragmentsViewer` and `window.__fragmentsModels`

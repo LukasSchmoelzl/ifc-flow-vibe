@@ -1,6 +1,6 @@
 // Node Data Types - Defines all data types that can flow between nodes
 
-import type { IfcEntity } from "@/src/core/entity-types";
+// IfcEntity interface moved inline
 
 // Base types for all nodes
 export interface NodeInput {
@@ -19,7 +19,7 @@ export interface FileManagerOutput {
   schema: string;
   projectName: string;
   elementCounts: Record<string, number>;
-  model?: any; // FragmentsModel reference
+  model?: any; // fragmentsModel reference
 }
 
 // Search Node Input
@@ -97,6 +97,18 @@ export interface AIVisibilityOutput {
 }
 
 // Entity data that can be passed between nodes
+// Inline IfcEntity interface
+interface IfcEntity {
+  expressID: number;
+  type: string;
+  name?: string;
+  globalId?: string;
+  description?: string;
+  objectType?: string;
+  tag?: string;
+  properties?: Record<string, any>;
+}
+
 export interface EntityData extends IfcEntity {
   expressID: number;
   type: string;

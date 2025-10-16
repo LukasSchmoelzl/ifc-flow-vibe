@@ -8,16 +8,15 @@ import ReactFlow, {
   useReactFlow,
   type SelectionMode,
 } from "reactflow";
-import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
+import { fragmentsViewer } from "@/src/viewer/fragments-viewer";
 import { FooterPill } from "@/src/overlays/footer-pill";
-import { getNodeLabel } from "./nodes/auto-registry";
 import { useCanvasStore } from "./store";
 import { useUIStore } from "@/src/shared/ui-store";
 import { useSettingsStore } from "@/src/shared/settings-store";
 import * as eventHandlers from "./event-handlers";
 
 // React Flow constants - defined outside component to prevent recreating on every render
-import { nodeTypes as importedNodeTypes } from "./nodes/auto-registry";
+import { nodeTypes } from "@/src/canvas/nodes/auto-registry";
 const EDGE_TYPES = {} as const;
 const SNAP_GRID: [number, number] = [15, 15];
 const PRO_OPTIONS = { hideAttribution: true };
@@ -38,8 +37,7 @@ export function FlowCanvas() {
   const setReactFlowInstance = useCanvasStore(state => state.setReactFlowInstance);
   const setReactFlowWrapper = useCanvasStore(state => state.setReactFlowWrapper);
   
-  // Memoize nodeTypes to prevent React Flow warning about recreating nodeTypes on every render
-  const nodeTypes = useMemo(() => importedNodeTypes, []);
+  // nodeTypes is already memoized in auto-registry
   
   // Set ReactFlow instance and wrapper in store (useEffect to avoid setState during render)
   React.useEffect(() => {
@@ -119,9 +117,9 @@ export function FlowCanvas() {
         </ReactFlow>
       </div>
 
-      {/* Fragments 3D Viewer - Right Side (50%) */}
+      {/* fragments 3D Viewer - Right Side (50%) */}
       <div className="hidden md:block md:w-1/2 h-full border-l border-slate-200 dark:border-slate-700">
-        <FragmentsViewer className="w-full h-full" />
+        <fragmentsViewer className="w-full h-full" />
       </div>
     </>
   );

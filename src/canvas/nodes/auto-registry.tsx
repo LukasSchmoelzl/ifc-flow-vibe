@@ -1,47 +1,34 @@
 import type { NodeTypes } from "reactflow";
 import type { Node } from "reactflow";
-import type { NodeProcessor } from "../executor";
-import type { NodeMetadata, NodeStatus } from "./node-metadata";
+import type { NodeProcessor } from "@/src/canvas/executor";
+import type { NodeMetadata } from "./types";
 
-// Import all node components
-import { FileManagerNode } from "./nodes/file-manager-node";
-import { SearchNode } from "./nodes/search-node";
-import { ProjectInfoNode } from "./nodes/project-info-node";
-import { UserSelectionNode } from "./nodes/user-selection-node";
-import { AIVisibilityNode } from "./nodes/ai-visibility-node";
+// Import all nodes (single import per node)
+import { fileManagerNode } from "./file-manager-node";
+import { searchNode } from "./search-node";
+import { fragmentsApiNode } from "./fragments-api-node";
+import { userSelectionNode } from "./user-selection-node";
+import { aiVisibilityNode } from "./ai-visibility-node";
+import { infoViewerNode } from "./info-viewer-node";
 
-// Import all node metadata
-import { fileManagerNodeMetadata } from "./nodes/file-manager-node/metadata";
-import { searchNodeMetadata } from "./nodes/search-node/metadata";
-import { projectInfoNodeMetadata } from "./nodes/project-info-node/metadata";
-import { userSelectionNodeMetadata } from "./nodes/user-selection-node/metadata";
-import { aiVisibilityNodeMetadata } from "./nodes/ai-visibility-node/metadata";
-
-// Registry of all nodes with their metadata
-const NODE_METADATA_MAP: Record<string, NodeMetadata> = {
-  fileManagerNode: fileManagerNodeMetadata,
-  searchNode: searchNodeMetadata,
-  projectInfoNode: projectInfoNodeMetadata,
-  userSelectionNode: userSelectionNodeMetadata,
-  aiVisibilityNode: aiVisibilityNodeMetadata,
-};
-
-// React Flow node types (for rendering)
-export const nodeTypes: NodeTypes = {
-  fileManagerNode: FileManagerNode,
-  searchNode: SearchNode,
-  projectInfoNode: ProjectInfoNode,
-  userSelectionNode: UserSelectionNode,
-  aiVisibilityNode: AIVisibilityNode,
+// Single registry for all node information
+const NODE_REGISTRY = {
+  fileManagerNode,
+  searchNode,
+  fragmentsApiNode,
+  userSelectionNode,
+  aiVisibilityNode,
+  infoViewerNode,
 } as const;
 
+// React Flow node types (for rendering)
+export const nodeTypes: NodeTypes = Object.fromEntries(
+  Object.entries(NODE_REGISTRY).map(([key, { component }]) => [key, component])
+) as NodeTypes;
+
 // Node processors (for workflow execution)
-export const NODE_PROCESSORS: Record<string, NodeProcessor> = Object.entries(NODE_METADATA_MAP).reduce(
-  (acc, [type, metadata]) => {
-    acc[type] = metadata.processor;
-    return acc;
-  },
-  {} as Record<string, NodeProcessor>
+export const NODE_PROCESSORS: Record<string, NodeProcessor> = Object.fromEntries(
+  Object.entries(NODE_REGISTRY).map(([key, { metadata }]) => [key, metadata.processor])
 );
 
 // Generate unique node ID
@@ -55,17 +42,18 @@ export const createNode = (
   position: { x: number; y: number },
   additionalData?: Record<string, any>
 ): Node => {
-  const metadata = NODE_METADATA_MAP[type];
-  if (!metadata) {
-    throw new Error(`No node metadata found for type: ${type}`);
+  const nodeInfo = NODE_REGISTRY[type as keyof typeof NODE_REGISTRY];
+  if (!nodeInfo) {
+    throw new Error(`No node found for type: ${type}`);
   }
 
   return {
     id: generateNodeId(),
-    type: metadata.type,
+    type,
     position,
     data: {
-      ...metadata.defaultData,
+      isLoading: false,
+      error: null,
       ...additionalData,
     },
   };
@@ -76,27 +64,17 @@ export const getAllNodes = (): Array<{
   id: string;
   label: string;
   icon: React.ReactElement;
-  status: NodeStatus;
 }> => {
-  return Object.entries(NODE_METADATA_MAP).map(([id, metadata]) => {
+  return Object.entries(NODE_REGISTRY).map(([id, { metadata }]) => {
     const IconComponent = metadata.icon;
     return {
       id,
       label: metadata.label,
       icon: <IconComponent className="h-4 w-4 mr-2" />,
-      status: metadata.status,
     };
   });
 };
 
-// Get node label by type
-export const getNodeLabel = (nodeType: string): string => {
-  const metadata = NODE_METADATA_MAP[nodeType];
-  if (!metadata) {
-    throw new Error(`No node metadata found for type: ${nodeType}`);
-  }
-  return metadata.label;
-};
 
 // Special factory for File Manager nodes from File menu
 export const createFileManagerNodeFromFile = (
@@ -109,6 +87,6 @@ export const createFileManagerNodeFromFile = (
   });
 };
 
-// Export node metadata for external use
-export { NODE_METADATA_MAP };
+// Export node registry for external use
+export { NODE_REGISTRY };
 

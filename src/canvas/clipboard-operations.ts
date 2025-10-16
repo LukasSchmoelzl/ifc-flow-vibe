@@ -2,7 +2,7 @@
 
 import type { Node, Edge } from "reactflow";
 import { useCanvasStore } from "./store";
-import { generateNodeId } from "./nodes/auto-registry";
+import { generateNodeId } from "@/src/canvas/nodes/auto-registry";
 
 type Toast = {
   title: string;

@@ -8,30 +8,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/shared/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/shared/ui/tooltip";
 import { ChevronDown, FileUp, FileText, Box, Filter, Move, Edit, Calculator, GitBranch, BarChart, Download, Clock, Terminal, Shuffle, Database, Layers } from "lucide-react";
 import { getAllNodes } from "@/src/canvas/nodes/auto-registry";
-import { NodeStatusBadge } from "@/src/canvas/nodes/node-status-badge";
 import { useUIStore } from "@/src/shared/ui-store";
 import { useCanvasStore } from "@/src/canvas/store";
 
-function getStatusTooltipContent(status: string): string | null {
-  switch (status) {
-    case "working":
-      return "This node is fully implemented and working";
-    case "wip":
-      return "This node is work in progress - basic functionality available";
-    case "new":
-      return "This node is newly added - limited functionality";
-    default:
-      return null;
-  }
-}
 
 export function NodesToolbar() {
   const isMobile = useUIStore(state => state.isMobile);
@@ -58,7 +39,6 @@ export function NodesToolbar() {
   };
 
   const renderNodeItem = (node: any) => {
-    const tooltipContent = getStatusTooltipContent(node.status);
     const isSelected = selectedNodeType === node.id;
 
     const handleNodeInteraction = (event: React.MouseEvent | React.TouchEvent) => {
@@ -91,22 +71,6 @@ export function NodesToolbar() {
         <span className={`text-sm font-medium whitespace-nowrap ${isSelected ? 'text-primary font-semibold' : ''}`}>
           {node.label}
         </span>
-        {tooltipContent ? (
-          <TooltipProvider delayDuration={100}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <NodeStatusBadge status={node.status as any} />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="center">
-                <p className="max-w-xs text-xs">{tooltipContent}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <NodeStatusBadge status={node.status as any} />
-        )}
       </div>
     );
   };

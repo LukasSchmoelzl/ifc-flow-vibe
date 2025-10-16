@@ -13,16 +13,13 @@
 
 </div>
 
-<table>
-<tr>
-<td width="50%">
-<img src="docs/assets/ui_light.png" alt="IFC Flow Map Light Theme" title="Light Theme"/>
-</td>
-<td width="50%">
-<img src="docs/assets/ui_dark.png" alt="IFC Flow Map Dark Theme" title="Dark Theme"/>
-</td>
-</tr>
-</table>
+## 🎨 Features
+
+- **Visual Node Editor** - Drag-and-drop interface for building workflows
+- **IFC File Support** - Load and analyze Industry Foundation Classes files
+- **AI-Powered Workflows** - Let AI build your workflows automatically
+- **3D Visualization** - Interactive 3D model viewer with highlighting
+- **Real-time Processing** - Execute workflows and see results instantly
 
 ---
 

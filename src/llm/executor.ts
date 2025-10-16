@@ -1,5 +1,5 @@
 import { getAllLLMTools } from './tool-registry';
-import { LLMCanvasActions } from './canvas-actions';
+import { LLMCanvasActions } from '@/src/canvas/canvas-actions';
 
 const MAX_ITERATIONS = 10;
 
@@ -36,26 +36,48 @@ export class Executor {
   }
 
   private async runToolChain(
-    userMessage: string, 
+    userMessage: string,
     chatHistory: Array<{role: 'user' | 'assistant', content: string}>
   ): Promise<ExecutionResult> {
     const messages: Array<{role: 'user' | 'assistant', content: any}> = [];
     this.canvasActions.reset();
-    
+
     chatHistory.forEach(msg => {
       messages.push({ role: msg.role, content: msg.content });
     });
-    
+
     messages.push({ role: 'user', content: userMessage });
-    
+
     const tools = getAllLLMTools();
+
+    console.log('========================================');
+    console.log('🤖 SYSTEM PROMPT:');
+    console.log('========================================');
+    console.log(SYSTEM_PROMPT);
+    console.log('========================================');
+    console.log('🛠️  AVAILABLE TOOLS:');
+    console.log('========================================');
+    tools.forEach(tool => {
+      console.log(`\n📦 ${tool.name}`);
+      console.log(tool.description);
+      console.log('Input Schema:', JSON.stringify(tool.input_schema, null, 2));
+    });
+    console.log('========================================\n');
+
     let iteration = 0;
-    
+
     try {
       while (iteration < MAX_ITERATIONS) {
         iteration++;
-        
+
+        console.log(`\n📤 REQUEST TO CLAUDE (Iteration ${iteration}):`);
+        console.log('Messages:', JSON.stringify(messages, null, 2));
+
         const response = await this.sendRequestToClaude(messages, tools, SYSTEM_PROMPT);
+
+        console.log(`\n📥 RESPONSE FROM CLAUDE (Iteration ${iteration}):`);
+        console.log('Stop Reason:', response.stop_reason);
+        console.log('Content:', JSON.stringify(response.content, null, 2));
         
         if (response.stop_reason === 'end_turn') {
           const textContent = response.content.find((c: any) => c.type === 'text');
@@ -77,20 +99,24 @@ export class Executor {
           for (const content of response.content) {
             if (content.type === 'tool_use') {
               const { name, input, id } = content;
-              
-              console.log(`🔧 Tool: ${name}`, input);
-              
+
+              console.log(`\n🔧 TOOL USE: ${name}`);
+              console.log('Tool Input:', JSON.stringify(input, null, 2));
+
               const nodeId = this.canvasActions.createNodeFromTool(name, input);
               this.canvasActions.connectToPreviousNode(nodeId);
               const result = await this.canvasActions.executeNode(nodeId);
-              
+
+              const resultStr = JSON.stringify(result);
+
               toolResults.push({
                 type: 'tool_result',
                 tool_use_id: id,
-                content: JSON.stringify(result),
+                content: resultStr,
               });
-              
-              console.log(`✅ Result:`, result);
+
+              console.log(`✅ TOOL RESULT:`, result);
+              console.log(`📤 Sending back to Claude:`, resultStr);
             }
           }
           

@@ -26,12 +26,6 @@ import {
   Upload,
 } from "lucide-react";
 import { workflowStorage, type Workflow } from "@/src/canvas/storage";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/shared/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/shared/ui/tabs";
 import { Alert, AlertDescription } from "@/src/shared/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/src/shared/ui/radio-group";
@@ -269,20 +263,9 @@ export function SaveWorkflowDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="tags">Tags</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <HelpCircle className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">
-                        Tags help you organize and find workflows later
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="Tags help you organize and find workflows later">
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
               </div>
               <div className="flex gap-2">
                 <Input

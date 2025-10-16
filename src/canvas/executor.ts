@@ -175,7 +175,7 @@ export class WorkflowExecutor {
 
       // If sourceHandle is specified, extract that specific data
       let dataToPass = sourceResult;
-      if (edge.sourceHandle && edge.sourceHandle !== "output" && sourceResult) {
+      if (edge.sourceHandle && sourceResult) {
         // Check if the specific handle data exists
         if (edge.sourceHandle === "full") {
           dataToPass = sourceResult;

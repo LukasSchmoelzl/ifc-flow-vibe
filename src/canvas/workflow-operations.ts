@@ -3,7 +3,7 @@
 import type { Node, Edge } from "reactflow";
 import { useCanvasStore } from "./store";
 import { WorkflowExecutor } from "./executor";
-import { createFileManagerNodeFromFile } from "./nodes/auto-registry";
+import { createFileManagerNodeFromFile } from "@/src/canvas/nodes/auto-registry";
 import type { Workflow } from "./storage";
 import { workflowStorage } from "./storage";
 

@@ -4,7 +4,7 @@ import type { Node, Connection, ReactFlowInstance, NodeChange, EdgeChange } from
 import { applyNodeChanges, applyEdgeChanges } from "reactflow";
 import { useCanvasStore } from "./store";
 import { useUIStore } from "@/src/shared/ui-store";
-import { createNode } from "./nodes/auto-registry";
+import { createNode } from "@/src/canvas/nodes/auto-registry";
 
 export function onNodesChange(changes: NodeChange[]): void {
   const { nodes, setNodes } = useCanvasStore.getState();

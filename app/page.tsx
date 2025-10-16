@@ -14,7 +14,6 @@ import { MobilePlacementOverlay } from "@/src/overlays/mobile-placement";
 // Canvas State
 import { useCanvasStore } from "@/src/canvas/store";
 import { useUIStore } from "@/src/shared/ui-store";
-import { getNodeLabel } from "@/src/canvas/nodes/auto-registry";
 
 function AppContent() {
   const isMobile = useUIStore(state => state.isMobile);
@@ -36,7 +35,7 @@ function AppContent() {
       <FileDropOverlay isVisible={isFileDragging} />
       <MobilePlacementOverlay
         isVisible={isMobile && placementMode && selectedNodeType !== null}
-        nodeLabel={selectedNodeType ? getNodeLabel(selectedNodeType) : ""}
+        nodeLabel={selectedNodeType || ""}
       />
       
       {/* ========== HEADER DOMAIN ========== */}
