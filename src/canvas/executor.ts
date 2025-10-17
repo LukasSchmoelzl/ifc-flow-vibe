@@ -92,21 +92,17 @@ export class WorkflowExecutor {
     this.abortController = new AbortController();
 
     try {
-      console.log("🚀 WORKFLOW EXECUTION STARTED");
-
       const sortedNodes = topologicalSort(this.nodes, this.edges);
-      console.log(`📋 Processing ${sortedNodes.length} nodes in order:`, sortedNodes);
+      console.log(`🚀 Workflow: ${sortedNodes.length} nodes`);
 
       for (const nodeId of sortedNodes) {
-        const node = this.nodes.find(n => n.id === nodeId);
-        console.log(`\n▶️  Processing node: ${nodeId} (${node?.type || 'unknown'})`);
         await this.processNode(nodeId);
       }
 
-      console.log("\n✅ WORKFLOW EXECUTION COMPLETED");
+      console.log("✅ Workflow completed");
       return this.nodeResults;
     } catch (error) {
-      console.error("Error executing workflow:", error);
+      console.error("❌ Workflow failed:", error);
       throw error;
     } finally {
       this.isRunning = false;
@@ -133,7 +129,6 @@ export class WorkflowExecutor {
 
   public async processNode(nodeId: string): Promise<any> {
     if (this.nodeResults.has(nodeId)) {
-      console.log(`   ⏭️  Node ${nodeId} already processed, using cached result`);
       return this.nodeResults.get(nodeId);
     }
 
@@ -143,8 +138,6 @@ export class WorkflowExecutor {
     }
 
     const inputValues = await this.getInputValues(nodeId);
-    console.log(`   📥 Input values:`, Object.keys(inputValues).length > 0 ? inputValues : 'none');
-
     const context: ProcessorContext = {
       nodeResults: this.nodeResults,
       edges: this.edges,
@@ -153,14 +146,34 @@ export class WorkflowExecutor {
     };
 
     const processor = NODE_PROCESSORS[node.type as keyof typeof NODE_PROCESSORS];
-    
     if (!processor) {
       throw new Error(`No processor found for node type: ${node.type}`);
     }
     
-    console.log(`   🔄 Calling processor for ${node.type}...`);
+    // Log with input info
+    const inputKeys = Object.keys(inputValues);
+    const inputLog = inputKeys.length > 0 ? `input: ${inputKeys.join(', ')}` : 'no input';
+    console.log(`▶️  ${node.type} (${inputLog})`);
+    
     const result = await processor.process(node, inputValues, context);
-    console.log(`   ✅ Node ${nodeId} processed successfully`);
+
+    // Log with output info
+    let outputType = 'none';
+    if (result) {
+      if (typeof result === 'object') {
+        // Check if it's a FragmentsModel (has specific methods)
+        if (typeof result.getMetadata === 'function') {
+          outputType = 'FragmentsModel';
+        } else {
+          // Show first 3 keys for regular objects
+          const keys = Object.keys(result).slice(0, 3);
+          outputType = keys.length > 0 ? keys.join(', ') : 'object';
+        }
+      } else {
+        outputType = typeof result;
+      }
+    }
+    console.log(`   ✓ output: ${outputType}`);
 
     this.nodeResults.set(nodeId, result);
     return result;
@@ -192,11 +205,15 @@ export class WorkflowExecutor {
   }
 
   private updateNodeDataInList(nodeId: string, newData: any) {
+    const node = this.nodes.find(n => n.id === nodeId);
+    console.log(`🔄 Executor: Updating node ${node?.type || nodeId} with data:`, newData);
+    
     this.nodes = this.nodes.map((n) =>
       n.id === nodeId ? { ...n, data: newData } : n
     );
 
     if (this.onNodeUpdate) {
+      console.log(`📢 Executor: Calling onNodeUpdate for ${node?.type || nodeId}`);
       this.onNodeUpdate(nodeId, newData);
     }
   }

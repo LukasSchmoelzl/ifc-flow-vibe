@@ -89,7 +89,6 @@ export async function runWorkflow(toast: ToastFn, updateNodeData: (nodeId: strin
       description: "Workflow has been executed successfully",
     });
   } catch (error) {
-    console.error("Workflow execution error:", error);
     throw error;
   } finally {
     setIsRunning(false);

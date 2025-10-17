@@ -5,10 +5,10 @@ declare global {
   interface Window {
     __fragmentsViewer?: {
       components: OBC.Components;
-      fragments: FRAGS.fragmentsModels;
+      fragments: FRAGS.FragmentsModels;
       world: OBC.World;
     };
-    __fragmentsModels?: Record<string, FRAGS.fragmentsModel>;
+    __fragmentsModels?: Record<string, FRAGS.FragmentsModel>;
   }
 }
 

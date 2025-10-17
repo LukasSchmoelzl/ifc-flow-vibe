@@ -13,10 +13,10 @@ export const infoViewerNodeMetadata: NodeMetadata = {
   llmTools: [
     {
       name: "display_info",
-      description: `Display project information from connected Project Info node outputs.
+      description: `Display project information from connected Fragments API node outputs.
       
         INPUT/OUTPUT:
-        - Input: Any of the 4 Project Info outputs (ModelInfo, ProjectInfo, ProjectStatistics, ProjectStructure)
+        - Input: Any of the Fragments API outputs (metadata, structure, statistics)
         - Output: Formatted display of the received information
 
         Use this when user wants to view, display, or show project information in a readable format.`.trim(),

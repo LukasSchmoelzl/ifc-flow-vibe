@@ -11,12 +11,12 @@ const GITHUB_WORKER_URL = "https://thatopen.github.io/engine_fragment/resources/
 // Use web-ifc version 0.0.72 (worked before restructuring)
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.72/";
 
-interface fragmentsViewerProps {
-  onModelLoad?: (model: FRAGS.fragmentsModel) => void;
+interface FragmentsViewerProps {
+  onModelLoad?: (model: FRAGS.FragmentsModel) => void;
   className?: string;
 }
 
-export function fragmentsViewer({ onModelLoad, className = "" }: fragmentsViewerProps) {
+export function FragmentsViewer({ onModelLoad, className = "" }: FragmentsViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
   const isInitialized = useRef(false);
@@ -64,7 +64,7 @@ export function fragmentsViewer({ onModelLoad, className = "" }: fragmentsViewer
           type: "text/javascript",
         });
         const workerUrl = URL.createObjectURL(workerFile);
-        const fragments = new FRAGS.fragmentsModels(workerUrl);
+        const fragments = new FRAGS.FragmentsModels(workerUrl);
         
         world.camera.controls.addEventListener("control", () => fragments.update());
 

@@ -28,6 +28,36 @@ export interface ExecutionResult {
 export class Executor {
   private canvasActions = new LLMCanvasActions();
 
+  private sanitizeResult(result: any): any {
+    // Check if it's a FragmentsModel (has methods like getMetadata)
+    if (result && typeof result === 'object' && typeof result.getMetadata === 'function') {
+      return {
+        type: 'FragmentsModel',
+        message: 'Model loaded successfully',
+        note: 'FragmentsModel object (use fragments API nodes to extract data)'
+      };
+    }
+
+    // If it's a plain object, check for nested FragmentsModels
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(result)) {
+        if (value && typeof value === 'object' && typeof (value as any).getMetadata === 'function') {
+          sanitized[key] = {
+            type: 'FragmentsModel',
+            message: 'Model reference',
+            note: 'Use fragments API nodes to extract data'
+          };
+        } else {
+          sanitized[key] = value;
+        }
+      }
+      return sanitized;
+    }
+
+    return result;
+  }
+
   async processUserMessage(
     userMessage: string, 
     chatHistory?: Array<{role: 'user' | 'assistant', content: string}>
@@ -107,7 +137,9 @@ export class Executor {
               this.canvasActions.connectToPreviousNode(nodeId);
               const result = await this.canvasActions.executeNode(nodeId);
 
-              const resultStr = JSON.stringify(result);
+              // Filter out FragmentsModel objects (they have circular references)
+              const sanitizedResult = this.sanitizeResult(result);
+              const resultStr = JSON.stringify(sanitizedResult);
 
               toolResults.push({
                 type: 'tool_result',
@@ -115,7 +147,7 @@ export class Executor {
                 content: resultStr,
               });
 
-              console.log(`✅ TOOL RESULT:`, result);
+              console.log(`✅ TOOL RESULT:`, sanitizedResult);
               console.log(`📤 Sending back to Claude:`, resultStr);
             }
           }

@@ -8,7 +8,7 @@ import ReactFlow, {
   useReactFlow,
   type SelectionMode,
 } from "reactflow";
-import { fragmentsViewer } from "@/src/viewer/fragments-viewer";
+import { FragmentsViewer } from "@/src/viewer/fragments-viewer";
 import { FooterPill } from "@/src/overlays/footer-pill";
 import { useCanvasStore } from "./store";
 import { useUIStore } from "@/src/shared/ui-store";
@@ -119,7 +119,7 @@ export function FlowCanvas() {
 
       {/* fragments 3D Viewer - Right Side (50%) */}
       <div className="hidden md:block md:w-1/2 h-full border-l border-slate-200 dark:border-slate-700">
-        <fragmentsViewer className="w-full h-full" />
+        <FragmentsViewer className="w-full h-full" />
       </div>
     </>
   );

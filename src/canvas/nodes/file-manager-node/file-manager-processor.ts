@@ -11,7 +11,6 @@ export class FileManagerNodeProcessor implements NodeProcessor {
     let isDefaultFile = false;
 
     if (!file) {
-      console.log(`[FileManager] No file provided, loading default: ${DEFAULT_IFC_FILE}`);
       file = await this.loadDefaultFile();
       isDefaultFile = true;
     }
@@ -36,26 +35,18 @@ export class FileManagerNodeProcessor implements NodeProcessor {
 
       const { fragments, world } = fragmentsViewer;
 
-      // Clear existing model if any (only one model at a time)
       await this.clearExistingModels(fragments, world);
 
-      // Convert IFC to fragments
       const serializer = new FRAGS.IfcImporter();
       serializer.wasm = {
         absolute: true,
         path: WASM_PATH,
       };
-
-      console.log(`[FileManager] Loading file: ${file.name}, size: ${file.size} bytes`);
       
       const ifcBuffer = await file.arrayBuffer();
       const typedArray = new Uint8Array(ifcBuffer);
-      console.log(`[FileManager] Converting IFC to fragments...`);
-
       const fragmentsBytes = await serializer.process({ bytes: typedArray });
-      console.log(`[FileManager] fragments bytes generated: ${fragmentsBytes.byteLength} bytes`);
 
-      console.log(`[FileManager] Loading model into fragments viewer...`);
       const model = await fragments.load(fragmentsBytes.buffer as ArrayBuffer, {
         modelId: node.id,
         camera: world.camera.three as any,
@@ -63,7 +54,6 @@ export class FileManagerNodeProcessor implements NodeProcessor {
 
       world.scene.three.add(model.object);
       await fragments.update(true);
-      console.log(`[FileManager] Model added to scene`);
 
 
       // Store model globally (single model only)
@@ -79,12 +69,9 @@ export class FileManagerNodeProcessor implements NodeProcessor {
         isDefaultFile,
       });
 
-      console.log(`[FileManager] Processing complete for node ${node.id}`);
-
-      // Return the full fragments Model instead of simple object
       return model;
     } catch (error) {
-      console.error(`Error processing file-manager node ${node.id}:`, error);
+      console.error(`❌ FileManager:`, error);
       
       context.updateNodeData(node.id, {
         ...node.data,
@@ -109,13 +96,11 @@ export class FileManagerNodeProcessor implements NodeProcessor {
         }
         (model as any).dispose?.();
       } catch (error) {
-        console.warn(`Error removing model ${modelId}:`, error);
+        // Ignore cleanup errors
       }
     }
 
-    // Clear the models registry
     window.__fragmentsModels = {};
-    console.log('[FileManager] Cleared all existing models');
   }
 
   private async loadDefaultFile(): Promise<File> {

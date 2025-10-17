@@ -66,7 +66,7 @@ export function WorkflowLibrary({
       try {
         setWorkflows(workflowStorage.getWorkflows());
       } catch (error) {
-        console.error("Failed to load workflows:", error);
+        // Ignore load errors
       }
     }
   };
@@ -150,7 +150,6 @@ export function WorkflowLibrary({
         description: `"${workflow.name}" has been imported to your library`,
       });
     } catch (error: unknown) {
-      console.error("Error importing workflow:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to import workflow file";
       setImportError(errorMessage);
       toast({

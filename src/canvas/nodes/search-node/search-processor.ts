@@ -30,8 +30,6 @@ export interface CountResponse {
 // Processor
 export class SearchNodeProcessor implements NodeProcessor {
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
-    console.log(`[SearchNode] Processing node ${node.id}`);
-    console.log(`[SearchNode] Inputs:`, inputValues);
 
     const model = inputValues?.model;
     const parameter = inputValues?.parameter;
@@ -47,8 +45,6 @@ export class SearchNodeProcessor implements NodeProcessor {
       });
 
       const results = await this.searchEntities({ query, types, model });
-
-      console.log(`[SearchNode] Found ${results.length} entities`);
 
       const resultData = {
         searchResults: results,
@@ -66,7 +62,7 @@ export class SearchNodeProcessor implements NodeProcessor {
 
       return resultData;
     } catch (error) {
-      console.error(`[SearchNode] Error:`, error);
+      console.error(`❌ Search:`, error);
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
@@ -92,28 +88,43 @@ export class SearchNodeProcessor implements NodeProcessor {
       throw new Error('No model available for search');
     }
 
-    const itemsData = await model.getItemsData();
+    // Get all item IDs with geometry
+    const allItemIds = await model.getItemsIdsWithGeometry();
+    if (!allItemIds || allItemIds.length === 0) {
+      return [];
+    }
 
+    // Get data for all items
+    const itemsData = await model.getItemsData(allItemIds);
+    if (!itemsData || !Array.isArray(itemsData)) {
+      return [];
+    }
+
+    // Filter by types if specified
     let filteredData = itemsData;
-
     if (params.types && params.types.length > 0) {
       filteredData = itemsData.filter((item: any) =>
-        params.types!.includes(item.ObjectType)
+        params.types!.some(type => 
+          item.ObjectType?.toLowerCase().includes(type.toLowerCase())
+        )
       );
     }
 
+    // Filter by query if specified
     if (params.query) {
       const queryLower = params.query.toLowerCase();
       filteredData = filteredData.filter((item: any) =>
         item.Name?.toLowerCase().includes(queryLower) ||
-        item.GlobalId?.toLowerCase().includes(queryLower)
+        item.GlobalId?.toLowerCase().includes(queryLower) ||
+        item.ObjectType?.toLowerCase().includes(queryLower)
       );
     }
 
+    // Map to SearchResult format
     return filteredData.map((item: any) => ({
       name: item.Name || item.GlobalId || 'Unnamed',
-      expressID: item.expressID,
-      type: item.ObjectType
+      expressID: item.expressID || 0,
+      type: item.ObjectType || 'Unknown'
     }));
   }
 }

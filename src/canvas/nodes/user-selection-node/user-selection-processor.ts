@@ -30,8 +30,6 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
   private previousHighlightedIds: number[] = [];
 
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
-    console.log(`[UserSelectionNode] Processing node ${node.id}`);
-    console.log(`[UserSelectionNode] Inputs:`, inputValues);
 
     const expressIds = inputValues?.expressIds as number[] | undefined;
     const action = inputValues?.action as string | undefined;
@@ -87,7 +85,7 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
 
       return resultData;
     } catch (error) {
-      console.error(`[UserSelectionNode] Error:`, error);
+      console.error(`❌ UserSelection:`, error);
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
@@ -102,7 +100,6 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
     const fragments = (window as any).__fragmentsViewer;
 
     if (!model) {
-      console.warn('⚠️ [UserSelectionNode] No model available for highlighting');
       return;
     }
 
@@ -118,7 +115,6 @@ export class UserSelectionNodeProcessor implements NodeProcessor {
         transparent: true
       };
       await model.highlight(expressIds, highlightMaterial);
-      console.log('✅ [UserSelectionNode] Highlighted:', expressIds);
     }
 
     this.previousHighlightedIds = [...expressIds];

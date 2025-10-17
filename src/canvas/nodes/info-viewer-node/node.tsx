@@ -14,6 +14,11 @@ export const InfoViewerNode: React.FC<NodeProps> = ({ data, selected }) => {
     hasData,
     timestamp
   } = data as any;
+  
+  // Log when data changes
+  React.useEffect(() => {
+    console.log('🖼️ InfoViewer UI: Data updated:', { projectData, hasData, timestamp });
+  }, [projectData, hasData, timestamp]);
 
   return (
     <BaseNodeLayout
@@ -28,55 +33,79 @@ export const InfoViewerNode: React.FC<NodeProps> = ({ data, selected }) => {
       inputInfo={infoViewerNodeMetadata.inputInfo}
       outputInfo={infoViewerNodeMetadata.outputInfo}
     >
-      <div className="text-xs space-y-3 text-white/90">
-        <div className="text-white/80">Info Viewer Node</div>
-        
-        {/* Status */}
-        <div className="space-y-1">
-          <div className="font-medium">Status</div>
-          <div className="text-muted-foreground text-[10px]">
-            {data.isLoading ? "Loading..." :
-             data.error ? `Error: ${data.error}` :
-             hasData ? "Data received" :
-             "Waiting for data"}
-          </div>
-        </div>
+      <div className="text-xs text-white/90 space-y-2">
+        {/* Display Area - Shows Data Summary */}
+        {projectData ? (
+          <>
+            {/* Metadata Section */}
+            {projectData.metadata && (
+              <div className="space-y-1">
+                <div className="font-semibold text-white">📋 Metadata</div>
+                <div className="text-white/70 text-[10px] pl-2">
+                  Schema: {projectData.metadata.schema || 'N/A'}
+                </div>
+              </div>
+            )}
 
-        {/* Active View */}
-        {activeView && (
-          <div className="space-y-1">
-            <div className="font-medium">Active View</div>
-            <div className="text-white/60 text-[10px]">{activeView}</div>
-          </div>
-        )}
+            {/* Statistics Section */}
+            {projectData.statistics && (
+              <div className="space-y-1">
+                <div className="font-semibold text-white">📊 Statistics</div>
+                <div className="text-white/70 text-[10px] pl-2">
+                  Total Elements: {projectData.statistics.totalElements?.toLocaleString() || 'N/A'}
+                </div>
+                {projectData.statistics.categories && (
+                  <div className="text-white/70 text-[10px] pl-2">
+                    Categories ({projectData.statistics.categories.length}): {projectData.statistics.categories.slice(0, 5).join(', ')}
+                    {projectData.statistics.categories.length > 5 && ` +${projectData.statistics.categories.length - 5} more`}
+                  </div>
+                )}
+              </div>
+            )}
 
-        {/* Project Data Display */}
-        {projectData && (
-          <div className="space-y-1">
-            <div className="font-medium">Project Data</div>
-            <div className="text-white/60 text-[10px]">
-              {typeof projectData === 'object' && projectData !== null ? 
-                JSON.stringify(projectData, null, 2).substring(0, 200) + '...' :
-                String(projectData).substring(0, 200) + '...'
-              }
-            </div>
-          </div>
-        )}
+            {/* Structure Section */}
+            {projectData.structure && (
+              <div className="space-y-1">
+                <div className="font-semibold text-white">🏗️ Structure</div>
+                <div className="text-white/70 text-[10px] pl-2">
+                  Root: {projectData.structure.category || 'N/A'}
+                </div>
+                {projectData.structure.children && (
+                  <div className="text-white/70 text-[10px] pl-2">
+                    Children: {projectData.structure.children.length} items
+                  </div>
+                )}
+              </div>
+            )}
 
-        {/* Timestamp */}
-        {timestamp && (
-          <div className="space-y-1">
-            <div className="font-medium">Last Updated</div>
-            <div className="text-white/60 text-[10px]">
-              {new Date(timestamp).toLocaleTimeString()}
-            </div>
-          </div>
-        )}
+            {/* Description */}
+            {projectData.description && (
+              <div className="space-y-1">
+                <div className="font-semibold text-white">📝 Description</div>
+                <div className="text-white/70 text-[10px] pl-2">
+                  {projectData.description}
+                </div>
+              </div>
+            )}
 
-        {/* No Data Message */}
-        {!hasData && !data.isLoading && !data.error && (
+            {/* Timestamp */}
+            {projectData.timestamp && (
+              <div className="text-white/50 text-[9px] pt-1 border-t border-white/10">
+                Updated: {new Date(projectData.timestamp).toLocaleString()}
+              </div>
+            )}
+          </>
+        ) : data.isLoading ? (
           <div className="text-white/60 text-[10px]">
-            Connect to Project Info node to display data
+            Loading...
+          </div>
+        ) : data.error ? (
+          <div className="text-red-400 text-[10px]">
+            Error: {data.error}
+          </div>
+        ) : (
+          <div className="text-white/60 text-[10px]">
+            Connect to Fragments API node to display data
           </div>
         )}
       </div>

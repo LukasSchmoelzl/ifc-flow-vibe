@@ -18,4 +18,10 @@ Allgemein:
 
 Nodes:
     In jedem node UI sollen die Eingänge und Ausgänge jeweils als Liste mit Datentyp oder API call als Inhalt
+
+Logging:
+    Workflow-Level: 2 Logs (Start, Ende)
+    Node-Level: 2 Logs pro Node (Start mit Input, Ende mit Output)
+    Format: ▶️  nodeType (input: ...) und ✓ output: ...
+    Keine Debug-Logs, nur Fehler mit ❌ NodeType:
     

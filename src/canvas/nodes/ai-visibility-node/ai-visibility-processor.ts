@@ -5,8 +5,6 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
   private invisibleIds: number[] = [];
 
   async process(node: any, inputValues: any, context: ProcessorContext): Promise<any> {
-    console.log(`[AIVisibilityNode] Processing node ${node.id}`);
-    console.log(`[AIVisibilityNode] Inputs:`, inputValues);
 
     const expressIds = inputValues?.expressIds as number[] | undefined;
     const action = inputValues?.action as string | undefined;
@@ -56,7 +54,7 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
 
       return resultData;
     } catch (error) {
-      console.error(`[AIVisibilityNode] Error:`, error);
+      console.error(`❌ AIVisibility:`, error);
       context.updateNodeData(node.id, {
         ...node.data,
         isLoading: false,
@@ -71,7 +69,6 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
     const fragments = (window as any).__fragmentsViewer;
 
     if (!model) {
-      console.warn('⚠️ [AIVisibilityNode] No model available');
       return;
     }
 
@@ -87,7 +84,6 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
         transparent: true
       };
       await model.highlight(expressIds, highlightMaterial);
-      console.log('✅ [AIVisibilityNode] Highlighted:', expressIds);
     }
 
     this.highlightedIds = [...expressIds];
@@ -116,7 +112,6 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
     const model = (window as any).__fragmentsModels?.[0];
 
     if (!model) {
-      console.warn('⚠️ [AIVisibilityNode] No model available');
       return;
     }
 
@@ -128,7 +123,6 @@ export class AIVisibilityNodeProcessor implements NodeProcessor {
     const model = (window as any).__fragmentsModels?.[0];
 
     if (!model) {
-      console.warn('⚠️ [AIVisibilityNode] No model available');
       return;
     }
 
